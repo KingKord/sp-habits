@@ -1,0 +1,88 @@
+# Habits for Super Productivity
+
+Track habits, build routines and keep unwanted habits within limits — inside [Super Productivity](https://super-productivity.com/).
+
+Set a goal such as reading for 20 minutes a day, limit coffee to two cups, or aim for three workouts over seven days. Record your progress and see your history in one place.
+
+Current release: **0.18.1** · Requires **Super Productivity 19.3.1+** · [Download](https://github.com/KingKord/sp-habits/releases/latest) · [User guide](docs/user-guide.md)
+
+![Habits in dark mode, showing example goals, daily counters and a week of progress](docs/images/habits-day.png)
+
+*Demo habits with synthetic data.*
+
+## What you can do
+
+- **Build or limit a habit.** Set a minimum or maximum, per day or over a rolling period of up to 366 days.
+- **Track amounts your way.** Use quick counters or enter a daily total, with standard or custom units.
+- **See your progress.** Browse daily history, a monthly calendar, statistics, streaks and personal bests.
+- **Adjust over time.** Change a goal from a chosen date or plan gradual reductions while keeping past rules.
+- **Link recurring tasks.** Count completions from supported fixed daily schedules in Super Productivity.
+- **Keep your history.** Hide or archive a habit, correct past entries, and export or import JSON backups.
+
+English and Russian, light and dark themes, and layouts for narrow and wide screens are included. Habits needs no separate account or server and makes no runtime network requests.
+
+## Install
+
+1. Download **`sp-habits.zip`** from the [latest release](https://github.com/KingKord/sp-habits/releases/latest). Use the release asset, not GitHub's source-code ZIP.
+2. In Super Productivity, open **Settings → Plugins → Choose Plugin File**.
+3. Select the ZIP without extracting it and confirm installation.
+4. Make sure **Habits** is enabled, then open it from the sidebar.
+
+Plugins run inside Super Productivity and can access app data. Install builds you trust. Each release also provides a SHA-256 file if you want to check the download.
+
+### Updating
+
+First use **More → Export JSON** to save a backup. Upload the new ZIP through the same settings screen, without removing the installed plugin. Habits keeps a stable plugin ID so compatible updates can reuse saved history and JSON backups. See the [verification log](VERIFICATION.md) for checked versions and platforms.
+
+## Try your first habit
+
+1. Select **+ Add** and enter a name.
+2. Choose **Positive** for a minimum goal or **Negative** for a maximum allowance.
+3. Set the amount, unit, period and tracking start date, then save.
+4. Use **+ / −** to record an amount. Select a displayed total or a past day to correct it.
+
+For example, choose Positive, 20 min per day and a step of 5 for reading. Each **+** adds five minutes. For coffee, choose Negative and two cups per day: two is within the allowance, three is over it.
+
+Today's result is provisional. Streaks and success percentages use completed tracked days. A period of seven days means a rolling window, rather than a calendar week.
+
+For optional review tasks, reduction plans, colour settings and full task-link behavior, see the [user guide](docs/user-guide.md).
+
+## Your data and current limits
+
+Habits stores its history through Super Productivity's plugin storage. Names, custom units and existing history are preserved in their original language. It does not send your data to a separate service; cross-device sync depends on your Super Productivity settings.
+
+Export before importing: an import replaces the complete plugin history after confirmation. Wait for **Ready** before closing after an edit. If a write fails, use **Reload data** to return to confirmed storage.
+
+The project is actively evolving. Keep these limits in mind:
+
+- Linked tasks currently support active, fixed `DAILY` schedules every 1–366 days. Weekly, monthly, yearly and after-completion schedules are unsupported.
+- Counts are whole numbers. Days run from midnight to midnight in the saved timezone.
+- Concurrent editing on multiple devices is unsupported; delivery to a second client has not been verified.
+- Physical mobile devices and Safari have not been checked. macOS installation and isolated Chromium layouts have been verified.
+
+Read the [full rules and limitations](docs/user-guide.md) before relying on a particular workflow.
+
+## Help and contributions
+
+For a bug or a feature idea, [open an issue](https://github.com/KingKord/sp-habits/issues/new/choose). Include the Habits version, Super Productivity version and steps to reproduce. Use invented examples instead of uploading personal habit backups.
+
+Code, documentation, translations and reproducible bug reports are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md); it explains setup, checks and the pull request process. Community participation follows the [code of conduct](CODE_OF_CONDUCT.md). For vulnerabilities, use the [security policy](SECURITY.md).
+
+## Build from source
+
+Use Node.js 24 LTS, `zip` and `unzip`:
+
+```sh
+git clone https://github.com/KingKord/sp-habits.git
+cd sp-habits
+npm ci
+npm run check
+```
+
+Install `dist/sp-habits.zip` in a separate test profile. See [development](docs/development.md) for the architecture and testing guidance, or the [release guide](docs/releasing.md) for publication.
+
+## License
+
+Habits code is available under the [MIT License](LICENSE). Bundled Unicode emoji and CLDR data retain their [separate license and notices](THIRD_PARTY_LICENSES.txt).
+
+This is a community plugin, maintained independently of the Super Productivity project.

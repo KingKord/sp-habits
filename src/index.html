@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Habits</title>
+  </head>
+  <body hidden>
+    <main class="shell">
+      <header class="top">
+        <h1>Habits</h1>
+        <button id="add" class="quiet">+ Add</button>
+      </header>
+      <section id="error" class="error" role="alert" hidden>
+        <strong>Data needs attention</strong>
+        <p id="error-text"></p>
+        <div class="actions">
+          <button id="reload">Reload data</button
+          ><button id="raw" hidden>Download original data</button>
+        </div>
+      </section>
+      <nav class="view-switch" aria-label="Plugin section">
+        <button id="view-day" aria-pressed="true">Day</button
+        ><button id="view-calendar" aria-pressed="false">Calendar</button
+        ><button id="view-stats" aria-pressed="false">Statistics</button>
+      </nav>
+      <div id="day-view">
+        <section class="toolbar" aria-label="Date and result">
+          <div class="date-nav">
+            <button id="prev" aria-label="Previous day">←</button
+            ><label
+              ><span class="sr-only">Date</span
+              ><input id="date" type="date" min="1900-01-01" required /></label
+            ><button id="next" aria-label="Next day">→</button
+            ><button id="today" class="quiet">Today</button>
+          </div>
+          <div id="summary" class="summary" aria-live="polite">Loading…</div>
+        </section>
+        <div class="tabs" role="group" aria-label="Habit list">
+          <button id="active" aria-pressed="true">Active</button
+          ><button id="hidden" aria-pressed="false">Hidden</button
+          ><button id="archived" aria-pressed="false">Archived</button
+          ><span id="save-status" role="status" aria-live="polite">Loading…</span>
+        </div>
+        <section id="cards" class="cards" aria-label="Habits"></section>
+        <p class="hint">
+          Streaks count completed days; ✦ counts ideal days within the streak. Your best streak and
+          badges are kept after a missed day.
+        </p>
+      </div>
+
+      <section id="calendar-view" aria-labelledby="calendar-title" hidden>
+        <div class="stats-heading">
+          <div>
+            <h2 id="calendar-title">Calendar</h2>
+          </div>
+        </div>
+        <div class="calendar-toolbar">
+          <div class="periods" role="group" aria-label="Calendar habits">
+            <button id="calendar-active" aria-pressed="true">Active</button
+            ><button id="calendar-all" aria-pressed="false">All</button
+            ><button id="calendar-archived" aria-pressed="false">Archived</button>
+          </div>
+          <div class="date-nav">
+            <button id="calendar-prev" aria-label="Previous month">←</button
+            ><label
+              >Month<input
+                id="calendar-month"
+                type="month"
+                min="1900-01"
+                max="9999-12"
+                required /></label
+            ><button id="calendar-next" aria-label="Next month">→</button
+            ><button id="calendar-today" class="quiet">This month</button>
+          </div>
+        </div>
+        <div class="calendar-legend" aria-label="Zones">
+          <span class="zone-ideal">Ideal</span><span class="zone-warning">Acceptable</span
+          ><span class="zone-red">Unsuccessful</span>
+        </div>
+        <p id="calendar-summary" class="sr-only" aria-live="polite"></p>
+        <div class="calendar-weekdays" aria-hidden="true">
+          <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span
+          ><span>Sat</span><span>Sun</span>
+        </div>
+        <div
+          id="calendar-grid"
+          class="calendar-grid"
+          role="group"
+          aria-label="Shared habit calendar"
+        ></div>
+        <section class="calendar-day-details" aria-labelledby="calendar-day-title">
+          <h3 id="calendar-day-title" aria-live="polite"></h3>
+          <div id="calendar-day-habits" class="calendar-day-habits"></div>
+        </section>
+        <details class="calendar-settings-list">
+          <summary>Habit settings and reduction plans</summary>
+          <div id="calendar-habit-settings"></div>
+        </details>
+        <details class="view-help">
+          <summary>About the calendar</summary>
+          <p class="hint">
+            Select a habit entry within a day to edit its amount. The daily amount appears next to
+            the name; the circle colour shows the result over the goal period. On a narrow screen,
+            select a date to see its habits below the month. Today has a dashed outline and its
+            result is provisional. Future days and days outside tracking are not assessed.
+          </p>
+          <p class="hint">
+            Ideal is the desired goal; yellow means the limit or minimum is met. Red means the
+            maximum was exceeded or the minimum was missed. Ideal and yellow days are successful.
+            Periods longer than a day include earlier events in a rolling interval.
+          </p>
+        </details>
+      </section>
+
+      <section id="statistics" aria-labelledby="stats-title" hidden>
+        <div class="stats-heading">
+          <div>
+            <h2 id="stats-title">Statistics</h2>
+          </div>
+          <label
+            >Habits<select id="stats-filter">
+              <option value="all">All</option>
+              <option value="active">Active</option>
+              <option value="archived">Archived</option>
+            </select></label
+          >
+        </div>
+        <div id="stats-presets" class="periods" role="group" aria-label="Statistics period"></div>
+        <form id="stats-form" class="stats-form" hidden>
+          <label>From<input id="stats-from" type="date" min="1900-01-01" required /></label>
+          <label>To<input id="stats-to" type="date" min="1900-01-01" required /></label>
+          <button type="submit">Show</button>
+        </form>
+        <div id="stats-metrics" class="stats-metrics" aria-live="polite"></div>
+        <div class="stats-scroll" tabindex="0" role="region" aria-label="Statistics table">
+          <table class="stats-table" role="table">
+            <caption id="stats-caption">
+              Habit statistics
+            </caption>
+            <thead role="rowgroup">
+              <tr role="row">
+                <th scope="col" role="columnheader">Habit</th>
+                <th scope="col" role="columnheader">Total</th>
+                <th scope="col" role="columnheader">Successful</th>
+                <th scope="col" role="columnheader">Completion</th>
+              </tr>
+            </thead>
+            <tbody id="stats-rows" role="rowgroup"></tbody>
+          </table>
+        </div>
+        <p class="hint">Completion uses completed days. Quantity includes today.</p>
+        <details class="view-help">
+          <summary>About statistics</summary>
+          <p id="stats-note" class="hint"></p>
+          <p class="hint">
+            7 and 30 days include today. Weeks start on Monday. Year means the last 12 months; This
+            year starts on January 1. A missing quantity counts as zero.
+          </p>
+        </details>
+      </section>
+
+      <p id="message" class="message" role="status" aria-live="polite"></p>
+      <details class="more-settings">
+        <summary>More</summary>
+        <footer>
+          <div class="actions">
+            <button id="export" class="quiet">↓ Export JSON</button
+            ><button id="import" class="quiet">↑ Import JSON</button
+            ><input id="import-file" type="file" accept=".json,application/json" hidden /><button
+              id="settings"
+              class="quiet"
+            >
+              How it works
+            </button>
+          </div>
+          <label class="theme-label"
+            >Theme<select id="theme">
+              <option value="auto">Follow app</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select></label
+          >
+        </footer>
+        <p class="footnote" id="zone"></p>
+        <p class="footnote">Habits · 0.18.1</p>
+      </details>
+    </main>
+    <p class="form-error" id="task-sync-error" role="alert"></p>
+    <dialog id="editor" aria-labelledby="editor-title">
+      <form id="habit-form">
+        <div class="dialog-top">
+          <h2 id="editor-title">New habit</h2>
+          <button type="button" class="quiet" id="close-editor" aria-label="Close form">×</button>
+        </div>
+        <label
+          >Name<input
+            id="name"
+            required
+            maxlength="120"
+            placeholder="For example, reading or coffee"
+            autocomplete="off"
+        /></label>
+        <label
+          >Linked recurring task<select id="task-series">
+            <option value="">Not linked</option>
+          </select></label
+        >
+        <p id="task-series-hint" class="hint" role="status"></p>
+        <label id="emoji-field-label">Emoji</label>
+        <input id="emoji" type="hidden" />
+        <div class="emoji-field" role="group" aria-labelledby="emoji-field-label">
+          <button
+            id="choose-emoji"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="emoji-picker"
+          >
+            <span id="emoji-preview" aria-hidden="true">＋</span
+            ><span id="emoji-choice-label">Choose emoji</span>
+          </button>
+          <button id="clear-emoji" type="button" class="quiet">No emoji</button>
+        </div>
+        <p id="emoji-status" class="sr-only" role="status" aria-live="polite"></p>
+        <label
+          >Habit type<select id="goal">
+            <option value="at-least">Good</option>
+            <option value="at-most">Bad</option>
+          </select></label
+        >
+        <div id="reflection-settings" hidden>
+          <label class="check-label"
+            ><input id="reflection-task" type="checkbox" /> Create a brief review task when pressing
+            +</label
+          >
+          <p class="hint">
+            Each + creates one task with questions about the episode. Editing totals and pressing −
+            do not create tasks. Completing the review keeps the episode in history.
+          </p>
+        </div>
+        <div class="form-row">
+          <label
+            >Unit<select id="unit-choice">
+              <option value="times">times</option>
+              <option value="items">items</option>
+              <option value="ml">ml</option>
+              <option value="g">g</option>
+              <option value="min">min</option>
+              <option value="custom">Other…</option>
+            </select></label
+          ><label
+            >+ button step<input
+              id="step"
+              type="number"
+              min="1"
+              max="1000000000"
+              step="1"
+              value="1"
+              required
+          /></label>
+        </div>
+        <label id="custom-unit-label" hidden
+          >Custom unit<input
+            id="unit"
+            maxlength="16"
+            autocomplete="off"
+            placeholder="For example, cups"
+            disabled
+        /></label>
+        <p class="hint">Changing the unit relabels history without converting the numbers.</p>
+        <div class="form-row">
+          <label
+            ><span id="limit-label">Allowed per period</span
+            ><input
+              id="limit"
+              type="number"
+              min="0"
+              max="1000000000"
+              step="1"
+              value="0"
+              required /></label
+          ><label
+            ><span id="from-label">Start tracking</span
+            ><input id="from" type="date" min="1900-01-01" required
+          /></label>
+        </div>
+        <label
+          >Period (days)<input
+            id="period-days"
+            type="number"
+            min="1"
+            max="366"
+            step="1"
+            value="1"
+            required
+        /></label>
+        <p class="hint">
+          1 means per day, 7 means over the last 7 days. Assessment begins on the first tracked day.
+        </p>
+        <fieldset class="zone-settings">
+          <legend>Calendar color zones</legend>
+          <label class="check-label"
+            ><input id="zones-enabled" type="checkbox" checked />Show color zones</label
+          >
+          <div id="zones-fields">
+            <label
+              ><span id="ideal-label">Ideal goal: at most</span
+              ><input
+                id="zones-ideal"
+                type="number"
+                min="0"
+                max="1000000000"
+                step="1"
+                value="0"
+                required
+            /></label>
+            <label class="check-label"
+              ><input id="zones-yellow-enabled" type="checkbox" checked />Use yellow to distinguish
+              acceptable from ideal</label
+            >
+            <p class="hint" id="zone-hint">
+              For example: ideal 0 ml, allowed 300 ml. At or below the ideal is green; above the
+              ideal but within the limit is yellow; above the limit is red. Yellow days are within
+              the limit. Disabling yellow does not change the allowed limit.
+            </p>
+          </div>
+        </fieldset>
+        <label id="initial-label"
+          >Quantity already recorded today<input
+            id="initial"
+            type="number"
+            min="0"
+            max="1000000000"
+            step="1"
+            value="0"
+        /></label>
+        <p class="hint" id="editor-hint">
+          Zero is a valid limit. Days without recorded events count as within the limit. Include
+          events that have already happened today.
+        </p>
+        <p class="form-error" id="editor-error" role="alert"></p>
+        <div class="dialog-bottom">
+          <button type="button" id="archive-habit" class="danger" hidden>Archive</button
+          ><button type="submit" id="save-habit" class="btn-primary">Create</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="emoji-picker" aria-labelledby="emoji-picker-title">
+      <div class="dialog-top">
+        <h2 id="emoji-picker-title">Emoji picker</h2>
+        <button id="close-emoji-picker" type="button" class="quiet" aria-label="Close emoji picker">
+          ×
+        </button>
+      </div>
+      <label
+        >Search<input
+          id="emoji-search"
+          type="search"
+          placeholder="For example, book or coffee"
+          autocomplete="off"
+      /></label>
+      <label
+        >Category<select id="emoji-category">
+          <option value="">All categories</option>
+        </select></label
+      >
+      <p id="emoji-results-status" class="hint" role="status" aria-live="polite"></p>
+      <div id="emoji-results" class="emoji-grid" role="group" aria-label="Emoji"></div>
+      <button id="more-emoji" type="button" class="quiet" hidden>Show more</button>
+      <div class="emoji-custom-row">
+        <label
+          >Custom emoji<input
+            id="emoji-custom"
+            maxlength="64"
+            placeholder="Paste an emoji"
+            autocomplete="off" /></label
+        ><button
+          id="open-system-emoji"
+          type="button"
+          class="quiet emoji-native-button"
+          aria-label="Open system emoji picker"
+          title="Open the system emoji picker"
+          hidden
+        >
+          ☺</button
+        ><button id="use-custom-emoji" type="button">Use</button>
+      </div>
+      <p id="emoji-picker-error" class="form-error" role="alert"></p>
+      <div class="dialog-bottom">
+        <button id="picker-clear-emoji" type="button" class="quiet">No emoji</button>
+      </div>
+    </dialog>
+    <dialog id="count-editor" aria-labelledby="count-editor-title">
+      <form id="count-form">
+        <div class="dialog-top">
+          <h2 id="count-editor-title">Daily quantity</h2>
+          <button type="button" class="quiet" id="close-count" aria-label="Close quantity editor">
+            ×
+          </button>
+        </div>
+        <p id="count-context" class="hint"></p>
+        <label
+          ><span id="count-amount-label">Quantity</span
+          ><input
+            id="count-amount"
+            type="number"
+            min="0"
+            max="1000000000"
+            step="1"
+            required
+            inputmode="numeric"
+        /></label>
+        <p id="count-error" class="form-error" role="alert"></p>
+        <div class="dialog-bottom">
+          <button id="cancel-count" type="button">Cancel</button
+          ><button id="save-count" type="submit" class="btn-primary">Save</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="plan-editor" aria-labelledby="plan-title">
+      <form id="plan-form">
+        <div class="dialog-top">
+          <h2 id="plan-title">Gradual reduction</h2>
+          <button id="close-plan" type="button" class="quiet" aria-label="Close reduction plan">
+            ×
+          </button>
+        </div>
+        <p id="plan-context" class="hint"></p>
+        <label
+          >Plan type<select id="plan-mode">
+            <option value="amount">Reduce quantity</option>
+            <option value="frequency">Reduce frequency: 1 per 2 days, per week…</option>
+          </select></label
+        >
+        <div id="amount-plan-fields">
+          <div class="form-row">
+            <label
+              >First reduction<input id="plan-first" type="date" min="1900-01-01" required /></label
+            ><label
+              >Every (days)<input
+                id="plan-interval"
+                type="number"
+                min="1"
+                max="366"
+                value="7"
+                required
+            /></label>
+          </div>
+          <div class="form-row">
+            <label
+              >Reduce by<input
+                id="plan-decrease"
+                type="number"
+                min="1"
+                max="1000000000"
+                step="1"
+                required /></label
+            ><label
+              >Target limit<input
+                id="plan-target"
+                type="number"
+                min="0"
+                max="1000000000"
+                value="0"
+                step="1"
+                required
+            /></label>
+          </div>
+        </div>
+        <div id="frequency-plan-fields" hidden>
+          <p class="hint">
+            Set the date, quantity and number of days for each stage. For example: 1 per 2 days → 1
+            per 7 days. Each stage must reduce the average frequency.
+          </p>
+          <div id="frequency-stages"></div>
+          <button id="add-frequency-stage" type="button">+ Add stage</button>
+        </div>
+        <p class="hint">
+          The plan applies only to future days. Limits from the first reduction date will be
+          replaced by the new schedule; past limits and quantities will be kept. Maximum 120 steps.
+        </p>
+        <div id="plan-preview" class="plan-preview" aria-live="polite"></div>
+        <p id="plan-error" class="form-error" role="alert"></p>
+        <div class="dialog-bottom">
+          <button id="cancel-reduction" type="button">Cancel future plan</button
+          ><button id="save-plan" type="submit" class="btn-primary">Save plan</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="info" aria-labelledby="info-title">
+      <div class="dialog-top">
+        <h2 id="info-title">How it works</h2>
+        <button id="close-info" class="quiet" aria-label="Close help">×</button>
+      </div>
+      <p>
+        Good habit: meet a minimum. Bad habit: stay within a limit. Today's result is provisional;
+        no entries count as zero.
+      </p>
+      <p>
+        Click a name for settings, or a number or circle for the daily total. The ± buttons adjust
+        it by the configured step. A period longer than a day is a rolling interval including the
+        selected day.
+      </p>
+      <p>
+        Data is stored in Super Productivity. Use Export JSON for backups. Editing from multiple
+        devices at the same time is not supported.
+      </p>
+    </dialog>
+    <script>
+      /* INLINE_SCRIPT */
+    </script>
+  </body>
+</html>

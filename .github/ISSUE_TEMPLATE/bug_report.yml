@@ -1,0 +1,43 @@
+name: Bug report
+description: Report a reproducible problem with Habits.
+title: "Bug: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues first. Use invented habits and remove private information from screenshots and logs. For vulnerabilities, follow SECURITY.md instead of sharing details here.
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Include Habits and Super Productivity versions.
+      placeholder: "Habits 0.18.1; Super Productivity 19.3.1"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system and desktop app or browser version.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Give a small example with synthetic data.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include relevant errors or redacted screenshots if useful. Do not upload personal backups.
+    validations:
+      required: true

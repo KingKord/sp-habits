@@ -1,0 +1,14 @@
+{
+  "id": "sp-habit-limits",
+  "name": "Habits",
+  "version": "0.18.1",
+  "manifestVersion": 1,
+  "minSupVersion": "19.3.1",
+  "description": "Positive habit goals, event limits, recurring tasks, calendar and statistics. No separate server.",
+  "iFrame": true,
+  "sidePanel": false,
+  "uiKit": true,
+  "hooks": ["taskComplete", "taskUpdate", "anyTaskUpdate", "persistedDataChanged"],
+  "permissions": [],
+  "icon": "icon.svg"
+}
