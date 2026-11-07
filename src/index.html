@@ -155,7 +155,8 @@
           <p id="stats-note" class="hint"></p>
           <p class="hint">
             7 and 30 days include today. Weeks start on Monday. Year means the last 12 months; This
-            year starts on January 1. A missing quantity counts as zero.
+            year starts on January 1. A missing quantity counts as zero. A time goal requires a Done
+            mark.
           </p>
         </details>
       </section>
@@ -183,7 +184,7 @@
           >
         </footer>
         <p class="footnote" id="zone"></p>
-        <p class="footnote">Habits · 0.18.1</p>
+        <p class="footnote">Habits · 0.18.2</p>
       </details>
     </main>
     <p class="form-error" id="task-sync-error" role="alert"></p>
@@ -200,8 +201,9 @@
             maxlength="120"
             placeholder="For example, reading or coffee"
             autocomplete="off"
+            enterkeyhint="done"
         /></label>
-        <label
+        <label id="task-series-label"
           >Linked recurring task<select id="task-series">
             <option value="">Not linked</option>
           </select></label
@@ -228,6 +230,29 @@
             <option value="at-most">Bad</option>
           </select></label
         >
+        <label
+          >Tracking<select id="unit-choice">
+            <option value="check-in">Done / missed</option>
+            <option value="times">times</option>
+            <option value="items">items</option>
+            <option value="ml">ml</option>
+            <option value="g">g</option>
+            <option value="min">min</option>
+            <option value="custom">Other…</option>
+          </select></label
+        >
+        <div id="check-in-settings" hidden>
+          <label class="check-label"
+            ><input id="has-deadline" type="checkbox" /> Add a time condition</label
+          >
+          <label id="deadline-field" hidden
+            >No later than<input id="deadline" type="time" value="08:00" step="60" disabled
+          /></label>
+          <p class="hint">
+            Confirm whether you met your goal. You can mark it later; the time of the click does not
+            determine the result.
+          </p>
+        </div>
         <div id="reflection-settings" hidden>
           <label class="check-label"
             ><input id="reflection-task" type="checkbox" /> Create a brief review task when pressing
@@ -238,17 +263,8 @@
             do not create tasks. Completing the review keeps the episode in history.
           </p>
         </div>
-        <div class="form-row">
+        <div class="form-row" id="quantity-settings">
           <label
-            >Unit<select id="unit-choice">
-              <option value="times">times</option>
-              <option value="items">items</option>
-              <option value="ml">ml</option>
-              <option value="g">g</option>
-              <option value="min">min</option>
-              <option value="custom">Other…</option>
-            </select></label
-          ><label
             >+ button step<input
               id="step"
               type="number"
@@ -267,9 +283,11 @@
             placeholder="For example, cups"
             disabled
         /></label>
-        <p class="hint">Changing the unit relabels history without converting the numbers.</p>
+        <p class="hint" id="unit-hint">
+          Changing the unit relabels history without converting the numbers.
+        </p>
         <div class="form-row">
-          <label
+          <label id="limit-field"
             ><span id="limit-label">Allowed per period</span
             ><input
               id="limit"
@@ -284,7 +302,7 @@
             ><input id="from" type="date" min="1900-01-01" required
           /></label>
         </div>
-        <label
+        <label id="period-label"
           >Period (days)<input
             id="period-days"
             type="number"
@@ -294,10 +312,10 @@
             value="1"
             required
         /></label>
-        <p class="hint">
+        <p class="hint" id="period-hint">
           1 means per day, 7 means over the last 7 days. Assessment begins on the first tracked day.
         </p>
-        <fieldset class="zone-settings">
+        <fieldset class="zone-settings" id="zone-settings">
           <legend>Calendar color zones</legend>
           <label class="check-label"
             ><input id="zones-enabled" type="checkbox" checked />Show color zones</label
@@ -399,7 +417,7 @@
           </button>
         </div>
         <p id="count-context" class="hint"></p>
-        <label
+        <label id="count-amount-field"
           ><span id="count-amount-label">Quantity</span
           ><input
             id="count-amount"
@@ -410,6 +428,7 @@
             required
             inputmode="numeric"
         /></label>
+        <div id="completion-controls" hidden></div>
         <p id="count-error" class="form-error" role="alert"></p>
         <div class="dialog-bottom">
           <button id="cancel-count" type="button">Cancel</button
@@ -426,7 +445,7 @@
           </button>
         </div>
         <p id="plan-context" class="hint"></p>
-        <label
+        <label id="plan-mode-label"
           >Plan type<select id="plan-mode">
             <option value="amount">Reduce quantity</option>
             <option value="frequency">Reduce frequency: 1 per 2 days, per week…</option>
@@ -435,7 +454,8 @@
         <div id="amount-plan-fields">
           <div class="form-row">
             <label
-              >First reduction<input id="plan-first" type="date" min="1900-01-01" required /></label
+              ><span id="plan-first-label">First reduction</span
+              ><input id="plan-first" type="date" min="1900-01-01" required /></label
             ><label
               >Every (days)<input
                 id="plan-interval"
@@ -448,7 +468,8 @@
           </div>
           <div class="form-row">
             <label
-              >Reduce by<input
+              ><span id="plan-decrease-label">Reduce by</span
+              ><input
                 id="plan-decrease"
                 type="number"
                 min="1"
@@ -456,7 +477,8 @@
                 step="1"
                 required /></label
             ><label
-              >Target limit<input
+              ><span id="plan-target-label">Target limit</span
+              ><input
                 id="plan-target"
                 type="number"
                 min="0"
@@ -475,7 +497,7 @@
           <div id="frequency-stages"></div>
           <button id="add-frequency-stage" type="button">+ Add stage</button>
         </div>
-        <p class="hint">
+        <p class="hint" id="plan-hint">
           The plan applies only to future days. Limits from the first reduction date will be
           replaced by the new schedule; past limits and quantities will be kept. Maximum 120 steps.
         </p>

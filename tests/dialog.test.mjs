@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { closeOnBackdrop } from "../src/ui/dialog.js";
+import { closeOnBackdrop, dismissKeyboardOnReturn } from "../src/ui/dialog.js";
 
 function harness() {
   let closed = 0;
@@ -52,4 +52,52 @@ test("dragging or cancelled pointer gestures do not discard dialog edits", () =>
   h.send("pointerdown", 30, 30);
   h.send("click", 30, 30);
   assert.equal(h.closed, 1);
+});
+
+test("Return blurs a single-line field without submitting; IME, multiline and buttons keep their behavior", () => {
+  let handler;
+  dismissKeyboardOnReturn(
+    {
+      on: (id, type, fn) => {
+        assert.equal(id, "habit-form");
+        assert.equal(type, "keydown");
+        handler = fn;
+      }
+    },
+    "habit-form"
+  );
+  for (const type of ["text", "search", "number", "time", "date"]) {
+    let blurred = false,
+      prevented = false;
+    handler({
+      key: "Enter",
+      target: {
+        tagName: "INPUT",
+        type,
+        blur: () => {
+          blurred = true;
+        }
+      },
+      preventDefault: () => {
+        prevented = true;
+      }
+    });
+    assert.equal(blurred, true);
+    assert.equal(prevented, true);
+  }
+  for (const override of [
+    { key: "Tab" },
+    { isComposing: true },
+    { keyCode: 229 },
+    { target: { tagName: "TEXTAREA" } },
+    { target: { tagName: "BUTTON" } },
+    { target: { tagName: "INPUT", type: "checkbox" } }
+  ]) {
+    handler({
+      key: "Enter",
+      target: { tagName: "INPUT", type: "text", blur: () => assert.fail("Unexpected blur") },
+      preventDefault: () => assert.fail("Unexpected cancellation"),
+      ...override
+    });
+  }
 });

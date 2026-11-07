@@ -24,3 +24,20 @@ export function closeOnBackdrop(dom, id, close) {
     if (dismiss) close();
   });
 }
+
+// Return finishes a single-line field without submitting or discarding the form.
+export function dismissKeyboardOnReturn(dom, id) {
+  dom.on(id, "keydown", (event) => {
+    const input = event.target;
+    if (
+      event.key !== "Enter" ||
+      event.isComposing ||
+      event.keyCode === 229 ||
+      input?.tagName !== "INPUT" ||
+      !["text", "search", "number", "time", "date"].includes(input.type)
+    )
+      return;
+    event.preventDefault();
+    input.blur();
+  });
+}

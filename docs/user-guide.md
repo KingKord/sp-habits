@@ -44,7 +44,7 @@ Day, Calendar and Statistics share one content inset: the existing 12 px through
 
 **Day** shows each habit's name, rule, streaks, best result, daily amount and seven days of history. Select a name to edit the habit, or an amount/day to edit that date's total. The ± buttons use the configured step. The eye button moves a habit to **Hidden**; select it again there to restore the habit.
 
-Above 700 px, the habit details and history use two columns with one shared date header. At 700 px and below, each habit becomes a vertical card: its week, date labels, goal and achievements appear under its details. Long names and rules wrap. Counter buttons are 44×44 px. Days are 44 px high and about 41 px wide at the smallest checked width of 320 px.
+Above 700 px, the habit details and history use two columns with one shared date header. At 700 px and below, each habit becomes a vertical card: its week, date labels, goal and achievements appear under its details. Long names and rules wrap. Counter buttons are 44×44 px. History markers preserve a square aspect ratio: 32 px on wide layouts, up to 44 px on narrow layouts and about 41 px at a plugin width of 320 px.
 
 **Calendar** uses the full available width. At 900 px and below, the month becomes a compact date grid with up to four status dots and a count of remaining habits. Select a date to see full habit names and amounts below the month. Future dates can be inspected but their amounts cannot be edited. An empty filter keeps the grid and shows an explanation. On month changes, the selected Day date is preferred if it belongs to that month, then today, then the first of the month.
 
@@ -52,13 +52,13 @@ Above 700 px, the habit details and history use two columns with one shared date
 
 Dialogs fit the available width and dynamic viewport height. Long forms scroll; mobile form actions stay near the bottom edge. Inputs use 16 px text on narrow screens, and touch controls have larger hit areas. Focus returns to the original control after saving, including after a background refresh. New pointer or keyboard input cancels a delayed focus request.
 
-**More** contains export, import, theme and information controls. Dialogs close with their close button, Escape or a backdrop click. Closing discards unsaved edits. Closing the nested emoji picker leaves the habit editor open; dragging from a field onto the backdrop does not dismiss a form. The temporary theme selection lasts until the plugin view is closed.
+**More** contains export, import, theme and information controls. Dialogs close with their close button, Escape or a backdrop click. Closing discards unsaved edits. In single-line habit fields, Return dismisses the keyboard and keeps the form and pending edits open; use **Create** or **Save** to submit. Text composition and keyboard activation of buttons retain their normal behavior. Closing the nested emoji picker leaves the habit editor open; dragging from a field onto the backdrop does not dismiss a form. The temporary theme selection lasts until the plugin view is closed.
 
 The UI follows the host's [UI Kit and theme variables](https://github.com/super-productivity/super-productivity/blob/v19.3.1/docs/plugin-development.md#theme-variables--ui-kit). Ordinary controls are styled by Super Productivity; custom styles use the same colours, typography and corner radii.
 
 ## Goals, frequency and units
 
-Create a **Positive** habit to meet a minimum, or a **Negative** habit to stay within an allowance. Counts and limits are integers from 0 to 1,000,000,000. Goal periods span 1–366 calendar days.
+Create a **Good** habit to build a behavior, or a **Bad** habit to limit or avoid one. In the single **Tracking** field, choose **Done / missed** for a daily check-in or select a quantity unit. Quantity habits use a minimum for Good and a maximum for Bad. Counts and limits are integers from 0 to 1,000,000,000. Goal periods span 1–366 calendar days.
 
 For example, reading can require at least 20 min per day with a +5 step. A frequency goal can require at least three workouts over the last seven days. A maximum of one event over seven days means a rolling window; an event on Sunday followed by another on Monday exceeds that limit.
 
@@ -74,9 +74,21 @@ For a 300 ml allowance and a +100 step, three presses reach 300 and remain accep
 
 Statistics keep different units separate. Standard aliases are combined for display, but amounts in millilitres and items are never added into one total.
 
+## Daily check-ins and optional time conditions
+
+Choose **Done / missed** in **Tracking**. Good habits use **Mark done** and **Missed**; bad habits use **No slip** and **Slipped**. The buttons describe whether the goal was met. A slip is not rewarded as a completion. Repeating the selected action clears it back to **Not marked**, and selecting the other outcome replaces it. Past days can be corrected from the history or calendar; future days cannot be marked.
+
+A check-in has no quantity, step, rolling period or yellow zone. Without a mark, the day stays neutral and unknown, earns no success, and interrupts the confirmed streak. Explicit success is green and failure is red. Today is provisional. Check-in totals count successful marks; their completion percentages exclude unmarked completed days, which are shown separately. The successful-day fraction retains all scheduled completed days as its denominator, making missing confirmations visible.
+
+Optionally enable **Add a time condition** and set **No later than**, such as 08:00. This is the condition you assess, not a reminder or a clock-based check. No actual wake-up/completion time is requested or inferred: you can confirm the result later in the day. Times use 24-hour local wall-clock values from 00:00 through 23:59, and the stated boundary is inclusive.
+
+Edit the condition with **Rule applies from** to change it from a chosen date while preserving earlier conditions and marks. Removing the time condition keeps the check-in and its history. Automatic time-condition plans are not exposed in this version.
+
+Create a separate habit to change between quantity tracking and check-ins, so existing quantities retain their meaning. Manual check-ins cannot link to recurring tasks or create episode-review tasks. The earlier test-only `before-time` format remains readable; explicitly saving its settings upgrades its dated conditions while keeping marks. Exported check-in histories require this version or newer; do not open them in 0.18.1.
+
 ## Day assessment and historical rules
 
-A completed tracked day is successful when its period count is at or below a maximum, or at or above a minimum. Equality is successful. Missing daily amounts count as zero after tracking begins: zero satisfies a zero maximum, but fails a positive minimum. A zero minimum is allowed and is met without entries.
+For quantity habits, a completed tracked day is successful when its period count is at or below a maximum, or at or above a minimum. Equality is successful. Missing daily amounts count as zero after tracking begins: zero satisfies a zero maximum, but fails a positive minimum. A zero minimum is allowed and is met without entries.
 
 Today is provisional and does not contribute to the final success percentage. Dates before tracking, after the archive boundary, or in the future do not get fabricated successes. A successful status describes the saved totals; it is not evidence of real-world activity.
 
@@ -155,7 +167,7 @@ The overall percentage weights habit-days, rather than averaging habit percentag
 
 Data is stored through the plugin's own synced API storage. Built-in habits are not modified, and task links use the official read APIs. Optional episode reviews create tasks through PluginAPI.addTask. There are no runtime HTTP/CDN requests, separate accounts, Node execution or server hosting.
 
-Schema version 1 remains readable without a read-time migration. `goal` is optional and defaults to `at-most`; `at-least` represents a minimum. Emoji, zones, unit, step and legacy fields are optional. Do not downgrade to a version that does not understand positive goals, frequency or task links; older code can interpret a minimum as a maximum or ignore automatic counts.
+Schema version 1 remains readable without a read-time migration. `goal` is optional and defaults to `at-most`; `at-least` represents a minimum. Rules with `tracking: "check-in"` use explicit outcome marks (1 for success, 0 for failure, no entry for unknown), independently of the habit direction. Their optional `deadline` is a wall-clock minute condition, separate from the mark. Emoji, zones, unit, step and legacy fields are optional. Do not downgrade to a version that does not understand positive goals, frequency or task links; older code can interpret a minimum as a maximum or ignore automatic counts.
 
 Writes are serialized, including rapid clicks. Wait for **Ready** before closing. A failed write stops the queue; **Reload data** restores confirmed storage. Invalid JSON is surfaced rather than replaced with an empty history. Import validates the structure and replaces the entire plugin history after confirmation.
 

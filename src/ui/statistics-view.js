@@ -92,6 +92,8 @@ export function createStatisticsView({ dom, store, now, render }) {
       name.scope = "row";
       name.append(node("span", habitName(row)));
       if (row.archived) name.append(node("small", t("Archived")));
+      if (row.tracking === "check-in")
+        name.append(node("small", t("Unmarked days: ") + row.unmarkedDays));
       if (!row.trackedDays) name.append(node("small", t("No data")));
       tr.title = row.trackedDays
         ? t("Unsuccessful days: ") +
@@ -141,7 +143,11 @@ export function createStatisticsView({ dom, store, now, render }) {
       t(
         "Days before tracking and after archiving are excluded. Each day uses its own rule; frequency checks include the previous N days, even if part of that interval precedes the selected statistics period. "
       ) +
-      t("The total rate counts days for each habit, rather than unique calendar dates.");
+      t("The total rate counts days for each habit, rather than unique calendar dates.") +
+      " " +
+      t(
+        "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction still shows all scheduled completed days."
+      );
   }
   byId("stats-presets").replaceChildren();
   for (const [key, label] of statsPresets) {

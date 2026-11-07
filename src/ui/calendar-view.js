@@ -1,7 +1,16 @@
 import { t } from "../i18n/index.js";
 import { unitText } from "./units.js";
 import * as D from "../domain.js";
-import { dateText, ruleText, usageText, habitName, goalText } from "./format.js";
+import {
+  dateText,
+  ruleText,
+  usageText,
+  habitName,
+  goalText,
+  checkInRule,
+  countText,
+  resultLabel
+} from "./format.js";
 
 export function createCalendarView({
   dom,
@@ -35,25 +44,29 @@ export function createCalendarView({
       " · " +
       dateText(day.date, { year: "numeric" }) +
       ": " +
-      (day.goal === "at-least" && day.editable && day.kind !== "rest"
-        ? day.zone === "red"
-          ? t("Goal not met")
-          : day.zone === "ideal"
-            ? t("Goal met")
-            : day.zone === "warning"
-              ? t("Minimum met")
-              : t("No color")
-        : day.kind === "future" && !day.scheduled
-          ? t("Rest day")
-          : zoneNames[day.zone]) +
+      (day.tracking === "check-in"
+        ? resultLabel(day)
+        : day.goal === "at-least" && day.editable && day.kind !== "rest"
+          ? day.zone === "red"
+            ? t("Goal not met")
+            : day.zone === "ideal"
+              ? t("Goal met")
+              : day.zone === "warning"
+                ? t("Minimum met")
+                : t("No color")
+          : day.kind === "future" && !day.scheduled
+            ? t("Rest day")
+            : zoneNames[day.zone]) +
       (day.editable
-        ? t(", daily quantity ") + day.count + " " + unit + ", " + usageText(day, unit)
+        ? (day.tracking === "check-in"
+            ? " · "
+            : t(", daily quantity ") + day.count + " " + unit + ", ") + usageText(day, unit)
         : "") +
       (day.zone === "future" &&
       day.scheduled &&
       day.limit !== null &&
       (!habit.endDate || day.date <= habit.endDate)
-        ? t(", plan: ") + goalText(day.goal) + ruleText(day.limit, day.periodDays, unit)
+        ? t(", plan: ") + goalText(day.goal) + ruleText(day.limit, day.periodDays, unit, day.goal)
         : "") +
       (day.date === today ? t(" · provisional") : "");
     const mark = button(
@@ -88,7 +101,15 @@ export function createCalendarView({
       dot,
       emoji,
       name,
-      node("span", day.editable ? day.count + " " + unit : "—", "calendar-mark-value")
+      node(
+        "span",
+        day.editable
+          ? day.tracking === "check-in"
+            ? countText(day)
+            : day.count + " " + unit
+          : "—",
+        "calendar-mark-value"
+      )
     );
     return mark;
   }
@@ -108,28 +129,33 @@ export function createCalendarView({
       settings,
       node(
         "small",
-        goalText(reference.goal) +
-          ruleText(reference.limit, reference.periodDays, D.unitOf(habit)) +
-          (habit.zones?.enabled === false
-            ? t(" · colors disabled")
-            : t(" · ideal ") +
-              (reference.goal === "at-least" ? "≥ " : "≤ ") +
-              reference.idealMax +
-              " " +
-              unitText(D.unitOf(habit)))
+        (reference.tracking === "check-in"
+          ? checkInRule(reference)
+          : goalText(reference.goal) +
+            ruleText(reference.limit, reference.periodDays, D.unitOf(habit), reference.goal)) +
+          (reference.tracking === "check-in"
+            ? ""
+            : habit.zones?.enabled === false
+              ? t(" · colors disabled")
+              : t(" · ideal ") +
+                (reference.goal === "at-least" ? "≥ " : "≤ ") +
+                reference.idealMax +
+                " " +
+                unitText(D.unitOf(habit)))
       )
     );
     const actions = node("div", undefined, "actions");
     settings.dataset.focusKey = "cal-settings-" + habit.id;
     settings.disabled = snapshot.blocked || snapshot.pending > 0 || snapshot.busyRead;
     const plan = button(
-      t("Reduction plan"),
+      reference.tracking === "check-in" ? t("Earlier time plan") : t("Reduction plan"),
       () => openPlan(habit),
-      t("Reduction plan: ") + habit.name
+      (reference.tracking === "check-in" ? t("Earlier time plan: ") : t("Reduction plan: ")) +
+        habit.name
     );
     plan.dataset.focusKey = "cal-plan-" + habit.id;
     plan.disabled = settings.disabled || habit.endDate !== null;
-    plan.hidden = reference.goal === "at-least";
+    plan.hidden = reference.goal === "at-least" || reference.tracking === "check-in";
     actions.append(plan);
     row.append(description, actions);
     return row;

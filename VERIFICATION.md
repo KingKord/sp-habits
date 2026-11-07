@@ -1,5 +1,36 @@
 # Verification log
 
+## 0.18.2 — 2026-11-07
+
+### Current candidate
+
+- Habit direction remains Good/Bad. The unified Tracking field offers Done/Missed alongside quantity units; there is no separate tracking-method selector. An optional No later than condition belongs to manual check-ins; clicking after that time does not infer a failure or record an actual completion time.
+- Positive check-ins use Done/Missed; negative check-ins use No slip/Slipped. Repeating a selected action restores an unmarked day. Unmarked check-ins are neutral, do not earn success and interrupt the confirmed streak. New check-in statistics distinguish unmarked days from explicit failures.
+- The earlier `before-time` test format remains readable. Explicitly saving its settings upgrades dated deadlines and preserves daily marks. Existing quantity histories retain their meaning. Changing a saved habit's tracking method requires a separate habit in this iteration.
+- Return in a single-line habit field blurs without submitting or closing the form.
+
+### Automated checks
+
+- Final 0.18.2 `npm run check` passed: ESLint, Prettier, **192 tests**, version/changelog validation, bundled JavaScript syntax and ZIP integrity.
+- New regressions cover both habit directions, optional and dated conditions, undo, unknown-day statistics, malformed imports, quantity/task-link guards and upgrade of the earlier time prototype.
+- Final source build `index.html`: **92,315 bytes**, below the 100 KiB host limit. ZIP SHA-256: `cce10044c6d706f9b11a5f10cfd1e9f431105b917b850d185f869eec6e049696`.
+- Release candidate version is **0.18.2** in the package, lockfile, manifest, interface and README. Interactive approval used the ignored **0.18.2-test.4** ZIP. Publication follows the main-branch GitHub Actions workflow.
+
+### Real-host browser review
+
+- Updated the plugin only in the separate Super Productivity **20.0.0** web instance in the in-app browser. Personal sync was not connected; the desktop app was not changed during this iteration.
+- Confirmed the previously entered test habit survived the update.
+- Created a positive check-in with an 08:00 condition and a negative check-in without a time condition. Verified the two-option habit type, conditional fields, both result actions and undo. On test.3, verified the unified Tracking selector switches between check-ins, ml and custom units; hidden quantity fields are disabled for check-ins and the optional time condition remains available.
+- A negative mark survived a full host-page reload. Verified switching it to adherence and undo, plus Calendar and Statistics rendering.
+- On test.4, real-host geometry checks passed at browser widths 1440, 1008, 768, 390 and 320 px. All history markers had equal width and height (32, 44 or approximately 40.57 px), with no horizontal iframe overflow. The temporary viewport override was reset.
+- The review screen is left open for interactive user feedback. This is a test candidate, not acceptance of the design.
+
+### Limits
+
+- This candidate has not been verified on the minimum 19.3.1 host, physical iOS/Safari, cross-device sync or concurrent editing.
+- Quantity tests pass, but a complete browser theme/viewport matrix was not rerun for this iteration.
+- Automated time-condition plans and switching the tracking method of an existing habit are outside this first review iteration. Conditions can be edited with a historical effective date.
+
 ## 0.18.1 — 2026-11-05
 
 ### Build and release

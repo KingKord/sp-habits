@@ -27,9 +27,20 @@ On Windows, use an environment that provides Node.js, `zip` and `unzip`, such as
 
 ## Test without personal data
 
-Unit tests use fixtures and mocked APIs. For UI changes, install the built ZIP in a separate Super Productivity profile with synthetic habits and tasks. Verify the changed flow, save/reopen behavior, English and Russian, both themes and a narrow viewport. Do not test import, replacement or task-creation flows against your everyday history.
+Unit tests use fixtures and mocked APIs. Interactive review uses a separate browser instance of the real Super Productivity web app, with synthetic habits and tasks and no personal sync connection. Keep development builds out of the everyday desktop app unless the user explicitly requests an installation.
 
-The standalone HTML needs the host's PluginAPI and UI Kit; opening `src/index.html` directly is not a supported preview. Local browser harnesses and screenshots belong in ignored `output/`. Shared documentation screenshots must contain synthetic data.
+The [official plugin starter](https://github.com/super-productivity/super-productivity/blob/master/packages/plugin-starter/README.md) recommends a separate browser profile or [test-app](https://test-app.super-productivity.com/). Check the host's displayed version against `minSupVersion` before installing. If test-app is too old, use the [official web app](https://app.super-productivity.com/) in a separate browser profile without connecting personal sync. A browser run on a newer host does not establish compatibility with the minimum supported host version.
+
+For each review iteration:
+
+1. Run the checks relevant to the change and build with `npm run build`.
+2. Upload `dist/sp-habits.zip` in the test host through **Settings → Plugins → Choose Plugin File**. The same plugin ID replaces its previous build; enable it if the host leaves it disabled.
+3. Open the changed screen for the user to try, gather feedback and repeat. Re-upload each new build; the installed ZIP does not automatically follow local source edits.
+4. Verify save/reopen behavior, task hooks and other changed integrations in the real host. Before release, also check English and Russian, both themes, a narrow viewport and compatibility with the supported host version.
+
+Do not test import, replacement or task-creation flows against everyday history. Desktop-only APIs require a separate desktop test profile.
+
+The standalone HTML needs the host's PluginAPI and UI Kit; opening `src/index.html` directly is not a supported preview. A local browser harness with mocked APIs is useful for quick UI checks, but cannot verify the real host's storage, API permissions or task events. Local harnesses and screenshots belong in ignored `output/`. Shared documentation screenshots must contain synthetic data.
 
 ## Source and translations
 
