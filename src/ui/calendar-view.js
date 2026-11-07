@@ -7,6 +7,7 @@ import {
   usageText,
   habitName,
   goalText,
+  checkInRule,
   countText,
   resultLabel
 } from "./format.js";
@@ -43,7 +44,7 @@ export function createCalendarView({
       " · " +
       dateText(day.date, { year: "numeric" }) +
       ": " +
-      (day.goal === "by-time"
+      (day.tracking === "check-in"
         ? resultLabel(day)
         : day.goal === "at-least" && day.editable && day.kind !== "rest"
           ? day.zone === "red"
@@ -57,7 +58,7 @@ export function createCalendarView({
             ? t("Rest day")
             : zoneNames[day.zone]) +
       (day.editable
-        ? (day.goal === "by-time"
+        ? (day.tracking === "check-in"
             ? " · "
             : t(", daily quantity ") + day.count + " " + unit + ", ") + usageText(day, unit)
         : "") +
@@ -102,7 +103,11 @@ export function createCalendarView({
       name,
       node(
         "span",
-        day.editable ? (day.goal === "by-time" ? countText(day) : day.count + " " + unit) : "—",
+        day.editable
+          ? day.tracking === "check-in"
+            ? countText(day)
+            : day.count + " " + unit
+          : "—",
         "calendar-mark-value"
       )
     );
@@ -124,9 +129,11 @@ export function createCalendarView({
       settings,
       node(
         "small",
-        goalText(reference.goal) +
-          ruleText(reference.limit, reference.periodDays, D.unitOf(habit), reference.goal) +
-          (reference.goal === "by-time"
+        (reference.tracking === "check-in"
+          ? checkInRule(reference)
+          : goalText(reference.goal) +
+            ruleText(reference.limit, reference.periodDays, D.unitOf(habit), reference.goal)) +
+          (reference.tracking === "check-in"
             ? ""
             : habit.zones?.enabled === false
               ? t(" · colors disabled")
@@ -141,13 +148,14 @@ export function createCalendarView({
     settings.dataset.focusKey = "cal-settings-" + habit.id;
     settings.disabled = snapshot.blocked || snapshot.pending > 0 || snapshot.busyRead;
     const plan = button(
-      reference.goal === "by-time" ? t("Earlier time plan") : t("Reduction plan"),
+      reference.tracking === "check-in" ? t("Earlier time plan") : t("Reduction plan"),
       () => openPlan(habit),
-      (reference.goal === "by-time" ? t("Earlier time plan: ") : t("Reduction plan: ")) + habit.name
+      (reference.tracking === "check-in" ? t("Earlier time plan: ") : t("Reduction plan: ")) +
+        habit.name
     );
     plan.dataset.focusKey = "cal-plan-" + habit.id;
     plan.disabled = settings.disabled || habit.endDate !== null;
-    plan.hidden = reference.goal === "at-least";
+    plan.hidden = reference.goal === "at-least" || reference.tracking === "check-in";
     actions.append(plan);
     row.append(description, actions);
     return row;

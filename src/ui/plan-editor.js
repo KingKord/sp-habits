@@ -13,7 +13,7 @@ export function createPlanEditor({ dom, store, now, commit }) {
     D.goalForDate(
       store.snapshot().state.habits.find((h) => h.id === planning),
       now()
-    ) === "by-time";
+    ) === "before-time";
   function frequencyInputs() {
     return [...byId("frequency-stages").children].map((row) => ({
       from: row.querySelector("input[type=date]").value,
@@ -152,7 +152,7 @@ export function createPlanEditor({ dom, store, now, commit }) {
     byId("plan-first-label").textContent = timed ? t("First change") : t("First reduction");
     byId("plan-hint").textContent = timed
       ? t(
-          "The plan changes future deadlines only. Earlier rules and recorded times are kept. Maximum 120 steps."
+          "The plan changes future deadlines only. Earlier rules and completion marks are kept. Maximum 120 steps."
         )
       : t(
           "The plan applies only to future days. Limits from the first reduction date will be replaced by the new schedule; past limits and quantities will be kept. Maximum 120 steps."

@@ -92,21 +92,18 @@ export function createStatisticsView({ dom, store, now, render }) {
       name.scope = "row";
       name.append(node("span", habitName(row)));
       if (row.archived) name.append(node("small", t("Archived")));
+      if (row.tracking === "check-in")
+        name.append(node("small", t("Unmarked days: ") + row.unmarkedDays));
       if (!row.trackedDays) name.append(node("small", t("No data")));
       tr.title = row.trackedDays
         ? t("Unsuccessful days: ") +
           row.exceededDays +
           t(". Daily average: ") +
-          (row.goal === "by-time" ? t("Not applicable") : amount(row.average, row.unit))
+          amount(row.average, row.unit)
         : t("Not tracked in this period");
       tr.append(
         name,
-        metricCell(
-          t("Total"),
-          row.goal === "by-time"
-            ? t("Recorded days: ") + number(row.recordedDays)
-            : amount(row.events, row.unit)
-        ),
+        metricCell(t("Total"), amount(row.events, row.unit)),
         metricCell(
           t("Successful"),
           row.completedDays ? number(row.successDays) + " / " + number(row.completedDays) : "—"
@@ -149,7 +146,7 @@ export function createStatisticsView({ dom, store, now, render }) {
       t("The total rate counts days for each habit, rather than unique calendar dates.") +
       " " +
       t(
-        "Time goals require a recorded time at or before the target. Their totals count recorded days; clock times are not added to quantities."
+        "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction still shows all scheduled completed days."
       );
   }
   byId("stats-presets").replaceChildren();

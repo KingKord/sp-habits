@@ -333,7 +333,9 @@ h2 {
 }
 .day {
   width: 32px;
-  height: 32px;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1;
   justify-self: center;
   border-radius: 50%;
   padding: 0;
@@ -1139,7 +1141,7 @@ form textarea {
   .day {
     width: 100%;
     max-width: 44px;
-    height: 44px;
+    height: auto;
   }
   .day strong {
     font-size: 12px;
@@ -1392,12 +1394,42 @@ form textarea {
   .day {
     width: 44px;
     max-width: 100%;
-    height: 44px;
+    height: auto;
   }
   .emoji-option {
     height: 44px;
   }
   .habit-achievement {
+    min-height: 44px;
+  }
+}
+
+.completion-controls {
+  margin-top: 8px;
+}
+.completion-status {
+  display: block;
+  color: var(--hl-muted);
+  margin-bottom: 6px;
+}
+.completion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.completion-check {
+  min-height: 36px;
+}
+.completion-check.done[aria-pressed="true"] {
+  color: var(--hl-good);
+  background: var(--hl-good-bg);
+}
+.completion-check.missed[aria-pressed="true"] {
+  color: var(--hl-bad);
+  background: var(--hl-bad-bg);
+}
+@media (pointer: coarse), (max-width: 700px) {
+  .completion-check {
     min-height: 44px;
   }
 }

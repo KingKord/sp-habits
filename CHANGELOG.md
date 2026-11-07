@@ -1,11 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.18.2
 
-- Add daily time goals such as getting up by 08:00, with actual-time records, explicit missing days and dated deadlines.
-- Support gradual earlier-time plans, for example 08:00 → 07:45, without changing past rules or records.
-- Include time goals in calendar results, statistics, streaks, backups and English/Russian interfaces.
-- Dismiss the keyboard when Return is pressed in a single-line habit field; keep unsaved edits and the form open.
+- Add manual daily check-ins for both good and bad habits, selected alongside quantity units in one Tracking field.
+- Support optional No later than conditions and dated changes without recording actual completion times or reinterpreting past marks.
+- Distinguish unmarked days from explicit missed/slipped outcomes in the calendar and check-in statistics; allow result correction and undo.
+- Preserve existing quantity histories and the earlier test-only time-goal format.
+- Dismiss the keyboard on Return in single-line habit fields while preserving the form and pending edits.
+- Keep seven-day history markers circular across narrow and wide layouts, including when the host UI Kit imposes a button minimum height.
 
 ## 0.18.1
 

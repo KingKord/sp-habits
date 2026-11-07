@@ -1,6 +1,7 @@
 import { t } from "../i18n/index.js";
 import { getLocale } from "../i18n/index.js";
 import { unitText } from "./units.js";
+import { completionControls } from "./completion-controls.js";
 import { progressPanel, recordText } from "./progress-view.js";
 import * as D from "../domain.js";
 import {
@@ -11,6 +12,7 @@ import {
   usageText,
   habitName,
   goalText,
+  checkInRule,
   streakLabels,
   countText
 } from "./format.js";
@@ -157,11 +159,16 @@ export function createDayView({
       }
       title.append(heading, node("p", resultLabel(result), "sr-only"));
       const rule =
-        goalText(result.goal) + ruleText(result.limit ?? "—", result.periodDays, unit, result.goal);
+        result.tracking === "check-in"
+          ? checkInRule(result)
+          : goalText(result.goal) +
+            ruleText(result.limit ?? "—", result.periodDays, unit, result.goal);
       const description = node(
         "small",
-        (result.goal === "by-time" ? t("by ") : result.goal === "at-least" ? "≥ " : "≤ ") +
-          ruleText(result.limit ?? "—", result.periodDays, unit, result.goal),
+        result.tracking === "check-in"
+          ? checkInRule(result)
+          : (result.goal === "at-least" ? "≥ " : "≤ ") +
+              ruleText(result.limit ?? "—", result.periodDays, unit, result.goal),
         "habit-rule"
       );
       description.title = rule + (result.periodDays > 1 ? " · " + usageText(result, unit) : "");
@@ -207,25 +214,36 @@ export function createDayView({
         )
       );
       top.append(title);
-      const counter = node("div", undefined, "counter");
-      const count = button(
-        result.goal === "by-time" && !result.recorded ? t("Record time") : countText(result) + " ",
-        () => openCountEditor(habit, selected, habit.id + "-count"),
-        (result.goal === "by-time" ? t("Edit time: ") : t("Edit quantity: ")) + habit.name,
-        "count"
-      );
-      if (result.readOnly) count.classList.add("task-derived");
-      if (result.goal !== "by-time") count.append(node("small", unit));
-      count.title =
-        (result.goal === "by-time" ? t("Time for ") : t("Quantity for ")) +
-        dateText(selected) +
-        ": " +
-        (result.goal === "by-time" ? countText(result) : result.count + " " + unit) +
-        t(". Click to edit.");
-      count.disabled = locked || s.pending > 0 || !result.editable || result.readOnly;
-      count.dataset.focusKey = habit.id + "-count";
-      counter.append(count);
-      if (result.goal !== "by-time")
+      let counter;
+      if (result.tracking === "check-in") {
+        counter = completionControls(dom, {
+          habit,
+          date: selected,
+          result,
+          disabled: locked || s.pending > 0 || !result.editable || result.readOnly,
+          commit,
+          now,
+          focusPrefix: habit.id
+        });
+      } else {
+        counter = node("div", undefined, "counter");
+        const count = button(
+          countText(result) + " ",
+          () => openCountEditor(habit, selected, habit.id + "-count"),
+          t("Edit quantity: ") + habit.name,
+          "count"
+        );
+        if (result.readOnly) count.classList.add("task-derived");
+        count.append(node("small", unit));
+        count.title =
+          t("Quantity for ") +
+          dateText(selected) +
+          ": " +
+          (result.count + " " + unit) +
+          t(". Click to edit.");
+        count.disabled = locked || s.pending > 0 || !result.editable || result.readOnly;
+        count.dataset.focusKey = habit.id + "-count";
+        counter.append(count);
         for (const [delta, text, suffix] of [
           [-1, "−", "minus"],
           [1, "+", "plus"]
@@ -252,6 +270,7 @@ export function createDayView({
           step.dataset.focusKey = habit.id + "-" + suffix;
           counter.append(step);
         }
+      }
       const week = node("div", undefined, "week");
       week.setAttribute("aria-label", t("Last seven days: ") + habit.name);
       for (let offset = -6; offset <= 0; offset++) {
@@ -264,7 +283,7 @@ export function createDayView({
         }
         const r = D.calendarResult(habit, date, today);
         const mark =
-          r.goal === "by-time"
+          r.tracking === "check-in"
             ? r.recorded
               ? ["success", "today-good"].includes(r.kind)
                 ? "✓"
@@ -291,7 +310,7 @@ export function createDayView({
             ": " +
             resultLabel(r) +
             (r.editable
-              ? (r.goal === "by-time"
+              ? (r.tracking === "check-in"
                   ? " · "
                   : t(", daily quantity ") + r.count + " " + unit + ", ") + usageText(r, unit)
               : ""),

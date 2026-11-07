@@ -4,7 +4,7 @@ Track habits, build routines and keep unwanted habits within limits — inside [
 
 Set a goal such as reading for 20 minutes a day, limit coffee to two cups, or aim for three workouts over seven days. Record your progress and see your history in one place.
 
-Current release: **0.18.1** · Requires **Super Productivity 19.3.1+** · [Download](https://github.com/KingKord/sp-habits/releases/latest) · [User guide](docs/user-guide.md)
+Current release: **0.18.2** · Requires **Super Productivity 19.3.1+** · [Download](https://github.com/KingKord/sp-habits/releases/latest) · [User guide](docs/user-guide.md)
 
 ![Habits in dark mode, showing example goals, daily counters and a week of progress](docs/images/habits-day.png)
 
@@ -13,7 +13,7 @@ Current release: **0.18.1** · Requires **Super Productivity 19.3.1+** · [Downl
 ## What you can do
 
 - **Build or limit a habit.** Set a minimum or maximum, per day or over a rolling period of up to 366 days.
-- **Track amounts your way.** Use quick counters or enter a daily total, with standard or custom units.
+- **Choose how to track.** Select Done/Missed or a standard/custom quantity unit from one Tracking field. Add an optional time condition to a daily check-in.
 - **See your progress.** Browse daily history, a monthly calendar, statistics, streaks and personal bests.
 - **Adjust over time.** Change a goal from a chosen date or plan gradual reductions while keeping past rules.
 - **Link recurring tasks.** Count completions from supported fixed daily schedules in Super Productivity.
@@ -37,11 +37,13 @@ First use **More → Export JSON** to save a backup. Upload the new ZIP through 
 ## Try your first habit
 
 1. Select **+ Add** and enter a name.
-2. Choose **Positive** for a minimum goal or **Negative** for a maximum allowance.
-3. Set the amount, unit, period and tracking start date, then save.
-4. Use **+ / −** to record an amount. Select a displayed total or a past day to correct it.
+2. Choose **Good** to build a habit or **Bad** to limit or avoid it.
+3. In **Tracking**, choose **Done / missed** or a quantity unit. For quantities, set the amount and period; for check-ins, optionally add a **No later than** time. Set the start date and save.
+4. Use the result buttons for a check-in or **+ / −** for quantities. Select a past day to correct it.
 
-For example, choose Positive, 20 min per day and a step of 5 for reading. Each **+** adds five minutes. For coffee, choose Negative and two cups per day: two is within the allowance, three is over it.
+For example, choose Good, 20 min per day and a step of 5 for reading. Each **+** adds five minutes. For coffee, choose Bad and two cups per day: two is within the allowance, three is over it.
+
+For a daily check-in, such as getting up no later than 08:00, confirm the outcome with Done/Missed (or No slip/Slipped for a bad habit). You can enter the result later; the click time does not determine it. Repeating the selected action clears the mark. Unmarked days stay unknown.
 
 Today's result is provisional. Streaks and success percentages use completed tracked days. A period of seven days means a rolling window, rather than a calendar week.
 

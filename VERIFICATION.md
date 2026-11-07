@@ -1,34 +1,35 @@
 # Verification log
 
-## Unreleased — 2026-11-07
+## 0.18.2 — 2026-11-07
 
-### Issues #1 and #2
+### Current candidate
 
-- Added daily `by-time` goals with actual clock-time records and dated deadlines. Missing records fail; explicit 00:00 and exact-deadline entries succeed. Time goals cannot reinterpret existing quantity histories or link to recurring tasks.
-- Added earlier-time plans, including 08:00 → 07:45, with future stages, previews and preservation of earlier rules and records. Calendar, statistics, streaks, backup parsing and translations understand the new goal.
-- Return in a single-line habit field blurs that field without submitting or closing the form. Button activation and IME composition keep their normal behavior.
+- Habit direction remains Good/Bad. The unified Tracking field offers Done/Missed alongside quantity units; there is no separate tracking-method selector. An optional No later than condition belongs to manual check-ins; clicking after that time does not infer a failure or record an actual completion time.
+- Positive check-ins use Done/Missed; negative check-ins use No slip/Slipped. Repeating a selected action restores an unmarked day. Unmarked check-ins are neutral, do not earn success and interrupt the confirmed streak. New check-in statistics distinguish unmarked days from explicit failures.
+- The earlier `before-time` test format remains readable. Explicitly saving its settings upgrades dated deadlines and preserves daily marks. Existing quantity histories retain their meaning. Changing a saved habit's tracking method requires a separate habit in this iteration.
+- Return in a single-line habit field blurs without submitting or closing the form.
 
 ### Automated checks
 
-- `npm run check` passed on Node.js 25.8.2: ESLint, Prettier, **186 tests**, version/changelog validation, JavaScript syntax and ZIP integrity.
-- Added regressions for midnight, exact and late times, missing entries, historical deadlines, backdating, sparse statistics and streaks, earlier-time plans/cancellation, invalid imports, quantity-conversion guards, storage reloads, visibility/archive and Return/IME behavior.
-- The bundled `index.html` is **88,371 bytes**, below the host's 100 KiB limit.
-- Version remains 0.18.1, with changes recorded under Unreleased. This branch is prepared for pull-request review; it does not publish or replace a release. Release versioning and publication remain a separate step after review.
+- Final 0.18.2 `npm run check` passed: ESLint, Prettier, **192 tests**, version/changelog validation, bundled JavaScript syntax and ZIP integrity.
+- New regressions cover both habit directions, optional and dated conditions, undo, unknown-day statistics, malformed imports, quantity/task-link guards and upgrade of the earlier time prototype.
+- Final source build `index.html`: **92,315 bytes**, below the 100 KiB host limit. ZIP SHA-256: `cce10044c6d706f9b11a5f10cfd1e9f431105b917b850d185f869eec6e049696`.
+- Release candidate version is **0.18.2** in the package, lockfile, manifest, interface and README. Interactive approval used the ignored **0.18.2-test.4** ZIP. Publication follows the main-branch GitHub Actions workflow.
 
-### Isolated browser checks
+### Real-host browser review
 
-- Used the bundled host and iframe scripts in Chromium with a mocked PluginAPI, separate localStorage keys and synthetic habits. The normal Super Productivity profile was not opened or changed.
-- Passed **8 combinations**: English/Russian × light/dark × 390/1440 px width. Verified creation, editing, Return blur, empty deadline/actual-time rejection, actual-time saving, earlier-plan validation and persistence, Day/Calendar/Statistics, reload and a quantity-counter smoke check after time editing.
-- The final matrix had no JavaScript errors or browser warnings. Day and Statistics had no horizontal overflow at either width. Reviewed screenshots of the time form, time entry, Day and plan; narrow dialogs kept their actions accessible.
-- Separately checked late/exact/midnight records, clearing a record, switching a new habit between quantity and time types, and zero view-only writes after reload.
-- A simulated failed clear left the stored midnight record intact and the editor open with an error; reload restored normal operation. Host export and confirmed import preserved the complete time goal, explicit 00:00 record and future plan.
-- Review screenshots use synthetic data: [time-goal form](docs/images/time-goal-form.png) and [earlier-time plan](docs/images/time-goal-plan.png). Local harnesses and other screenshots remain in ignored `output/playwright/`.
+- Updated the plugin only in the separate Super Productivity **20.0.0** web instance in the in-app browser. Personal sync was not connected; the desktop app was not changed during this iteration.
+- Confirmed the previously entered test habit survived the update.
+- Created a positive check-in with an 08:00 condition and a negative check-in without a time condition. Verified the two-option habit type, conditional fields, both result actions and undo. On test.3, verified the unified Tracking selector switches between check-ins, ml and custom units; hidden quantity fields are disabled for check-ins and the optional time condition remains available.
+- A negative mark survived a full host-page reload. Verified switching it to adherence and undo, plus Calendar and Statistics rendering.
+- On test.4, real-host geometry checks passed at browser widths 1440, 1008, 768, 390 and 320 px. All history markers had equal width and height (32, 44 or approximately 40.57 px), with no horizontal iframe overflow. The temporary viewport override was reset.
+- The review screen is left open for interactive user feedback. This is a test candidate, not acceptance of the design.
 
 ### Limits
 
-- Physical iPhone/iOS keyboard dismissal and Safari/WebKit were not tested. Chromium checks prove Enter handling, focus loss and form preservation; they do not prove a physical iOS keyboard interaction.
-- Installation in the live Super Productivity app, cross-device sync and concurrent editing were not tested for this branch.
-- Existing quantity backups remain readable without migration. Backups containing `by-time` require this feature; 0.18.1 cannot import them.
+- This candidate has not been verified on the minimum 19.3.1 host, physical iOS/Safari, cross-device sync or concurrent editing.
+- Quantity tests pass, but a complete browser theme/viewport matrix was not rerun for this iteration.
+- Automated time-condition plans and switching the tracking method of an existing habit are outside this first review iteration. Conditions can be edited with a historical effective date.
 
 ## 0.18.1 — 2026-11-05
 

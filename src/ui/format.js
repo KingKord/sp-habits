@@ -32,8 +32,14 @@ export function dateText(date, options = {}) {
   }).format(new Date(date + "T12:00:00Z"));
 }
 
+export function checkInRule(result) {
+  return result.deadline === null
+    ? t("Daily check-in")
+    : t("No later than ") + clockText(result.deadline);
+}
+
 export function ruleText(value, days, unit, goal) {
-  if (goal === "by-time") return clockText(value);
+  if (goal === "before-time") return clockText(value);
   return (
     value + " " + unitText(unit) + (days === 1 ? t(" per day") : t(" per ") + days + t(" days"))
   );
@@ -42,17 +48,15 @@ export function habitName(habit) {
   return (habit.emoji ? habit.emoji + " " : "") + habit.name;
 }
 export function goalText(goal) {
-  return goal === "by-time" ? t("by ") : goal === "at-least" ? t("at least ") : t("at most ");
+  return goal === "before-time"
+    ? t("before ")
+    : goal === "at-least"
+      ? t("at least ")
+      : t("at most ");
 }
 
 export function usageText(result, unit) {
-  if (result.goal === "by-time")
-    return (
-      (result.recorded ? clockText(result.count) : t("Not recorded")) +
-      " / " +
-      t("by ") +
-      clockText(result.limit)
-    );
+  if (result.tracking === "check-in") return countText(result) + " · " + checkInRule(result);
   if (result.kind === "rest") return t("Daily total: ") + result.count + " " + unitText(unit);
   return (
     (result.periodDays === 1 ? t("Daily total: ") : t("Over ") + result.periodDays + t(" days: ")) +
@@ -66,16 +70,24 @@ export function usageText(result, unit) {
 }
 
 export function countText(result) {
-  return result.goal === "by-time"
+  return result.tracking === "check-in"
     ? result.recorded
-      ? clockText(result.count)
-      : "—"
+      ? result.count === 1
+        ? result.goal === "at-most"
+          ? t("No slip")
+          : t("Done")
+        : result.goal === "at-most"
+          ? t("Slipped")
+          : t("Missed")
+      : t("Not marked")
     : String(result.count);
 }
 
 export function resultLabel(result) {
+  if (result.tracking === "check-in" && result.editable)
+    return countText(result) + (result.kind.startsWith("today") ? t(" · day in progress") : "");
   if (result.kind === "rest") return t("Rest day");
-  if (["at-least", "by-time"].includes(result.goal) && result.editable) {
+  if (result.goal === "at-least" && result.editable) {
     if (result.kind === "today-bad") return t("Goal not met yet · day in progress");
     if (result.kind === "failure") return t("❌ Goal not met");
     const label = result.zone === "warning" ? t("Minimum met") : t("Goal met");
@@ -88,6 +100,7 @@ export function resultLabel(result) {
   return t(labels[result.kind]);
 }
 export function resultClass(result) {
+  if (result.tracking === "check-in" && !result.recorded) return "inactive";
   if (result.zone === "warning") return "warning";
   return ["success", "today-good"].includes(result.kind)
     ? "good"

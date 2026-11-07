@@ -155,8 +155,8 @@
           <p id="stats-note" class="hint"></p>
           <p class="hint">
             7 and 30 days include today. Weeks start on Monday. Year means the last 12 months; This
-            year starts on January 1. A missing quantity counts as zero. A time goal requires a
-            recorded time.
+            year starts on January 1. A missing quantity counts as zero. A time goal requires a Done
+            mark.
           </p>
         </details>
       </section>
@@ -184,7 +184,7 @@
           >
         </footer>
         <p class="footnote" id="zone"></p>
-        <p class="footnote">Habits · 0.18.1</p>
+        <p class="footnote">Habits · 0.18.2</p>
       </details>
     </main>
     <p class="form-error" id="task-sync-error" role="alert"></p>
@@ -228,9 +228,31 @@
           >Habit type<select id="goal">
             <option value="at-least">Good</option>
             <option value="at-most">Bad</option>
-            <option value="by-time">By a certain time</option>
           </select></label
         >
+        <label
+          >Tracking<select id="unit-choice">
+            <option value="check-in">Done / missed</option>
+            <option value="times">times</option>
+            <option value="items">items</option>
+            <option value="ml">ml</option>
+            <option value="g">g</option>
+            <option value="min">min</option>
+            <option value="custom">Other…</option>
+          </select></label
+        >
+        <div id="check-in-settings" hidden>
+          <label class="check-label"
+            ><input id="has-deadline" type="checkbox" /> Add a time condition</label
+          >
+          <label id="deadline-field" hidden
+            >No later than<input id="deadline" type="time" value="08:00" step="60" disabled
+          /></label>
+          <p class="hint">
+            Confirm whether you met your goal. You can mark it later; the time of the click does not
+            determine the result.
+          </p>
+        </div>
         <div id="reflection-settings" hidden>
           <label class="check-label"
             ><input id="reflection-task" type="checkbox" /> Create a brief review task when pressing
@@ -243,15 +265,6 @@
         </div>
         <div class="form-row" id="quantity-settings">
           <label
-            >Unit<select id="unit-choice">
-              <option value="times">times</option>
-              <option value="items">items</option>
-              <option value="ml">ml</option>
-              <option value="g">g</option>
-              <option value="min">min</option>
-              <option value="custom">Other…</option>
-            </select></label
-          ><label
             >+ button step<input
               id="step"
               type="number"
@@ -274,7 +287,7 @@
           Changing the unit relabels history without converting the numbers.
         </p>
         <div class="form-row">
-          <label
+          <label id="limit-field"
             ><span id="limit-label">Allowed per period</span
             ><input
               id="limit"
@@ -404,7 +417,7 @@
           </button>
         </div>
         <p id="count-context" class="hint"></p>
-        <label
+        <label id="count-amount-field"
           ><span id="count-amount-label">Quantity</span
           ><input
             id="count-amount"
@@ -415,7 +428,7 @@
             required
             inputmode="numeric"
         /></label>
-        <button id="clear-time" type="button" class="quiet" hidden>Clear time record</button>
+        <div id="completion-controls" hidden></div>
         <p id="count-error" class="form-error" role="alert"></p>
         <div class="dialog-bottom">
           <button id="cancel-count" type="button">Cancel</button
