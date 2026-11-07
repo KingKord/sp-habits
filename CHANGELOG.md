@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add daily time goals such as getting up by 08:00, with actual-time records, explicit missing days and dated deadlines.
+- Support gradual earlier-time plans, for example 08:00 → 07:45, without changing past rules or records.
+- Include time goals in calendar results, statistics, streaks, backups and English/Russian interfaces.
+- Dismiss the keyboard when Return is pressed in a single-line habit field; keep unsaved edits and the form open.
+
 ## 0.18.1
 
 Initial public release of Habits for Super Productivity.

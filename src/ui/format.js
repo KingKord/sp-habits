@@ -1,4 +1,5 @@
 import { t, getLocale, plural } from "../i18n/index.js";
+import { clockText } from "../domain.js";
 import { unitText } from "./units.js";
 
 export const labels = {
@@ -31,7 +32,8 @@ export function dateText(date, options = {}) {
   }).format(new Date(date + "T12:00:00Z"));
 }
 
-export function ruleText(value, days, unit) {
+export function ruleText(value, days, unit, goal) {
+  if (goal === "by-time") return clockText(value);
   return (
     value + " " + unitText(unit) + (days === 1 ? t(" per day") : t(" per ") + days + t(" days"))
   );
@@ -40,10 +42,17 @@ export function habitName(habit) {
   return (habit.emoji ? habit.emoji + " " : "") + habit.name;
 }
 export function goalText(goal) {
-  return goal === "at-least" ? t("at least ") : t("at most ");
+  return goal === "by-time" ? t("by ") : goal === "at-least" ? t("at least ") : t("at most ");
 }
 
 export function usageText(result, unit) {
+  if (result.goal === "by-time")
+    return (
+      (result.recorded ? clockText(result.count) : t("Not recorded")) +
+      " / " +
+      t("by ") +
+      clockText(result.limit)
+    );
   if (result.kind === "rest") return t("Daily total: ") + result.count + " " + unitText(unit);
   return (
     (result.periodDays === 1 ? t("Daily total: ") : t("Over ") + result.periodDays + t(" days: ")) +
@@ -56,9 +65,17 @@ export function usageText(result, unit) {
   );
 }
 
+export function countText(result) {
+  return result.goal === "by-time"
+    ? result.recorded
+      ? clockText(result.count)
+      : "—"
+    : String(result.count);
+}
+
 export function resultLabel(result) {
   if (result.kind === "rest") return t("Rest day");
-  if (result.goal === "at-least" && result.editable) {
+  if (["at-least", "by-time"].includes(result.goal) && result.editable) {
     if (result.kind === "today-bad") return t("Goal not met yet · day in progress");
     if (result.kind === "failure") return t("❌ Goal not met");
     const label = result.zone === "warning" ? t("Minimum met") : t("Goal met");

@@ -1,5 +1,35 @@
 # Verification log
 
+## Unreleased — 2026-11-07
+
+### Issues #1 and #2
+
+- Added daily `by-time` goals with actual clock-time records and dated deadlines. Missing records fail; explicit 00:00 and exact-deadline entries succeed. Time goals cannot reinterpret existing quantity histories or link to recurring tasks.
+- Added earlier-time plans, including 08:00 → 07:45, with future stages, previews and preservation of earlier rules and records. Calendar, statistics, streaks, backup parsing and translations understand the new goal.
+- Return in a single-line habit field blurs that field without submitting or closing the form. Button activation and IME composition keep their normal behavior.
+
+### Automated checks
+
+- `npm run check` passed on Node.js 25.8.2: ESLint, Prettier, **186 tests**, version/changelog validation, JavaScript syntax and ZIP integrity.
+- Added regressions for midnight, exact and late times, missing entries, historical deadlines, backdating, sparse statistics and streaks, earlier-time plans/cancellation, invalid imports, quantity-conversion guards, storage reloads, visibility/archive and Return/IME behavior.
+- The bundled `index.html` is **88,371 bytes**, below the host's 100 KiB limit.
+- Version remains 0.18.1, with changes recorded under Unreleased. This branch is prepared for pull-request review; it does not publish or replace a release. Release versioning and publication remain a separate step after review.
+
+### Isolated browser checks
+
+- Used the bundled host and iframe scripts in Chromium with a mocked PluginAPI, separate localStorage keys and synthetic habits. The normal Super Productivity profile was not opened or changed.
+- Passed **8 combinations**: English/Russian × light/dark × 390/1440 px width. Verified creation, editing, Return blur, empty deadline/actual-time rejection, actual-time saving, earlier-plan validation and persistence, Day/Calendar/Statistics, reload and a quantity-counter smoke check after time editing.
+- The final matrix had no JavaScript errors or browser warnings. Day and Statistics had no horizontal overflow at either width. Reviewed screenshots of the time form, time entry, Day and plan; narrow dialogs kept their actions accessible.
+- Separately checked late/exact/midnight records, clearing a record, switching a new habit between quantity and time types, and zero view-only writes after reload.
+- A simulated failed clear left the stored midnight record intact and the editor open with an error; reload restored normal operation. Host export and confirmed import preserved the complete time goal, explicit 00:00 record and future plan.
+- Review screenshots use synthetic data: [time-goal form](docs/images/time-goal-form.png) and [earlier-time plan](docs/images/time-goal-plan.png). Local harnesses and other screenshots remain in ignored `output/playwright/`.
+
+### Limits
+
+- Physical iPhone/iOS keyboard dismissal and Safari/WebKit were not tested. Chromium checks prove Enter handling, focus loss and form preservation; they do not prove a physical iOS keyboard interaction.
+- Installation in the live Super Productivity app, cross-device sync and concurrent editing were not tested for this branch.
+- Existing quantity backups remain readable without migration. Backups containing `by-time` require this feature; 0.18.1 cannot import them.
+
 ## 0.18.1 — 2026-11-05
 
 ### Build and release

@@ -52,7 +52,7 @@ Above 700 px, the habit details and history use two columns with one shared date
 
 Dialogs fit the available width and dynamic viewport height. Long forms scroll; mobile form actions stay near the bottom edge. Inputs use 16 px text on narrow screens, and touch controls have larger hit areas. Focus returns to the original control after saving, including after a background refresh. New pointer or keyboard input cancels a delayed focus request.
 
-**More** contains export, import, theme and information controls. Dialogs close with their close button, Escape or a backdrop click. Closing discards unsaved edits. Closing the nested emoji picker leaves the habit editor open; dragging from a field onto the backdrop does not dismiss a form. The temporary theme selection lasts until the plugin view is closed.
+**More** contains export, import, theme and information controls. Dialogs close with their close button, Escape or a backdrop click. Closing discards unsaved edits. In single-line habit fields, Return dismisses the keyboard and keeps the form and pending edits open; use **Create** or **Save** to submit. Text composition and keyboard activation of buttons retain their normal behavior. Closing the nested emoji picker leaves the habit editor open; dragging from a field onto the backdrop does not dismiss a form. The temporary theme selection lasts until the plugin view is closed.
 
 The UI follows the host's [UI Kit and theme variables](https://github.com/super-productivity/super-productivity/blob/v19.3.1/docs/plugin-development.md#theme-variables--ui-kit). Ordinary controls are styled by Super Productivity; custom styles use the same colours, typography and corner radii.
 
@@ -73,6 +73,16 @@ Changing a unit changes the label for that habit's history; it does **not** conv
 For a 300 ml allowance and a +100 step, three presses reach 300 and remain acceptable; a fourth reaches 400 and exceeds the allowance. The daily-total form can set an independent value such as 150. Save or Enter applies it; Cancel and Escape write nothing. Subtraction cannot produce a negative total.
 
 Statistics keep different units separate. Standard aliases are combined for display, but amounts in millilitres and items are never added into one total.
+
+## Time goals
+
+Choose **By a certain time** when creating a habit such as getting up by 08:00. Set **Complete by** and the tracking start date. Select **Record time** or a day in the history/calendar, enter the actual time, and save. Recording a time at or before the target marks the day successful; a later time or a missing record is unsuccessful. Today remains provisional. **Clear time record** removes an incorrect entry and returns the day to not recorded; **00:00** is a real midnight entry.
+
+Times use 24-hour wall-clock values from 00:00 through 23:59 on the selected habit day. They are daily goals, without rolling periods, quantity steps or recurring-task links. Calendar colours and streaks use each day's deadline. Statistics show recorded-day counts rather than adding clock times to quantities; completion percentages use completed days as usual.
+
+Edit **Complete by** with a **Rule applies from** date to change the deadline while preserving earlier rules. In Calendar, expand **Habit settings and reduction plans** and choose **Earlier time plan** to move the target earlier by a chosen number of minutes at fixed day intervals. For example, move 08:00 earlier by 15 minutes to 07:45. The preview shows every dated target. Saving and cancelling plans follow the same rules as quantity reductions below.
+
+Create a separate habit to switch between quantity tracking and time goals, so old quantities are never interpreted as clock times. Existing numeric habits and backups keep their meaning. Backups with time goals require a build that supports `by-time`; version 0.18.1 cannot import them.
 
 ## Day assessment and historical rules
 
@@ -155,7 +165,7 @@ The overall percentage weights habit-days, rather than averaging habit percentag
 
 Data is stored through the plugin's own synced API storage. Built-in habits are not modified, and task links use the official read APIs. Optional episode reviews create tasks through PluginAPI.addTask. There are no runtime HTTP/CDN requests, separate accounts, Node execution or server hosting.
 
-Schema version 1 remains readable without a read-time migration. `goal` is optional and defaults to `at-most`; `at-least` represents a minimum. Emoji, zones, unit, step and legacy fields are optional. Do not downgrade to a version that does not understand positive goals, frequency or task links; older code can interpret a minimum as a maximum or ignore automatic counts.
+Schema version 1 remains readable without a read-time migration. `goal` is optional and defaults to `at-most`; `at-least` represents a minimum, and `by-time` represents a daily clock deadline with explicit time records. Emoji, zones, unit, step and legacy fields are optional. Do not downgrade to a version that does not understand positive goals, frequency or task links; older code can interpret a minimum as a maximum or ignore automatic counts.
 
 Writes are serialized, including rapid clicks. Wait for **Ready** before closing. A failed write stops the queue; **Reload data** restores confirmed storage. Invalid JSON is surfaced rather than replaced with an empty history. Import validates the structure and replaces the entire plugin history after confirmation.
 

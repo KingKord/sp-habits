@@ -2,7 +2,7 @@ import { t } from "../i18n/index.js";
 import * as D from "../domain.js";
 import { dateText } from "./format.js";
 import { createEmojiPicker } from "./emoji-picker.js";
-import { closeOnBackdrop } from "./dialog.js";
+import { closeOnBackdrop, dismissKeyboardOnReturn } from "./dialog.js";
 import { unitChoice, selectedUnit } from "./units.js";
 
 export function createHabitEditor({
@@ -25,10 +25,14 @@ export function createHabitEditor({
     originalRepeatId = "",
     loadGeneration = 0;
   const { byId, on, activeElement } = dom;
+  const timeGoal = () => byId("goal").value === "by-time";
+  const fieldValue = (id) => (timeGoal() ? D.clockMinutes(byId(id).value) : Number(byId(id).value));
+  dismissKeyboardOnReturn(dom, "habit-form");
   function updateTaskFields() {
     const linked = !!byId("task-series").value;
     for (const id of ["goal", "limit", "period-days", "unit-choice", "step"])
-      byId(id).disabled = linked;
+      byId(id).disabled =
+        linked || (timeGoal() && ["period-days", "unit-choice", "step"].includes(id));
     byId("task-series-hint").textContent = linked
       ? t(
           "The task defines the schedule. Completing it adds 1 completion; rest days do not lower your rate. Linking starts today."
@@ -68,7 +72,7 @@ export function createHabitEditor({
         option.disabled = schedule.paused;
         select.append(option);
       }
-      select.disabled = !!habit?.endDate;
+      select.disabled = !!habit?.endDate || timeGoal();
     } catch (error) {
       if (generation === loadGeneration && dom.isActive())
         byId("task-series-hint").textContent = t("Unable to load task series: ") + error.message;
@@ -95,6 +99,12 @@ export function createHabitEditor({
     byId("unit").required = custom;
   }
   function updateEditorHint() {
+    if (timeGoal()) {
+      byId("editor-hint").textContent = t(
+        "Record the actual time each day. At or before the target is successful; a missing record is not done. Times use the habit day, from 00:00 to 23:59."
+      );
+      return;
+    }
     if (!editing) {
       byId("editor-hint").textContent =
         byId("goal").value === "at-least"
@@ -120,10 +130,39 @@ export function createHabitEditor({
           );
   }
   function updateGoalFields() {
+    const timed = timeGoal();
     const positive = byId("goal").value === "at-least";
-    byId("reflection-settings").hidden = positive;
-    byId("reflection-task").disabled = positive;
-    byId("limit-label").textContent = positive ? t("Minimum per period") : t("Allowed per period");
+    for (const id of [
+      "task-series-label",
+      "task-series-hint",
+      "quantity-settings",
+      "unit-hint",
+      "period-label",
+      "period-hint",
+      "zone-settings"
+    ])
+      byId(id).hidden = timed;
+    byId("initial-label").hidden = timed || !!editing;
+    byId("initial").disabled = timed;
+    byId("custom-unit-label").hidden = timed || byId("unit-choice").value !== "custom";
+    byId("unit").disabled = timed || byId("unit-choice").value !== "custom";
+    byId("unit").required = !timed && byId("unit-choice").value === "custom";
+    byId("task-series").disabled =
+      timed || !!store.snapshot().state.habits.find((h) => h.id === editing)?.endDate;
+    byId("zones-ideal").disabled = timed || !byId("zones-enabled").checked;
+    if (byId("limit").type !== (timed ? "time" : "number")) byId("limit").value = "";
+    byId("limit").type = timed ? "time" : "number";
+    byId("limit").min = timed ? "00:00" : "0";
+    byId("limit").max = timed ? "23:59" : String(D.MAX_VALUE);
+    byId("limit").step = timed ? "60" : "1";
+    updateTaskFields();
+    byId("reflection-settings").hidden = positive || timed;
+    byId("reflection-task").disabled = positive || timed;
+    byId("limit-label").textContent = timed
+      ? t("Complete by")
+      : positive
+        ? t("Minimum per period")
+        : t("Allowed per period");
     byId("ideal-label").textContent = t("Ideal goal: ") + (positive ? t("at least") : t("at most"));
     byId("zone-hint").textContent = positive
       ? t(
@@ -162,7 +201,15 @@ export function createHabitEditor({
     setEmoji(habit?.emoji ?? "");
     byId("goal").value = habit ? D.goalForDate(habit, from) : "at-least";
     byId("reflection-task").checked = habit?.reflectionTask === true;
-    byId("limit").value = habit ? D.limitForDate(habit, from) : 1;
+    // Time records cannot be reinterpreted as quantities, or quantities as clock times.
+    for (const option of byId("goal").options)
+      option.disabled = !!habit && (option.value === "by-time") !== timeGoal();
+    updateGoalFields();
+    byId("limit").value = habit
+      ? timeGoal()
+        ? D.clockText(D.limitForDate(habit, from))
+        : D.limitForDate(habit, from)
+      : 1;
     lastLimit = Number(byId("limit").value);
     byId("period-days").value = habit ? D.periodDaysForDate(habit, from) : 1;
     originalUnit = habit ? D.unitOf(habit) : null;
@@ -228,6 +275,17 @@ export function createHabitEditor({
   });
   on("from", "input", updateEditorHint);
   on("goal", "change", () => {
+    if (timeGoal()) {
+      byId("task-series").value = "";
+      byId("period-days").value = 1;
+      updateGoalFields();
+      byId("limit").value = "08:00";
+      return;
+    }
+    if (byId("limit").type === "time") {
+      updateGoalFields();
+      byId("limit").value = 1;
+    }
     if (byId("goal").value === "at-least" && Number(byId("limit").value) === 0)
       byId("limit").value = 1;
     byId("zones-ideal").value = byId("limit").value;
@@ -255,7 +313,7 @@ export function createHabitEditor({
     if (saving || store.snapshot().pending || store.snapshot().blocked) return;
     if (!byId("habit-form").reportValidity()) return;
     const name = byId("name").value.trim(),
-      limit = Number(byId("limit").value),
+      limit = fieldValue("limit"),
       from = byId("from").value;
     const input = {
       name,
@@ -265,11 +323,15 @@ export function createHabitEditor({
       limit,
       from,
       startDate: from,
-      initialCount: Number(byId("initial").value),
-      unit: selectedUnit(byId("unit-choice").value, originalUnit, byId("unit").value),
-      step: Number(byId("step").value),
-      periodDays: Number(byId("period-days").value),
-      zones: editorZones()
+      initialCount: timeGoal() ? 0 : Number(byId("initial").value),
+      unit: timeGoal()
+        ? "min"
+        : selectedUnit(byId("unit-choice").value, originalUnit, byId("unit").value),
+      step: timeGoal() ? 1 : Number(byId("step").value),
+      periodDays: timeGoal() ? 1 : Number(byId("period-days").value),
+      zones: timeGoal()
+        ? { enabled: true, idealMax: limit, yellowMax: null, yellowEnabled: false }
+        : editorZones()
     };
     if (
       !name ||

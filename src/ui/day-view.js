@@ -11,7 +11,8 @@ import {
   usageText,
   habitName,
   goalText,
-  streakLabels
+  streakLabels,
+  countText
 } from "./format.js";
 
 export function createDayView({
@@ -155,11 +156,12 @@ export function createDayView({
         heading.append(visibility);
       }
       title.append(heading, node("p", resultLabel(result), "sr-only"));
-      const rule = goalText(result.goal) + ruleText(result.limit ?? "—", result.periodDays, unit);
+      const rule =
+        goalText(result.goal) + ruleText(result.limit ?? "—", result.periodDays, unit, result.goal);
       const description = node(
         "small",
-        (result.goal === "at-least" ? "≥ " : "≤ ") +
-          ruleText(result.limit ?? "—", result.periodDays, unit),
+        (result.goal === "by-time" ? t("by ") : result.goal === "at-least" ? "≥ " : "≤ ") +
+          ruleText(result.limit ?? "—", result.periodDays, unit, result.goal),
         "habit-rule"
       );
       description.title = rule + (result.periodDays > 1 ? " · " + usageText(result, unit) : "");
@@ -207,50 +209,49 @@ export function createDayView({
       top.append(title);
       const counter = node("div", undefined, "counter");
       const count = button(
-        String(result.count) + " ",
+        result.goal === "by-time" && !result.recorded ? t("Record time") : countText(result) + " ",
         () => openCountEditor(habit, selected, habit.id + "-count"),
-        t("Edit quantity: ") + habit.name,
+        (result.goal === "by-time" ? t("Edit time: ") : t("Edit quantity: ")) + habit.name,
         "count"
       );
       if (result.readOnly) count.classList.add("task-derived");
-      count.append(node("small", unit));
+      if (result.goal !== "by-time") count.append(node("small", unit));
       count.title =
-        t("Quantity for ") +
+        (result.goal === "by-time" ? t("Time for ") : t("Quantity for ")) +
         dateText(selected) +
         ": " +
-        result.count +
-        " " +
-        unit +
+        (result.goal === "by-time" ? countText(result) : result.count + " " + unit) +
         t(". Click to edit.");
       count.disabled = locked || s.pending > 0 || !result.editable || result.readOnly;
       count.dataset.focusKey = habit.id + "-count";
       counter.append(count);
-      for (const [delta, text, suffix] of [
-        [-1, "−", "minus"],
-        [1, "+", "plus"]
-      ]) {
-        const step = button(
-          text,
-          () => {
-            const date = selected;
-            void commit((state) => D.changeCount(state, habit.id, date, delta, now(state)), {
-              increment: { id: habit.id, date, delta }
-            });
-          },
-          (delta === 1 ? t("Add ") : t("Subtract ")) + increment + " " + unit + ": " + habit.name,
-          "step " + suffix
-        );
-        step.title = (delta === 1 ? "+" : "−") + increment + " " + unit;
-        step.disabled =
-          locked ||
-          s.pending > 0 ||
-          !result.editable ||
-          result.readOnly ||
-          (delta === -1 && result.count === 0) ||
-          (delta === 1 && result.count > D.MAX_VALUE - increment);
-        step.dataset.focusKey = habit.id + "-" + suffix;
-        counter.append(step);
-      }
+      if (result.goal !== "by-time")
+        for (const [delta, text, suffix] of [
+          [-1, "−", "minus"],
+          [1, "+", "plus"]
+        ]) {
+          const step = button(
+            text,
+            () => {
+              const date = selected;
+              void commit((state) => D.changeCount(state, habit.id, date, delta, now(state)), {
+                increment: { id: habit.id, date, delta }
+              });
+            },
+            (delta === 1 ? t("Add ") : t("Subtract ")) + increment + " " + unit + ": " + habit.name,
+            "step " + suffix
+          );
+          step.title = (delta === 1 ? "+" : "−") + increment + " " + unit;
+          step.disabled =
+            locked ||
+            s.pending > 0 ||
+            !result.editable ||
+            result.readOnly ||
+            (delta === -1 && result.count === 0) ||
+            (delta === 1 && result.count > D.MAX_VALUE - increment);
+          step.dataset.focusKey = habit.id + "-" + suffix;
+          counter.append(step);
+        }
       const week = node("div", undefined, "week");
       week.setAttribute("aria-label", t("Last seven days: ") + habit.name);
       for (let offset = -6; offset <= 0; offset++) {
@@ -263,18 +264,24 @@ export function createDayView({
         }
         const r = D.calendarResult(habit, date, today);
         const mark =
-          r.count > 0 && r.editable
-            ? new Intl.NumberFormat(getLocale(), {
-                notation: "compact",
-                maximumFractionDigits: 1
-              }).format(r.count)
-            : r.kind === "success"
-              ? "✓"
-              : r.kind === "failure"
-                ? "×"
-                : r.kind.startsWith("today")
-                  ? String(r.count)
-                  : "—";
+          r.goal === "by-time"
+            ? r.recorded
+              ? ["success", "today-good"].includes(r.kind)
+                ? "✓"
+                : "×"
+              : "—"
+            : r.count > 0 && r.editable
+              ? new Intl.NumberFormat(getLocale(), {
+                  notation: "compact",
+                  maximumFractionDigits: 1
+                }).format(r.count)
+              : r.kind === "success"
+                ? "✓"
+                : r.kind === "failure"
+                  ? "×"
+                  : r.kind.startsWith("today")
+                    ? String(r.count)
+                    : "—";
         const day = button(
           "",
           () => openCountEditor(habit, date, habit.id + "-" + date),
@@ -284,7 +291,9 @@ export function createDayView({
             ": " +
             resultLabel(r) +
             (r.editable
-              ? t(", daily quantity ") + r.count + " " + unit + ", " + usageText(r, unit)
+              ? (r.goal === "by-time"
+                  ? " · "
+                  : t(", daily quantity ") + r.count + " " + unit + ", ") + usageText(r, unit)
               : ""),
           "day " +
             resultClass(r) +

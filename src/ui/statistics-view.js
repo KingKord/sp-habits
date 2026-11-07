@@ -97,11 +97,16 @@ export function createStatisticsView({ dom, store, now, render }) {
         ? t("Unsuccessful days: ") +
           row.exceededDays +
           t(". Daily average: ") +
-          amount(row.average, row.unit)
+          (row.goal === "by-time" ? t("Not applicable") : amount(row.average, row.unit))
         : t("Not tracked in this period");
       tr.append(
         name,
-        metricCell(t("Total"), amount(row.events, row.unit)),
+        metricCell(
+          t("Total"),
+          row.goal === "by-time"
+            ? t("Recorded days: ") + number(row.recordedDays)
+            : amount(row.events, row.unit)
+        ),
         metricCell(
           t("Successful"),
           row.completedDays ? number(row.successDays) + " / " + number(row.completedDays) : "—"
@@ -141,7 +146,11 @@ export function createStatisticsView({ dom, store, now, render }) {
       t(
         "Days before tracking and after archiving are excluded. Each day uses its own rule; frequency checks include the previous N days, even if part of that interval precedes the selected statistics period. "
       ) +
-      t("The total rate counts days for each habit, rather than unique calendar dates.");
+      t("The total rate counts days for each habit, rather than unique calendar dates.") +
+      " " +
+      t(
+        "Time goals require a recorded time at or before the target. Their totals count recorded days; clock times are not added to quantities."
+      );
   }
   byId("stats-presets").replaceChildren();
   for (const [key, label] of statsPresets) {

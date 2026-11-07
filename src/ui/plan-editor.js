@@ -1,6 +1,6 @@
 import { t } from "../i18n/index.js";
 import * as D from "../domain.js";
-import { dateText, ruleText, habitName } from "./format.js";
+import { dateText, ruleText, habitName, goalText } from "./format.js";
 import { closeOnBackdrop } from "./dialog.js";
 
 export function createPlanEditor({ dom, store, now, commit }) {
@@ -8,6 +8,12 @@ export function createPlanEditor({ dom, store, now, commit }) {
   let planning = null,
     planSaving = false,
     lastFocusKey = null;
+  const timeGoal = () =>
+    planning &&
+    D.goalForDate(
+      store.snapshot().state.habits.find((h) => h.id === planning),
+      now()
+    ) === "by-time";
   function frequencyInputs() {
     return [...byId("frequency-stages").children].map((row) => ({
       from: row.querySelector("input[type=date]").value,
@@ -82,7 +88,9 @@ export function createPlanEditor({ dom, store, now, commit }) {
     first: byId("plan-first").value,
     everyDays: Number(byId("plan-interval").value),
     decrease: Number(byId("plan-decrease").value),
-    target: Number(byId("plan-target").value)
+    target: timeGoal()
+      ? D.clockMinutes(byId("plan-target").value)
+      : Number(byId("plan-target").value)
   });
   function previewPlan() {
     byId("plan-error").textContent = "";
@@ -103,7 +111,8 @@ export function createPlanEditor({ dom, store, now, commit }) {
             "li",
             dateText(stage.from, { year: "numeric" }) +
               " — " +
-              ruleText(stage.value, stage.periodDays ?? 1, D.unitOf(habit))
+              goalText(stage.goal) +
+              ruleText(stage.value, stage.periodDays ?? 1, D.unitOf(habit), stage.goal)
           )
         );
       byId("plan-preview").append(list);
@@ -129,13 +138,41 @@ export function createPlanEditor({ dom, store, now, commit }) {
     const today = now();
     byId("plan-context").textContent =
       habitName(habit) +
-      t(" · current limit ") +
-      ruleText(D.limitForDate(habit, today), D.periodDaysForDate(habit, today), D.unitOf(habit));
+      (timeGoal() ? t(" · current target ") : t(" · current limit ")) +
+      ruleText(
+        D.limitForDate(habit, today),
+        D.periodDaysForDate(habit, today),
+        D.unitOf(habit),
+        D.goalForDate(habit, today)
+      );
+    const timed = timeGoal();
+    byId("plan-title").textContent = timed ? t("Earlier time plan") : t("Gradual reduction");
+    byId("plan-mode").disabled = timed;
+    byId("plan-mode-label").hidden = timed;
+    byId("plan-first-label").textContent = timed ? t("First change") : t("First reduction");
+    byId("plan-hint").textContent = timed
+      ? t(
+          "The plan changes future deadlines only. Earlier rules and recorded times are kept. Maximum 120 steps."
+        )
+      : t(
+          "The plan applies only to future days. Limits from the first reduction date will be replaced by the new schedule; past limits and quantities will be kept. Maximum 120 steps."
+        );
+    if (byId("plan-target").type !== (timed ? "time" : "number")) byId("plan-target").value = "";
+    byId("plan-target").type = timed ? "time" : "number";
+    byId("plan-target").min = timed ? "00:00" : "0";
+    byId("plan-target").max = timed ? "23:59" : String(D.MAX_VALUE);
+    byId("plan-target").step = timed ? "60" : "1";
+    byId("plan-decrease-label").textContent = timed
+      ? t("Move earlier by (minutes)")
+      : t("Reduce by");
+    byId("plan-target-label").textContent = timed ? t("Target time") : t("Target limit");
     byId("plan-first").min = D.addDays(today, 1);
     byId("plan-first").value = D.addDays(today, 7);
     byId("plan-interval").value = 7;
-    byId("plan-decrease").value = D.stepOf(habit);
-    byId("plan-target").value = 0;
+    byId("plan-decrease").value = timed ? 15 : D.stepOf(habit);
+    byId("plan-target").value = timed
+      ? D.clockText(Math.max(0, D.limitForDate(habit, today) - 15))
+      : 0;
     const future = habit.limits.filter((limit) => limit.from > today);
     const list = node("ul");
     for (const limit of future)
@@ -144,7 +181,8 @@ export function createPlanEditor({ dom, store, now, commit }) {
           "li",
           dateText(limit.from, { year: "numeric" }) +
             " — " +
-            ruleText(limit.value, limit.periodDays ?? 1, D.unitOf(habit))
+            goalText(limit.goal) +
+            ruleText(limit.value, limit.periodDays ?? 1, D.unitOf(habit), limit.goal)
         )
       );
     byId("plan-context").append(
@@ -165,7 +203,8 @@ export function createPlanEditor({ dom, store, now, commit }) {
       });
       addFrequencyStage();
     }
-    byId("plan-mode").value = existing.length || period > 1 || value === 1 ? "frequency" : "amount";
+    byId("plan-mode").value =
+      !timed && (existing.length || period > 1 || value === 1) ? "frequency" : "amount";
     updatePlanMode();
     byId("plan-editor").showModal();
   }
