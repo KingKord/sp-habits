@@ -48,6 +48,8 @@ Above 700 px, the habit details and history use two columns with one shared date
 
 **Calendar** uses the full available width. At 900 px and below, the month becomes a compact date grid with up to four status dots and a count of remaining habits. Select a date to see full habit names and amounts below the month. Future dates can be inspected but their amounts cannot be edited. An empty filter keeps the grid and shows an explanation. On month changes, the selected Day date is preferred if it belongs to that month, then today, then the first of the month.
 
+The calendar's **Compact view** switch shows only each habit's status mark and emoji (habits without an emoji keep their name); the choice is remembered.
+
 **Statistics** uses a full-width table on larger screens and labelled habit cards at 700 px and below. The same data and table semantics serve both layouts. Summary metrics stack vertically on small screens.
 
 Dialogs fit the available width and dynamic viewport height. Long forms scroll; mobile form actions stay near the bottom edge. Inputs use 16 px text on narrow screens, and touch controls have larger hit areas. Focus returns to the original control after saving, including after a background refresh. New pointer or keyboard input cancels a delayed focus request.
@@ -94,7 +96,7 @@ Today is provisional and does not contribute to the final success percentage. Da
 
 Rules store their effective dates, goals, amounts and periods. A changed rule applies from its selected date until the next stored rule. You can backdate a rule before the current start date; tracking then expands to that date and missing amounts are treated as zero. Existing counts and later rule boundaries are preserved.
 
-Archiving ends tracking after the current day, including that final day in history. Hiding only changes visibility: it preserves tracking, rules, task updates, streaks and statistics. Hidden habits are excluded by the Calendar **Active** filter and included by **All**. An archive remains separately accessible regardless of its hidden flag.
+Archiving ends tracking after the current day, including that final day in history. Hiding only changes visibility: it preserves tracking, rules, task updates, streaks and statistics. Hidden habits are excluded by the Calendar **Active** filter unless the **Hidden habits** toggle is on, and always included by **All**. In Statistics the **Hidden habits** toggle is on by default; turn it off to leave hidden habits out. Use **Delete** in the habit editor to remove a habit and its history permanently (a linked Super Productivity task keeps running but is no longer tracked). An archive remains separately accessible regardless of its hidden flag.
 
 ## Streaks, personal bests and achievements
 

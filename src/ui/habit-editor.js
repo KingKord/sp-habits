@@ -396,11 +396,14 @@ export function createHabitEditor({
   on("delete-habit", "click", async () => {
     const state = store.snapshot().state,
       habit = state.habits.find((h) => h.id === editing);
+    if (!habit) return;
     if (
       !confirm(
         t("Delete “") +
           habit.name +
-          t("” permanently? All of its history will be removed and this cannot be undone.")
+          t(
+            "” permanently? All of its history will be removed and this cannot be undone. A linked Super Productivity recurring task will keep running but will no longer be tracked."
+          )
       )
     )
       return;

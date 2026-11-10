@@ -447,5 +447,5 @@
   "Calendar display": "Отображение календаря",
   "Delete": "Удалить",
   "Delete “": "Удалить «",
-  "” permanently? All of its history will be removed and this cannot be undone.": "» навсегда? Вся её история будет удалена, отменить это нельзя."
+  "” permanently? All of its history will be removed and this cannot be undone. A linked Super Productivity recurring task will keep running but will no longer be tracked.": "» навсегда? Вся её история будет удалена, отменить это нельзя. Связанная повторяющаяся задача Super Productivity продолжит работать, но больше не будет учитываться."
 }

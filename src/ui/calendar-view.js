@@ -202,6 +202,8 @@ export function createCalendarView({
     for (const key of ["active", "all", "archived"])
       byId("calendar-" + key).setAttribute("aria-pressed", String(filter === key));
     byId("calendar-hidden").setAttribute("aria-pressed", String(showHidden));
+    // Hidden habits are only a separate group within Active; All and Archived are unaffected.
+    byId("calendar-hidden").disabled = filter !== "active";
     byId("calendar-compact").setAttribute("aria-pressed", String(compact));
     byId("calendar-grid").classList.toggle("compact", compact);
     const habits = state.habits.filter((habit) => D.habitMatchesFilter(habit, filter, showHidden));
@@ -252,7 +254,6 @@ export function createCalendarView({
       dateButton.setAttribute("aria-controls", "calendar-day-habits");
       if (day.date === today) dateButton.setAttribute("aria-current", "date");
       heading.append(dateButton);
-      if (day.date === today) heading.append(node("small", t("today")));
       const marks = node("div", undefined, "calendar-marks");
       const overview = node("div", undefined, "calendar-day-overview");
       overview.setAttribute("aria-hidden", "true");

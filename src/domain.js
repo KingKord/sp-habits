@@ -772,7 +772,7 @@ export function statistics(state, from, to, today, filter = "all", includeHidden
   const rows = state.habits
     .filter(
       (h) =>
-        (includeHidden || !h.hidden) &&
+        (includeHidden || !h.hidden || h.endDate !== null) &&
         (filter === "all" || (filter === "active" ? h.endDate === null : h.endDate !== null))
     )
     .map((habit) => {

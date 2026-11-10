@@ -46,6 +46,7 @@ export function createStatisticsView({ dom, store, now, render }) {
     byId("stats-to").max = today;
     renderStatsPresets();
     byId("stats-hidden").setAttribute("aria-pressed", String(statsHidden));
+    byId("stats-hidden").disabled = statsFilter === "archived";
     let data;
     try {
       data = D.statistics(state, statsRange.from, statsRange.to, today, statsFilter, statsHidden);
