@@ -247,16 +247,6 @@ h2 {
   background: transparent;
   color: var(--hl-muted);
 }
-.habit-visibility[aria-pressed="true"]::after {
-  content: "";
-  position: absolute;
-  left: 4px;
-  top: 12px;
-  width: 17px;
-  height: 1px;
-  background: currentColor;
-  transform: rotate(-45deg);
-}
 .habit-rule {
   display: block;
   color: var(--hl-muted);
@@ -670,6 +660,17 @@ form textarea {
   font-size: 12px;
   color: var(--hl-muted);
 }
+.stats-heading .toggle,
+.calendar-toolbar .toggle {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-color: transparent;
+}
+.stats-heading .toggle[aria-pressed="true"],
+.calendar-toolbar .toggle[aria-pressed="true"] {
+  color: var(--hl-accent);
+  background: var(--hl-tint);
+}
 .stats-heading select {
   margin-left: 4px;
 }
@@ -842,7 +843,7 @@ form textarea {
 }
 .unified-calendar-date {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   gap: 3px;
   margin-bottom: 6px;
@@ -894,6 +895,19 @@ form textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.calendar-grid.compact .calendar-marks {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.calendar-grid.compact .calendar-mark {
+  width: auto;
+  padding: 3px;
+}
+.calendar-grid.compact .calendar-mark.has-emoji .calendar-mark-name,
+.calendar-grid.compact .calendar-mark-value {
+  display: none;
 }
 .calendar-mark-value {
   margin-left: auto;
@@ -947,6 +961,7 @@ form textarea {
 }
 .calendar-date-select {
   border: 0;
+  text-align: center;
   padding: 3px 6px;
   font-size: 12px;
   font-weight: 500;
@@ -1108,10 +1123,6 @@ form textarea {
   .habit-visibility {
     width: 44px;
     height: 44px;
-  }
-  .habit-visibility[aria-pressed="true"]::after {
-    left: 14px;
-    top: 22px;
   }
   .counter {
     max-width: none;
@@ -1386,10 +1397,6 @@ form textarea {
   .date-nav > button:not(.quiet) {
     width: 44px;
     height: 44px;
-  }
-  .habit-visibility[aria-pressed="true"]::after {
-    left: 14px;
-    top: 22px;
   }
   .day {
     width: 44px;

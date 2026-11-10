@@ -694,10 +694,18 @@ export function setHabitHidden(state, id, hidden) {
   return finish(next);
 }
 
-export function habitMatchesFilter(habit, filter) {
+export function habitMatchesFilter(habit, filter, includeHidden = false) {
   if (filter === "all") return true;
   if (filter === "archived") return habit.endDate !== null;
+  if (filter === "active" && includeHidden) return habit.endDate === null;
   return habit.endDate === null && !!habit.hidden === (filter === "hidden");
+}
+
+export function deleteHabit(state, id) {
+  const next = copy(state);
+  find(next, id);
+  next.habits = next.habits.filter((h) => h.id !== id);
+  return finish(next);
 }
 
 export function archiveHabit(state, id, today) {
@@ -754,7 +762,7 @@ export function periodRange(preset, today) {
   return { from, to: today };
 }
 
-export function statistics(state, from, to, today, filter = "all") {
+export function statistics(state, from, to, today, filter = "all", includeHidden = true) {
   assert(validDate(from) && validDate(to) && validDate(today), t("Choose valid dates."));
   assert(from <= to, t("The start of the period cannot be after its end."));
   assert(to <= today, t("The end of the period cannot be later than today."));
@@ -763,7 +771,9 @@ export function statistics(state, from, to, today, filter = "all") {
   // Count calendar days arithmetically and visit only recorded events, even for a long custom range.
   const rows = state.habits
     .filter(
-      (h) => filter === "all" || (filter === "active" ? h.endDate === null : h.endDate !== null)
+      (h) =>
+        (includeHidden || !h.hidden) &&
+        (filter === "all" || (filter === "active" ? h.endDate === null : h.endDate !== null))
     )
     .map((habit) => {
       const start = habit.startDate > from ? habit.startDate : from;

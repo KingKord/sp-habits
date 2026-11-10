@@ -144,3 +144,34 @@ test("task completions and undo still update a linked hidden habit without chang
   assert.equal(D.dayResult(undone.habits[0], today, today).count, 0);
   assert.equal(undone.habits[0].endDate, null);
 });
+
+test("deleting a habit removes only that habit and rejects unknown ids", () => {
+  const state = D.createHabit(
+    fixture(),
+    { name: "Walking", goal: "at-least", limit: 1, initialCount: 0, startDate: "2026-11-01" },
+    today,
+    "walking"
+  );
+  const raw = JSON.stringify(state);
+  const next = D.deleteHabit(state, "reading");
+  assert.equal(JSON.stringify(state), raw);
+  assert.deepEqual(
+    next.habits.map((h) => h.id),
+    ["walking"]
+  );
+  assert.deepEqual(
+    D.deleteHabit(D.setHabitHidden(state, "walking", true), "walking").habits.length,
+    1
+  );
+  assert.throws(() => D.deleteHabit(state, "missing"));
+});
+
+test("the hidden toggle widens the active filter and statistics can exclude hidden habits", () => {
+  const state = D.setHabitHidden(fixture(), "reading", true),
+    habit = state.habits[0];
+  assert.equal(D.habitMatchesFilter(habit, "active"), false);
+  assert.equal(D.habitMatchesFilter(habit, "active", true), true);
+  assert.equal(D.habitMatchesFilter(habit, "archived", true), false);
+  assert.equal(D.statistics(state, "2026-11-01", today, today, "all").rows.length, 1);
+  assert.equal(D.statistics(state, "2026-11-01", today, today, "all", false).rows.length, 0);
+});

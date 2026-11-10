@@ -61,6 +61,13 @@
             ><button id="calendar-all" aria-pressed="false">All</button
             ><button id="calendar-archived" aria-pressed="false">Archived</button>
           </div>
+          <div class="periods" role="group" aria-label="Calendar display">
+            <button id="calendar-hidden" type="button" class="toggle" aria-pressed="false">
+              Hidden habits</button
+            ><button id="calendar-compact" type="button" class="toggle" aria-pressed="false">
+              Compact view
+            </button>
+          </div>
           <div class="date-nav">
             <button id="calendar-prev" aria-label="Previous month">←</button
             ><label
@@ -125,6 +132,9 @@
               <option value="archived">Archived</option>
             </select></label
           >
+          <button id="stats-hidden" type="button" class="toggle" aria-pressed="true">
+            Hidden habits
+          </button>
         </div>
         <div id="stats-presets" class="periods" role="group" aria-label="Statistics period"></div>
         <form id="stats-form" class="stats-form" hidden>
@@ -184,7 +194,7 @@
           >
         </footer>
         <p class="footnote" id="zone"></p>
-        <p class="footnote">Habits · 0.18.2</p>
+        <p class="footnote">Habits · 0.19.0</p>
       </details>
     </main>
     <p class="form-error" id="task-sync-error" role="alert"></p>
@@ -359,6 +369,7 @@
         <p class="form-error" id="editor-error" role="alert"></p>
         <div class="dialog-bottom">
           <button type="button" id="archive-habit" class="danger" hidden>Archive</button
+          ><button type="button" id="delete-habit" class="danger" hidden>Delete</button
           ><button type="submit" id="save-habit" class="btn-primary">Create</button>
         </div>
       </form>

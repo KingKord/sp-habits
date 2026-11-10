@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.19.0
+
+- Add a Delete button next to Archive in the habit editor; deleting asks for confirmation and permanently removes the habit and its history (#7).
+- Add a Compact view switch to the calendar that shows only each habit's status mark and emoji; the choice is remembered (#6).
+- Add a Hidden habits toggle to the calendar and to Statistics to include or exclude hidden habits (#5).
+- Replace the hidden-habit icon with a standard eye / crossed-eye pair and centre calendar date numbers in their cells (#4).
+
 ## 0.18.2
 
 - Add manual daily check-ins for both good and bad habits, selected alongside quantity units in one Tracking field.

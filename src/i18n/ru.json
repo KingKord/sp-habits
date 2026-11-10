@@ -441,5 +441,11 @@
   "Slipped · Undo": "Нарушил · Отменить",
   "Unmarked days: ": "Не отмечено дней: ",
   "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction still shows all scheduled completed days.": "В итоге для привычек с отметками учитываются успешные дни. Неотмеченные дни остаются неизвестными и исключаются из процента выполнения. Дробь успешных дней показывает все запланированные завершённые дни.",
-  "Tracking": "Учёт"
+  "Tracking": "Учёт",
+  "Hidden habits": "Скрытые привычки",
+  "Compact view": "Компактный вид",
+  "Calendar display": "Отображение календаря",
+  "Delete": "Удалить",
+  "Delete “": "Удалить «",
+  "” permanently? All of its history will be removed and this cannot be undone.": "» навсегда? Вся её история будет удалена, отменить это нельзя."
 }

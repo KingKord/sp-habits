@@ -436,5 +436,11 @@
   "Slipped · Undo": "Slipped · Undo",
   "Unmarked days: ": "Unmarked days: ",
   "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction still shows all scheduled completed days.": "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction still shows all scheduled completed days.",
-  "Tracking": "Tracking"
+  "Tracking": "Tracking",
+  "Hidden habits": "Hidden habits",
+  "Compact view": "Compact view",
+  "Calendar display": "Calendar display",
+  "Delete": "Delete",
+  "Delete “": "Delete “",
+  "” permanently? All of its history will be removed and this cannot be undone.": "” permanently? All of its history will be removed and this cannot be undone."
 }

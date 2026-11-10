@@ -26,7 +26,14 @@ export function createCalendarView({
   const { byId, node, button, fragment, on } = dom;
   let calendarMonth = "",
     calendarDate = "",
-    filter = "active";
+    filter = "active",
+    showHidden = false,
+    compact = false;
+  try {
+    compact = localStorage.getItem("habits-calendar-compact") === "1";
+  } catch {
+    // Storage is optional; the detailed view is the default.
+  }
   const zoneNames = {
     ideal: t("Ideal"),
     warning: t("Acceptable"),
@@ -167,7 +174,9 @@ export function createCalendarView({
       "calendar-today",
       "calendar-active",
       "calendar-all",
-      "calendar-archived"
+      "calendar-archived",
+      "calendar-hidden",
+      "calendar-compact"
     ])
       byId(id).disabled = !state;
     if (!state) {
@@ -192,7 +201,10 @@ export function createCalendarView({
     byId("calendar-next").disabled = calendarMonth === "9999-12";
     for (const key of ["active", "all", "archived"])
       byId("calendar-" + key).setAttribute("aria-pressed", String(filter === key));
-    const habits = state.habits.filter((habit) => D.habitMatchesFilter(habit, filter));
+    byId("calendar-hidden").setAttribute("aria-pressed", String(showHidden));
+    byId("calendar-compact").setAttribute("aria-pressed", String(compact));
+    byId("calendar-grid").classList.toggle("compact", compact);
+    const habits = state.habits.filter((habit) => D.habitMatchesFilter(habit, filter, showHidden));
     byId("calendar-summary").textContent = habits.length
       ? t("Daily habit markers: ") + habits.map(habitName).join(" · ")
       : t("No habits match this filter.");
@@ -275,6 +287,19 @@ export function createCalendarView({
       filter = key;
       render();
     });
+  on("calendar-hidden", "click", () => {
+    showHidden = !showHidden;
+    render();
+  });
+  on("calendar-compact", "click", () => {
+    compact = !compact;
+    try {
+      localStorage.setItem("habits-calendar-compact", compact ? "1" : "0");
+    } catch {
+      // The choice still applies for this session.
+    }
+    render();
+  });
   on("calendar-month", "change", (event) => {
     if (event.target.checkValidity()) {
       calendarMonth = event.target.value;

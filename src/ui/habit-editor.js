@@ -228,6 +228,7 @@ export function createHabitEditor({
     byId("initial-label").hidden = !!habit;
     byId("initial").value = 0;
     byId("archive-habit").hidden = !habit || habit.endDate !== null;
+    byId("delete-habit").hidden = !habit;
     byId("save-habit").textContent = habit ? t("Save") : t("Create");
     byId("editor-hint").textContent = habit
       ? t(
@@ -359,6 +360,7 @@ export function createHabitEditor({
     byId("save-habit").disabled = true;
     byId("close-editor").disabled = true;
     byId("archive-habit").disabled = true;
+    byId("delete-habit").disabled = true;
     const repeatId = byId("task-series").value;
     const ok = await commit(
       (state) =>
@@ -372,6 +374,7 @@ export function createHabitEditor({
     byId("save-habit").disabled = false;
     byId("close-editor").disabled = false;
     byId("archive-habit").disabled = false;
+    byId("delete-habit").disabled = false;
     if (ok) closeEditor();
     else byId("editor-error").textContent = store.snapshot().error;
   });
@@ -389,6 +392,20 @@ export function createHabitEditor({
     const id = editing;
     if ((await commit((state) => D.archiveHabit(state, id, now(state)))) && dom.isActive())
       closeEditor();
+  });
+  on("delete-habit", "click", async () => {
+    const state = store.snapshot().state,
+      habit = state.habits.find((h) => h.id === editing);
+    if (
+      !confirm(
+        t("Delete “") +
+          habit.name +
+          t("” permanently? All of its history will be removed and this cannot be undone.")
+      )
+    )
+      return;
+    const id = editing;
+    if ((await commit((state) => D.deleteHabit(state, id))) && dom.isActive()) closeEditor();
   });
   return { open: openEditor };
 }

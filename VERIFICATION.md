@@ -61,3 +61,8 @@
 - Physical mobile devices, Safari, cross-device delivery and concurrent editing were not checked.
 - Plugin data is stored by Super Productivity. A source review found no separate runtime network requests or embedded user history.
 - This record does not constitute a complete security audit.
+
+## 0.19.0
+
+- `npm run check` (lint, format, 194 unit tests, build) passed, including new tests for habit deletion and the hidden filters.
+- Limits: the new calendar, statistics and editor controls were reviewed in code and covered by domain tests; they were not exercised in a browser, on physical devices or in Safari.

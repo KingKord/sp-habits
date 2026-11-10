@@ -16,7 +16,8 @@ export function createStatisticsView({ dom, store, now, render }) {
   ];
   let statsPreset = "7d",
     statsRange = null,
-    statsFilter = "all";
+    statsFilter = "all",
+    statsHidden = true;
   function renderStatsPresets() {
     byId("stats-form").hidden = statsPreset !== "custom";
     for (const el of byId("stats-presets").children)
@@ -44,9 +45,10 @@ export function createStatisticsView({ dom, store, now, render }) {
     byId("stats-from").max = today;
     byId("stats-to").max = today;
     renderStatsPresets();
+    byId("stats-hidden").setAttribute("aria-pressed", String(statsHidden));
     let data;
     try {
-      data = D.statistics(state, statsRange.from, statsRange.to, today, statsFilter);
+      data = D.statistics(state, statsRange.from, statsRange.to, today, statsFilter, statsHidden);
     } catch (e) {
       byId("stats-note").textContent = e.message;
       byId("stats-metrics").replaceChildren();
@@ -181,6 +183,10 @@ export function createStatisticsView({ dom, store, now, render }) {
   };
   on("stats-from", "input", changeRange);
   on("stats-to", "input", changeRange);
+  on("stats-hidden", "click", () => {
+    statsHidden = !statsHidden;
+    render();
+  });
   on("stats-filter", "change", (event) => {
     statsFilter = event.target.value;
     render();
