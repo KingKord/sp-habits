@@ -445,6 +445,7 @@
           </button>
         </div>
         <p id="count-context" class="hint"></p>
+        <button id="count-note" type="button" class="quiet">Daily note</button>
         <label id="count-amount-field"
           ><span id="count-amount-label">Quantity</span
           ><input
@@ -461,6 +462,35 @@
         <div class="dialog-bottom">
           <button id="cancel-count" type="button">Cancel</button
           ><button id="save-count" type="submit" class="btn-primary">Save</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="note-editor" aria-labelledby="note-editor-title">
+      <form id="note-form">
+        <div class="dialog-top">
+          <h2 id="note-editor-title">Daily note</h2>
+          <button id="close-note" type="button" class="quiet" aria-label="Close note editor">
+            ×
+          </button>
+        </div>
+        <p id="note-context" class="hint"></p>
+        <label
+          >Note<textarea
+            id="note-text"
+            maxlength="500"
+            rows="5"
+            aria-describedby="note-hint"
+          ></textarea>
+        </label>
+        <p id="note-hint" class="hint">
+          Up to 500 characters. Leave empty to remove the note. Notes do not change quantities or
+          results.
+        </p>
+        <p id="note-error" class="form-error" role="alert"></p>
+        <div class="dialog-bottom">
+          <button id="remove-note" type="button" class="danger">Remove note</button>
+          <button id="cancel-note" type="button">Cancel</button>
+          <button id="save-note" type="submit" class="btn-primary">Save</button>
         </div>
       </form>
     </dialog>

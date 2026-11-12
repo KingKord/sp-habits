@@ -6,6 +6,7 @@ import { createScope } from "./ui/scope.js";
 import { createDOM } from "./ui/dom.js";
 import { createHabitEditor } from "./ui/habit-editor.js";
 import { createCountEditor } from "./ui/count-editor.js";
+import { createNoteEditor } from "./ui/note-editor.js";
 import { createPlanEditor } from "./ui/plan-editor.js";
 import { createDayView } from "./ui/day-view.js";
 import { createCalendarView } from "./ui/calendar-view.js";
@@ -76,7 +77,8 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
     systemEmoji: exportClient.systemEmoji,
     loadSchedules: async () => (await taskRequest({ action: "list" })).schedules
   });
-  const count = createCountEditor({ dom, store, now, commit });
+  const note = createNoteEditor({ dom, store, now, commit, confirm });
+  const count = createCountEditor({ dom, store, now, commit, openNoteEditor: note.open });
   const plan = createPlanEditor({ dom, store, now, commit });
   const day = createDayView({
     dom,
@@ -88,7 +90,8 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
     openEditor: editor.open,
     openCountEditor: count.open,
     confirm,
-    newId: () => window.crypto.randomUUID()
+    newId: () => window.crypto.randomUUID(),
+    openNoteEditor: note.open
   });
   const calendar = createCalendarView({
     dom,

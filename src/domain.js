@@ -2,6 +2,7 @@ import { t } from "./i18n/index.js";
 import { validateOrganization, removeHabitOrganization } from "./organization.js";
 import { canonicalUnit } from "./i18n/units.js";
 import { MAX_STORAGE_CHARACTERS, MAX_BACKUP_BYTES } from "./data-limits.js";
+import { validateNotes, updatedNotes } from "./notes.js";
 export const MAX_VALUE = 1000000000;
 const VISIBILITY_ERROR = "Invalid habit visibility.";
 
@@ -249,6 +250,7 @@ export function validateState(state) {
         t("Invalid quantity or event date.")
       );
     }
+    validateNotes(habit, validDate);
     assert(
       !(habit.journal !== undefined && habit.legacyJournal !== undefined),
       t("Ambiguous journal archive.")
@@ -708,6 +710,15 @@ export function setHabitHidden(state, id, hidden) {
     habit = find(next, id);
   if (hidden) habit.hidden = true;
   else delete habit.hidden;
+  return finish(next);
+}
+
+export function setNote(state, id, date, text, today) {
+  const next = copy(state),
+    habit = find(next, id);
+  const notes = updatedNotes(habit, date, text, today, validDate);
+  if (Object.keys(notes).length) habit.notes = notes;
+  else delete habit.notes;
   return finish(next);
 }
 

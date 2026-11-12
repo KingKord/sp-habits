@@ -481,5 +481,18 @@
   "Habit groups": "Группы привычек",
   "Groups": "Группы",
   "Moves swap adjacent habits within each group in this filtered list. Hidden and archived habits keep their place. New habits appear at the end of Ungrouped.": "Перемещение меняет местами соседние привычки внутри группы в выбранном списке. Скрытые и архивные привычки сохраняют место. Новые привычки появляются в конце списка без группы.",
-  "Choose a unique group name of 1–80 characters without line breaks.": "Введите уникальное название группы от 1 до 80 символов без переносов строк."
+  "Choose a unique group name of 1–80 characters without line breaks.": "Введите уникальное название группы от 1 до 80 символов без переносов строк.",
+  "Invalid daily notes.": "Некорректные заметки по дням.",
+  "Invalid daily note. Use a tracked date and up to 500 characters.": "Некорректная заметка. Выберите день отслеживания и введите не более 500 символов.",
+  "Notes can only be edited for tracked dates up to today.": "Заметки можно менять только для дней отслеживания не позднее сегодняшнего.",
+  "A daily note can contain up to 500 characters.": "Заметка за день может содержать не более 500 символов.",
+  "Discard unsaved note changes? Choose Cancel to keep editing.": "Отменить несохранённые изменения заметки? Нажмите «Отмена», чтобы продолжить редактирование.",
+  "Add note": "Добавить заметку",
+  "Edit note": "Изменить заметку",
+  "Daily note: ": "Заметка за день: ",
+  "Daily note": "Заметка за день",
+  "Close note editor": "Закрыть редактор заметки",
+  "Note": "Заметка",
+  "Up to 500 characters. Leave empty to remove the note. Notes do not change quantities or results.": "До 500 символов. Оставьте поле пустым, чтобы удалить заметку. Заметки не меняют количество или результат.",
+  "Remove note": "Удалить заметку"
 }

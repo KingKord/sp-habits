@@ -62,6 +62,14 @@ Dialogs fit the available width and dynamic viewport height. Long forms scroll; 
 
 The UI follows the host's [UI Kit and theme variables](https://github.com/super-productivity/super-productivity/blob/v19.3.1/docs/plugin-development.md#theme-variables--ui-kit). Ordinary controls are styled by Super Productivity; custom styles use the same colours, typography and corner radii.
 
+## Daily notes
+
+Select **Add note** or **Edit note** on a habit in Day, or **Daily note** in a daily quantity/check-in form. Notes belong to the selected date and are independent of its outcome: saving a note never records a quantity, marks a check-in or creates a review task. Notes are also available on rest days and task-linked days; changing a task-derived quantity still requires the linked task.
+
+Each note accepts up to 500 characters of plain text. Save an empty note or select **Remove note** to remove it. Unsaved note changes require confirmation before dismissal. If the same note changed elsewhere, your input stays in the form and cannot overwrite the newer note; reopen it to review the latest text.
+
+Notes can be edited for past and current dates within a habit's tracking dates, including archived history. They survive hiding, archiving and JSON export/import. Old event journals remain compatibility archives and are not changed by note edits.
+
 ## Goals, frequency and units
 
 Create a **Good** habit to build a behavior, or a **Bad** habit to limit or avoid one. In the single **Tracking** field, choose **Done / missed** for a daily check-in or select a quantity unit. Quantity habits use a minimum for Good and a maximum for Bad. Counts and limits are integers from 0 to 1,000,000,000. Goal periods span 1–366 calendar days.

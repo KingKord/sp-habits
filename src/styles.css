@@ -288,6 +288,11 @@ h2 {
   max-width: 190px;
   margin-top: 4px;
 }
+.habit-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+}
 .count {
   background: transparent;
   border: 0;

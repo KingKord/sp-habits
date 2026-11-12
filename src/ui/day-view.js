@@ -5,6 +5,7 @@ import { getLocale } from "../i18n/index.js";
 import { unitText } from "./units.js";
 import { completionControls } from "./completion-controls.js";
 import { progressPanel, recordText } from "./progress-view.js";
+import { noteForDate } from "../notes.js";
 import * as D from "../domain.js";
 import {
   dateText,
@@ -29,7 +30,8 @@ export function createDayView({
   openEditor,
   openCountEditor,
   confirm,
-  newId
+  newId,
+  openNoteEditor
 }) {
   const { byId, node, button, fragment, on, activeElement, restoreFocus } = dom;
   const organization = createOrganizationControls({ dom, commit, render, confirm, newId });
@@ -319,6 +321,15 @@ export function createDayView({
           counter.append(step);
         }
       }
+      const note = button(
+        noteForDate(habit, selected) ? t("Edit note") : t("Add note"),
+        () => openNoteEditor(habit, selected),
+        t("Daily note: ") + habit.name,
+        "quiet habit-note"
+      );
+      note.disabled = locked || s.pending > 0 || !result.editable;
+      note.dataset.focusKey = habit.id + "-note";
+      if (noteForDate(habit, selected)) note.title = noteForDate(habit, selected);
       const week = node("div", undefined, "week");
       week.setAttribute("aria-label", t("Last seven days: ") + habit.name);
       for (let offset = -6; offset <= 0; offset++) {
@@ -374,7 +385,7 @@ export function createDayView({
         day.dataset.focusKey = habit.id + "-" + date;
         week.append(day);
       }
-      top.append(counter);
+      top.append(counter, note);
       const history = node("div", undefined, "habit-history");
       history.append(
         weekHeadings("week habit-week-headings"),

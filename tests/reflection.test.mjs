@@ -97,6 +97,22 @@ test("minus, generic corrections/imports, reads and reconciliation never create 
   assert.equal(JSON.parse(h.raw()).habits[0].counts[today], 12);
 });
 
+test("daily-note host writes cannot create review tasks or quantities", async () => {
+  const h = host(),
+    expected = h.raw();
+  const noted = D.setNote(
+    D.parseState(expected),
+    "coffee",
+    today,
+    "Independent observation",
+    today
+  );
+  await h.integration.request({ action: "write", expected, raw: D.encodeState(noted) });
+  assert.deepEqual(h.calls, ["save"]);
+  assert.deepEqual(D.parseState(h.raw()).habits[0].counts, {});
+  assert.equal(D.parseState(h.raw()).habits[0].notes[today], "Independent observation");
+});
+
 test("disabled and positive habits do not create tasks, even with a retained flag", async () => {
   for (const options of [
     { reflectionTask: false },

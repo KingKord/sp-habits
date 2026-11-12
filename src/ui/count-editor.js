@@ -6,7 +6,7 @@ import { completionControls } from "./completion-controls.js";
 import { closeOnBackdrop } from "./dialog.js";
 import { settingsVersion, assertSettingsVersion, EditConflictError } from "../edit-session.js";
 
-export function createCountEditor({ dom, store, now, commit }) {
+export function createCountEditor({ dom, store, now, commit, openNoteEditor }) {
   const { byId, on, restoreFocus } = dom;
   let countEditing = null,
     countSaving = false;
@@ -90,6 +90,11 @@ export function createCountEditor({ dom, store, now, commit }) {
     restoreFocus(focusKey);
   }
   on("close-count", "click", closeCountEditor);
+  on("count-note", "click", () => {
+    if (!countEditing || countSaving) return;
+    const habit = store.snapshot().state?.habits.find((entry) => entry.id === countEditing.id);
+    if (habit) openNoteEditor(habit, countEditing.date);
+  });
   closeOnBackdrop(dom, "count-editor", closeCountEditor);
   on("cancel-count", "click", closeCountEditor);
   on("count-editor", "cancel", (event) => {

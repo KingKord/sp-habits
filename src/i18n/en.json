@@ -476,5 +476,18 @@
   "Habit groups": "Habit groups",
   "Groups": "Groups",
   "Moves swap adjacent habits within each group in this filtered list. Hidden and archived habits keep their place. New habits appear at the end of Ungrouped.": "Moves swap adjacent habits within each group in this filtered list. Hidden and archived habits keep their place. New habits appear at the end of Ungrouped.",
-  "Choose a unique group name of 1–80 characters without line breaks.": "Choose a unique group name of 1–80 characters without line breaks."
+  "Choose a unique group name of 1–80 characters without line breaks.": "Choose a unique group name of 1–80 characters without line breaks.",
+  "Invalid daily notes.": "Invalid daily notes.",
+  "Invalid daily note. Use a tracked date and up to 500 characters.": "Invalid daily note. Use a tracked date and up to 500 characters.",
+  "Notes can only be edited for tracked dates up to today.": "Notes can only be edited for tracked dates up to today.",
+  "A daily note can contain up to 500 characters.": "A daily note can contain up to 500 characters.",
+  "Discard unsaved note changes? Choose Cancel to keep editing.": "Discard unsaved note changes? Choose Cancel to keep editing.",
+  "Add note": "Add note",
+  "Edit note": "Edit note",
+  "Daily note: ": "Daily note: ",
+  "Daily note": "Daily note",
+  "Close note editor": "Close note editor",
+  "Note": "Note",
+  "Up to 500 characters. Leave empty to remove the note. Notes do not change quantities or results.": "Up to 500 characters. Leave empty to remove the note. Notes do not change quantities or results.",
+  "Remove note": "Remove note"
 }
