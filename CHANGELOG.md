@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.20.0
+
+- Arrange habits with accessible persisted ordering and optional named groups (#13, #14).
+- Add independent daily notes without changing quantities, outcomes or archived journals (#15).
+- Schedule manual habits on selected weekdays or anchored intervals, with dated pause intervals and exceptions (#17, #19).
+- Load bundled application code through the existing verified offline resource bridge, keeping the iframe below the host size limit.
+- Preserve stale-edit conflict checks and unsaved pause/group drafts across background changes.
+
 ## 0.19.1
 
 - Refresh open views when persisted data changes, including histories without task links (#8).
