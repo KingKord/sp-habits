@@ -3,6 +3,15 @@ import { localizedAmounts } from "./units.js";
 import * as D from "../domain.js";
 import { dateText, number, amount, percent, habitName } from "./format.js";
 
+export function assessmentCoverage(row, unmarkedDays = row.unmarkedDays ?? 0) {
+  const assessedDays = row.completedDays - unmarkedDays;
+  return {
+    successful: assessedDays ? number(row.successDays) + " / " + number(assessedDays) : "—",
+    coverage: number(assessedDays) + " / " + number(row.completedDays),
+    unmarkedDays
+  };
+}
+
 export function createStatisticsView({ dom, store, now, render }) {
   const { byId, node, button, fragment, on } = dom;
   const statsPresets = [
@@ -36,6 +45,7 @@ export function createStatisticsView({ dom, store, now, render }) {
       byId("stats-metrics").replaceChildren();
       byId("stats-rows").replaceChildren();
       byId("stats-note").textContent = t("Wait for the history to load.");
+      byId("stats-coverage").textContent = "";
       return;
     }
     if (statsPreset !== "custom" || !statsRange)
@@ -52,10 +62,25 @@ export function createStatisticsView({ dom, store, now, render }) {
       data = D.statistics(state, statsRange.from, statsRange.to, today, statsFilter, statsHidden);
     } catch (e) {
       byId("stats-note").textContent = e.message;
+      byId("stats-coverage").textContent = "";
       byId("stats-metrics").replaceChildren();
       byId("stats-rows").replaceChildren();
       return;
     }
+    const coverage = assessmentCoverage(
+      data.total,
+      data.rows.reduce((sum, row) => sum + (row.unmarkedDays ?? 0), 0)
+    );
+    byId("stats-coverage").textContent =
+      t("Assessed habit-days: ") +
+      coverage.coverage +
+      " · " +
+      t("Unmarked check-in days: ") +
+      number(coverage.unmarkedDays) +
+      ". " +
+      t(
+        "Unmarked check-ins are excluded from the rate. Quantity days use recorded totals, with missing totals counted as zero. Today is excluded."
+      );
     const metrics = fragment();
     for (const [label, value, hint] of [
       [
@@ -67,13 +92,7 @@ export function createStatisticsView({ dom, store, now, render }) {
           : "—",
         t("By unit, including today")
       ],
-      [
-        t("Successful days"),
-        data.total.completedDays
-          ? number(data.total.successDays) + " / " + number(data.total.completedDays)
-          : "—",
-        t("Completed days for each habit")
-      ],
+      [t("Successful days"), coverage.successful, t("Completed days for each habit")],
       [
         t("Completion"),
         percent(data.total.successRate),
@@ -95,8 +114,18 @@ export function createStatisticsView({ dom, store, now, render }) {
       name.scope = "row";
       name.append(node("span", habitName(row)));
       if (row.archived) name.append(node("small", t("Archived")));
+      const rowCoverage = assessmentCoverage(row);
       if (row.tracking === "check-in")
-        name.append(node("small", t("Unmarked days: ") + row.unmarkedDays));
+        name.append(
+          node(
+            "small",
+            t("Marked days: ") +
+              rowCoverage.coverage +
+              " · " +
+              t("Unmarked days: ") +
+              number(rowCoverage.unmarkedDays)
+          )
+        );
       if (!row.trackedDays) name.append(node("small", t("No data")));
       tr.title = row.trackedDays
         ? t("Unsuccessful days: ") +
@@ -107,10 +136,7 @@ export function createStatisticsView({ dom, store, now, render }) {
       tr.append(
         name,
         metricCell(t("Total"), amount(row.events, row.unit)),
-        metricCell(
-          t("Successful"),
-          row.completedDays ? number(row.successDays) + " / " + number(row.completedDays) : "—"
-        )
+        metricCell(t("Successful / assessed"), rowCoverage.successful)
       );
       const share = metricCell(t("Completion"), percent(row.successRate));
       const value = share.lastElementChild;
@@ -149,7 +175,7 @@ export function createStatisticsView({ dom, store, now, render }) {
       t("The total rate counts days for each habit, rather than unique calendar dates.") +
       " " +
       t(
-        "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction still shows all scheduled completed days."
+        "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction uses the same assessed-day denominator as the rate."
       );
   }
   byId("stats-presets").replaceChildren();

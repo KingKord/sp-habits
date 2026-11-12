@@ -447,5 +447,11 @@
   "Calendar display": "Отображение календаря",
   "Delete": "Удалить",
   "Delete “": "Удалить «",
-  "” permanently? All of its history will be removed and this cannot be undone. A linked Super Productivity recurring task will keep running but will no longer be tracked.": "» навсегда? Вся её история будет удалена, отменить это нельзя. Связанная повторяющаяся задача Super Productivity продолжит работать, но больше не будет учитываться."
+  "” permanently? All of its history will be removed and this cannot be undone. A linked Super Productivity recurring task will keep running but will no longer be tracked.": "» навсегда? Вся её история будет удалена, отменить это нельзя. Связанная повторяющаяся задача Super Productivity продолжит работать, но больше не будет учитываться.",
+  "Assessed habit-days: ": "Оценённые дни привычек: ",
+  "Unmarked check-in days: ": "Дни без отметки: ",
+  "Marked days: ": "Отмечено дней: ",
+  "Successful / assessed": "Успешно / оценено",
+  "Unmarked check-ins are excluded from the rate. Quantity days use recorded totals, with missing totals counted as zero. Today is excluded.": "Дни без отметки не входят в процент. Количественные привычки оцениваются по записанным итогам; отсутствие записи считается нулём. Сегодняшний день не учитывается.",
+  "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction uses the same assessed-day denominator as the rate.": "Итоги отметок считают успешные дни. Дни без отметки остаются неизвестными и не входят в процент выполнения. Доля успешных дней использует то же количество оценённых дней, что и процент."
 }

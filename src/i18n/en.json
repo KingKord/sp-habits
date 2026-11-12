@@ -442,5 +442,11 @@
   "Calendar display": "Calendar display",
   "Delete": "Delete",
   "Delete “": "Delete “",
-  "” permanently? All of its history will be removed and this cannot be undone. A linked Super Productivity recurring task will keep running but will no longer be tracked.": "” permanently? All of its history will be removed and this cannot be undone. A linked Super Productivity recurring task will keep running but will no longer be tracked."
+  "” permanently? All of its history will be removed and this cannot be undone. A linked Super Productivity recurring task will keep running but will no longer be tracked.": "” permanently? All of its history will be removed and this cannot be undone. A linked Super Productivity recurring task will keep running but will no longer be tracked.",
+  "Assessed habit-days: ": "Assessed habit-days: ",
+  "Unmarked check-in days: ": "Unmarked check-in days: ",
+  "Marked days: ": "Marked days: ",
+  "Successful / assessed": "Successful / assessed",
+  "Unmarked check-ins are excluded from the rate. Quantity days use recorded totals, with missing totals counted as zero. Today is excluded.": "Unmarked check-ins are excluded from the rate. Quantity days use recorded totals, with missing totals counted as zero. Today is excluded.",
+  "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction uses the same assessed-day denominator as the rate.": "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction uses the same assessed-day denominator as the rate."
 }
