@@ -4,7 +4,7 @@ import { orderedHabits, groupedHabits, moveHabit } from "../organization.js";
 import { getLocale } from "../i18n/index.js";
 import { unitText } from "./units.js";
 import { completionControls } from "./completion-controls.js";
-import { scheduleDescription } from "./schedule-fields.js";
+import { scheduleDescription, linkedScheduleDescription } from "./schedule-fields.js";
 import { weeklyRuleDescription } from "../weekly-goals.js";
 import { progressPanel, recordText } from "./progress-view.js";
 import { noteForDate } from "../notes.js";
@@ -239,8 +239,7 @@ export function createDayView({
             t("Task: ") +
               schedule.title +
               " · " +
-              schedule.every +
-              t(" days") +
+              linkedScheduleDescription(schedule) +
               (schedule.time ? " · " + schedule.time : ""),
             "habit-rule"
           )

@@ -5,7 +5,7 @@ import { createEmojiPicker } from "./emoji-picker.js";
 import { closeOnBackdrop, dismissKeyboardOnReturn } from "./dialog.js";
 import { unitChoice, selectedUnit } from "./units.js";
 import { settingsVersion, assertSettingsVersion, EditConflictError } from "../edit-session.js";
-import { createScheduleFields } from "./schedule-fields.js";
+import { createScheduleFields, linkedScheduleDescription } from "./schedule-fields.js";
 import { createPauseFields } from "./pause-fields.js";
 import { createWeeklyFields } from "./weekly-fields.js";
 
@@ -61,7 +61,7 @@ export function createHabitEditor({
           "The task defines the schedule. Completing it adds 1 completion; rest days do not lower your rate. Linking starts today."
         )
       : t(
-          "Fixed repeats every N days are supported. Set the repeat and time in Super Productivity."
+          "Fixed daily and weekly repeats are supported. Set the schedule and time in Super Productivity."
         );
   }
   async function populateSchedules(habit, selected) {
@@ -86,8 +86,7 @@ export function createHabitEditor({
           "option",
           schedule.title +
             " · " +
-            schedule.every +
-            t(" days") +
+            linkedScheduleDescription(schedule) +
             (schedule.time ? " · " + schedule.time : "") +
             (schedule.paused ? t(" · paused") : "")
         );

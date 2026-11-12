@@ -138,7 +138,7 @@ On macOS and Windows desktop builds, **Open system emoji** uses the same `window
 
 ## Recurring-task integration
 
-Select **Linked recurring task** when creating or editing a habit. Supported schedules are active, fixed `DAILY` repeats every 1–366 calendar days with a start date. Set repetition, time and reminders in Super Productivity. Linking reads tasks and repeat configurations; it does not edit the linked series. Optional episode review tasks are a separate opt-in feature described above.
+Select **Linked recurring task** when creating or editing a habit. Supported schedules are active, fixed `DAILY` repeats every 1–366 calendar days and `WEEKLY` repeats every 1–366 weeks with selected weekdays and an explicit start date. Set repetition, time and reminders in Super Productivity. Linking reads tasks and repeat configurations; it does not edit the linked series. Optional episode review tasks are a separate opt-in feature described above.
 
 Linking configures a positive habit with a minimum of one completion per day. The link takes effect today without backfilling earlier history. One repeat series can belong to only one active habit. Instances are identified by the repeat-series ID rather than the title or one instance's task ID.
 
@@ -151,7 +151,9 @@ Linking configures a positive habit with a minimum of one completion per day. Th
 
 The background integration works while Super Productivity is open and the plugin is enabled, including with the Habits view closed. It reconciles on readiness, task/data hooks and every 30 seconds, reads live and archived tasks, and notifies an open view. Errors are visible and never replace history with empty data. Writes share one queue and compare the previous raw value; use **Reload data** after a conflict.
 
-After-completion, wait-for-completion, weekly, monthly and yearly schedules are unsupported. Integration counts completions rather than reading minutes. `deletedInstanceDates` exceptions do not change the fixed habit assessment. The plugin and host schedule timezones must agree.
+After-completion, wait-for-completion, monthly and yearly schedules are unsupported. Integration counts completions rather than reading minutes. Weekly links respect the host's `deletedInstanceDates`; existing daily-link behavior continues to ignore those exceptions. The plugin and host schedule timezones must agree.
+
+Weekly host recurrence counts seven-day blocks from the task's saved start date, independently of Monday-based habit goal weeks. For example, a Wednesday anchor with a two-week repeat on Monday and Friday schedules the following Friday and Monday in that first block. The arithmetic and weekday fields were checked against the official [19.3.1 recurrence source](https://github.com/super-productivity/super-productivity/blob/v19.3.1/src/app/features/task-repeat-cfg/store/get-newest-possible-due-date.util.ts), [20.0.0 recurrence source](https://github.com/super-productivity/super-productivity/blob/v20.0.0/src/app/features/task-repeat-cfg/store/get-newest-possible-due-date.util.ts) and [week-difference helper](https://github.com/super-productivity/super-productivity/blob/v20.0.0/src/app/util/get-diff-in-weeks.ts), with independent date-oracle tests. This uses existing configuration fields and needs no new permission or minimum-host increase; source and fixture checks do not replace real-host integration testing.
 
 `taskSchedules` and `taskCompletions` are included in backups. Use a supported compatible build after enabling task links so automatic amounts and rest days remain understood. Concurrent editing from multiple devices remains unsupported.
 

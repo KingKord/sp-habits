@@ -5,6 +5,7 @@ import { MAX_STORAGE_CHARACTERS, MAX_BACKUP_BYTES } from "./data-limits.js";
 import { validateNotes, updatedNotes } from "./notes.js";
 import { validateManualSchedules, manualAssessedDays, putManualSchedule } from "./scheduling.js";
 import { validatePauses, pausedOn } from "./scheduling.js";
+import { linkedWeeklyDays } from "./scheduling.js";
 import {
   validWeeklyRule,
   weeklyEvaluator,
@@ -1242,6 +1243,10 @@ function scheduledDays(habit, from, to) {
     const anchor = dayIndex(schedule.anchor);
     const start = Math.max(lo, anchor);
     const end = Math.min(hi, schedule.until ? dayIndex(schedule.until) : hi);
+    if (schedule.cycle === "weekly") {
+      total += linkedWeeklyDays(schedule, indexDate(start), indexDate(end));
+      continue;
+    }
     const first = anchor + Math.ceil((start - anchor) / schedule.every) * schedule.every;
     if (first <= end) total += Math.floor((end - first) / schedule.every) + 1;
   }
@@ -1270,6 +1275,26 @@ function validateTaskHistory(habit) {
         (idOK(s.repeatId) &&
           validDate(s.anchor) &&
           validPeriod(s.every) &&
+          (s.cycle === undefined ||
+            (s.cycle === "weekly" &&
+              Array.isArray(s.days) &&
+              s.days.length > 0 &&
+              s.days.length <= 7 &&
+              s.days.every(
+                (day, index) =>
+                  Number.isInteger(day) &&
+                  day >= 0 &&
+                  day < 7 &&
+                  (index === 0 || day > s.days[index - 1])
+              ))) &&
+          (s.excludedDates === undefined ||
+            (s.cycle === "weekly" &&
+              Array.isArray(s.excludedDates) &&
+              s.excludedDates.length <= 10000 &&
+              s.excludedDates.every(
+                (date, index) =>
+                  validDate(date) && (index === 0 || date > s.excludedDates[index - 1])
+              ))) &&
           typeof s.paused === "boolean" &&
           typeof s.title === "string" &&
           s.title.length <= 500 &&

@@ -125,3 +125,30 @@ export function manualAssessedDays(habit, from, to) {
   }
   return count;
 }
+
+// The host's WEEKLY cycle uses seven-day blocks anchored at startDate,
+// independently of the calendar week's first day (SP 19.3.1 and 20.0.0).
+export function linkedWeeklyDays(schedule, from, to) {
+  const anchor = dayIndex(schedule.anchor),
+    lo = Math.max(dayIndex(from), anchor),
+    hi = dayIndex(to);
+  if (lo > hi) return 0;
+  let total = 0;
+  for (const day of schedule.days) {
+    const first = anchor + ((day - weekday(anchor) + 7) % 7),
+      interval = schedule.every * 7;
+    const start = first + Math.max(0, Math.ceil((lo - first) / interval)) * interval;
+    if (start <= hi) total += Math.floor((hi - start) / interval) + 1;
+  }
+  for (const date of schedule.excludedDates ?? []) {
+    const index = dayIndex(date);
+    if (
+      index >= lo &&
+      index <= hi &&
+      schedule.days.includes(weekday(index)) &&
+      Math.floor((index - anchor) / 7) % schedule.every === 0
+    )
+      total--;
+  }
+  return total;
+}

@@ -20,6 +20,15 @@ export function scheduleDescription(habit, date) {
       : t("Every ") + schedule.every + t(" days from ") + schedule.anchor;
 }
 
+export function linkedScheduleDescription(schedule) {
+  return schedule.cycle === "weekly"
+    ? schedule.days.map((day) => weekdayNames()[day]).join(", ") +
+        t(" · every ") +
+        schedule.every +
+        t(" weeks")
+    : schedule.every + t(" days");
+}
+
 export function createScheduleFields(dom) {
   const { byId, node } = dom;
   const root = byId("manual-schedule-fields");

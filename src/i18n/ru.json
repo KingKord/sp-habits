@@ -578,5 +578,9 @@
   "Dated habit rules": "Правила привычки по датам",
   "Goal or condition": "Цель или условие",
   "days": "дн.",
-  "Displayed range: ": "Показанный период: "
+  "Displayed range: ": "Показанный период: ",
+  "Choose an active fixed daily or weekly repeat.": "Выберите активное фиксированное дневное или недельное повторение.",
+  "Fixed daily and weekly repeats are supported. Set the schedule and time in Super Productivity.": "Поддерживаются фиксированные дневные и недельные повторения. Настройте расписание и время в Super Productivity.",
+  " · every ": " · каждые ",
+  " weeks": " нед."
 }

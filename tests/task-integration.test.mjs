@@ -36,7 +36,7 @@ function linked(start = today) {
 }
 const cfgs = { series: config() };
 
-test("only supported fixed DAILY configurations are linkable; weekdays do not affect DAILY", () => {
+test("fixed DAILY ignores weekdays and incomplete or completion-relative schedules are rejected", () => {
   assert.equal(fixedSchedule(config({ startTime: "8:00" })).time, "08:00");
   assert.equal(fixedSchedule(config({ monday: false })).every, 2);
   for (const override of [

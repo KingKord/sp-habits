@@ -21,12 +21,13 @@ export function reflectionTask(habit, date, zone, language) {
   };
 }
 
-// DAILY uses the start date as its calendar anchor; weekday flags do not apply.
-// Source: SP v19.3.1 get-newest-possible-due-date.util.ts.
+// DAILY ignores weekday flags. WEEKLY uses seven-day blocks from startDate.
+// Sources: SP v19.3.1 and v20.0.0 store/get-newest-possible-due-date.util.ts,
+// util/get-diff-in-weeks.ts (documented with parity fixtures in tests).
 export function fixedSchedule(cfg) {
   if (
     !cfg ||
-    cfg.repeatCycle !== "DAILY" ||
+    !["DAILY", "WEEKLY"].includes(cfg.repeatCycle) ||
     cfg.repeatFromCompletionDate ||
     cfg.waitForCompletion ||
     !D.validDate(cfg.startDate) ||
@@ -36,7 +37,7 @@ export function fixedSchedule(cfg) {
   const rawTime = cfg.startTime ? String(cfg.startTime).padStart(5, "0") : null;
   if (!D.validTime(rawTime) || (cfg.repeatUntilDay && !D.validDate(cfg.repeatUntilDay)))
     return null;
-  return {
+  const schedule = {
     repeatId: cfg.id,
     title: String(cfg.title ?? "").slice(0, 500),
     anchor: cfg.startDate,
@@ -45,6 +46,22 @@ export function fixedSchedule(cfg) {
     until: cfg.repeatUntilDay || null,
     paused: !!cfg.isPaused
   };
+  if (cfg.repeatCycle === "WEEKLY") {
+    const keys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+    if (keys.some((key) => cfg[key] !== undefined && typeof cfg[key] !== "boolean")) return null;
+    const days = keys.flatMap((key, index) => (cfg[key] === true ? [index] : []));
+    if (!days.length) return null;
+    const excluded = cfg.deletedInstanceDates ?? [];
+    if (!Array.isArray(excluded) || excluded.length > 10000 || !excluded.every(D.validDate))
+      return null;
+    return {
+      ...schedule,
+      cycle: "weekly",
+      days,
+      ...(excluded.length ? { excludedDates: [...new Set(excluded)].sort() } : {})
+    };
+  }
+  return schedule;
 }
 
 export function reconcileTasks(state, tasks, configs, today) {
@@ -180,7 +197,7 @@ export function createTaskIntegration(api, notify = () => {}, instant = () => ne
           const cfg = repeatId ? (await api.getAppState()).taskRepeatCfgs[repeatId] : null;
           const schedule = repeatId ? fixedSchedule(cfg) : null;
           if (repeatId && (!schedule || schedule.paused))
-            throw new Error(t("Choose an active fixed repeat every N days."));
+            throw new Error(t("Choose an active fixed daily or weekly repeat."));
           const linked = D.setTaskSchedule(candidate, id, schedule, today);
           const { tasks, configs } = await snapshot();
           await save(raw, reconcileTasks(linked, tasks, configs, today));

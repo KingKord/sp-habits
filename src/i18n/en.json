@@ -573,5 +573,9 @@
   "Dated habit rules": "Dated habit rules",
   "Goal or condition": "Goal or condition",
   "days": "days",
-  "Displayed range: ": "Displayed range: "
+  "Displayed range: ": "Displayed range: ",
+  "Choose an active fixed daily or weekly repeat.": "Choose an active fixed daily or weekly repeat.",
+  "Fixed daily and weekly repeats are supported. Set the schedule and time in Super Productivity.": "Fixed daily and weekly repeats are supported. Set the schedule and time in Super Productivity.",
+  " · every ": " · every ",
+  " weeks": " weeks"
 }
