@@ -16,6 +16,7 @@ import { mountBackupControls } from "./ui/backup-controls.js";
 import { closeOnBackdrop } from "./ui/dialog.js";
 import { createThemePreference } from "./ui/theme-preference.js";
 import { mountDraftRecovery } from "./ui/draft-recovery.js";
+import { mountCreateHabitShortcut } from "./ui/create-habit-shortcut.js";
 
 // Composition root: features receive only their dependencies and own their UI state.
 export function createApplication({ window, api = window.PluginAPI, instant = () => new Date() }) {
@@ -100,6 +101,16 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
     openDetails: details.open
   });
   scope.add(day.dispose);
+  const createShortcut = mountCreateHabitShortcut({
+    window,
+    loadShortcut: async () => (await exportClient.request(false, "shortcuts")).addNewTask,
+    canOpen: () => !byId("add").disabled && !document.querySelector("dialog[open]"),
+    open: () => editor.open(),
+    onChange: (shortcut) => {
+      byId("add").title = t("New habit") + (shortcut ? " (" + shortcut + ")" : "");
+    }
+  });
+  scope.add(createShortcut.dispose);
   const calendar = createCalendarView({
     dom,
     store,
@@ -168,6 +179,10 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
         : snapshot.blocked
           ? t("Saving paused")
           : t("Ready");
+    byId("save-status").classList.toggle(
+      "sr-only",
+      !snapshot.busyRead && !snapshot.pending && !snapshot.blocked
+    );
     const locked = snapshot.blocked || snapshot.busyRead || !snapshot.state;
     byId("add").disabled = locked || snapshot.pending > 0;
     byId("export").disabled = !snapshot.state || snapshot.pending > 0 || snapshot.busyRead;
@@ -195,7 +210,12 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
   const refresh = () => {
     if (store.snapshot().state && now() !== day.lastToday()) render();
   };
-  scope.add(exportClient.subscribe(store.invalidate));
+  scope.add(
+    exportClient.subscribe(() => {
+      store.invalidate();
+      void createShortcut.refresh();
+    })
+  );
   scope.on(window, "focus", refresh);
   scope.on(document, "visibilitychange", () => {
     if (!document.hidden) refresh();

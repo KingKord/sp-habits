@@ -1,5 +1,31 @@
 # Verification log
 
+## 0.23.0 — 2026-11-12
+
+### Checks and scope
+
+- Full `npm run check` passed: ESLint, Prettier, 343 tests, version/changelog validation, bundled JavaScript syntax and ZIP integrity. All five version sources and the current README entry are 0.23.0.
+- Fixes follow-up findings #44–#53: duplicate host/plugin title, shared create shortcut, date control alignment, note/date centering, zero-goal summary, visible empty Calendar, invalid month drafts, shared persistence status, desktop date details and future-entry readability.
+- Shortcut regressions cover exact modifier matching, configured/disabled/malformed bindings, keyboard layouts and fallback, editable/composed targets, modal/repeat/IME/AltGraph exclusions, blocked/pending state, asynchronous refresh ordering and disposal. The validated bridge returns only the configured addNewTask string, not global configuration.
+- Final iframe: 26,822 / 102,400 bytes; headroom: 75,578 bytes. ZIP SHA-256: `925d7c4c58fd99c03341f6b82a52e6347e5c36e5090216c7a32e65bd076f3700`.
+
+### Visual and interaction review
+
+- Reviewed 36 packaged-build combinations: English/Russian, light/dark, 320/700/1440 px and Day/Calendar/Statistics, with real host spacing tokens. No horizontal page overflow or view-only history changes. Captured settled screenshots and visually inspected representative wide/narrow screens.
+- Measured date/month input and arrow centers: maximum difference 0 px; label margins 0 px and paired control heights equal. Calendar numeral centers differ from their cell center by at most 0.015625 px, including a date with a saved note. The note badge is positioned separately from the numeral.
+- The visible duplicate product title is removed while an accessible h1 remains. Navigation and Add habit share one toolbar. Calendar no longer adds a redundant heading band; native date/month picker controls remain available.
+- Focused-iframe Shift+A opens exactly one new-habit form. Typing the combination in a Name field retains the draft and types its letter normally. A custom Ctrl+Alt+H binding replaces Shift+A, and a disabled binding leaves the button as the available entry point. Open forms are not replaced.
+- Clearing Month retains the invalid draft across filter refreshes and visibly explains the still-applied month. A valid selection clears validation. Empty wide/narrow filters display an explanation; Day with no assessable goals avoids a zero-of-zero ratio.
+- Explicit date selection reveals full details on desktop and mobile, focuses the heading, and returns focus to the selected date. Disabled future text remains fully opaque and non-editable. A delayed synthetic write keeps Saving visible in both Calendar and Statistics; after acknowledgement and quantity undo the exact original JSON is restored.
+- Document scaling at 200% retained usable layout without horizontal overflow. This supplements the responsive viewport checks; it is not a physical-device or Safari zoom test.
+
+### Actual host and limits
+
+- Installed the candidate into a clean isolated official 19.3.1WB host (embedded web assets on localhost as documented below), enabled it and reloaded. The host provided the real configured binding, shown as New habit (Shift+A). Exercised actual keyboard events, editable-form protection, synthetic fixture import, wide date details and focus return; view-only actions preserved the exact plugin JSON.
+- Inspected the combined host header and plugin toolbar together. The host's native Add task actions remain unchanged: the implementation installs no parent listener or duplicate plugin shortcut and does not change the system-wide desktop shortcut. Reuse applies only while focus is inside Habits.
+- Evidence is under ignored `output/playwright/ux-polish-023/`: matrix/flow results, before/after screenshots, actual-host captures and issue records. The user's personal desktop installation and history were not modified during this follow-up.
+- #54 remains an explicit keyboard-efficiency follow-up: the baseline six-habit wide Calendar exposed 121 enabled sequential tab stops. A roving date-grid design is not claimed in this release. Native Electron/Safari, physical touch devices, a fresh 20.0.0 installation and cross-device sync were not rerun.
+
 ## 0.22.0 — 2026-11-12
 
 ### Automated checks

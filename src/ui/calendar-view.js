@@ -40,7 +40,23 @@ export function createCalendarView({
   const { byId, node, button, fragment, on } = dom;
   const view = byId("calendar-grid").ownerDocument.defaultView;
   const narrow = view.matchMedia("(max-width: 900px)");
+  const monthField = byId("calendar-month");
+  const monthFeedback = node("div", undefined, "calendar-month-feedback");
+  const monthMessage = node("p", "", "form-error");
+  monthMessage.id = "calendar-month-message";
+  monthMessage.setAttribute("role", "alert");
+  const appliedMonth = node("p", "", "hint");
+  appliedMonth.id = "calendar-month-applied";
+  appliedMonth.setAttribute("role", "status");
+  monthFeedback.append(monthMessage, appliedMonth);
+  const emptyMessage = node("p", t("No habits match this filter."), "empty hint");
+  emptyMessage.id = "calendar-empty-state";
+  emptyMessage.setAttribute("role", "status");
+  byId("calendar-summary").after(emptyMessage);
+  byId("calendar-summary").after(monthFeedback);
+  monthField.setAttribute("aria-describedby", "calendar-month-message calendar-month-applied");
   const detailsTitle = byId("calendar-day-title");
+  let detailsRevealed = false;
   detailsTitle.tabIndex = -1;
   const returnToDate = button(
     t("Back to selected date"),
@@ -57,11 +73,13 @@ export function createCalendarView({
   detailsTitle.after(returnToDate);
   const updateCompactControl = () => {
     byId("calendar-compact").hidden = narrow.matches;
-    returnToDate.hidden = !narrow.matches;
+    returnToDate.hidden = !narrow.matches && !detailsRevealed;
   };
   narrow.addEventListener("change", updateCompactControl);
   updateCompactControl();
   let calendarMonth = "",
+    monthDraft = null,
+    monthError = "",
     calendarDate = "",
     filter = "active",
     showHidden = false,
@@ -82,6 +100,39 @@ export function createCalendarView({
     paused: t("Paused")
   };
 
+  function updateMonthFeedback() {
+    monthMessage.textContent = monthError;
+    monthMessage.hidden = !monthError;
+    appliedMonth.textContent = calendarMonth
+      ? t("Displayed month: ") +
+        dateText(calendarMonth + "-01", { month: "long", year: "numeric", day: undefined })
+      : "";
+    monthFeedback.hidden = !calendarMonth || (monthDraft === null && !monthError);
+  }
+  function applyMonth(month) {
+    calendarMonth = month;
+    monthDraft = null;
+    monthError = "";
+    monthField.setCustomValidity("");
+    render();
+  }
+  function validateMonth() {
+    const value = monthField.value;
+    if (
+      monthField.checkValidity() &&
+      value >= "1900-01" &&
+      value <= "9999-12" &&
+      D.validDate(value + "-01")
+    ) {
+      if (monthDraft !== null || calendarMonth !== value) applyMonth(value);
+      else updateMonthFeedback();
+      return;
+    }
+    monthDraft = value;
+    monthError = t("Choose a month from January 1900 through December 9999.");
+    monthField.setCustomValidity(monthError);
+    updateMonthFeedback();
+  }
   function habitMark(habit, day, today, snapshot, prefix = "cal") {
     const unit = unitText(D.unitOf(habit));
     const hasNote = !!noteForDate(habit, day.date);
@@ -237,6 +288,7 @@ export function createCalendarView({
     ])
       byId(id).disabled = !state;
     if (!state) {
+      emptyMessage.hidden = monthFeedback.hidden = true;
       byId("calendar-grid").replaceChildren();
       byId("calendar-day-habits").replaceChildren();
       byId("calendar-day-title").textContent = "";
@@ -253,7 +305,8 @@ export function createCalendarView({
           ? today
           : calendarMonth + "-01";
     }
-    byId("calendar-month").value = calendarMonth;
+    if (monthDraft === null) monthField.value = calendarMonth;
+    updateMonthFeedback();
     byId("calendar-prev").disabled = calendarMonth === "1900-01";
     byId("calendar-next").disabled = calendarMonth === "9999-12";
     for (const key of ["active", "all", "archived"])
@@ -264,6 +317,7 @@ export function createCalendarView({
     byId("calendar-compact").setAttribute("aria-pressed", String(compact));
     byId("calendar-grid").classList.toggle("compact", compact);
     const habits = state.habits.filter((habit) => D.habitMatchesFilter(habit, filter, showHidden));
+    emptyMessage.hidden = habits.length > 0;
     byId("calendar-summary").textContent = habits.length
       ? t("Daily habit markers: ") + habits.map(habitName).join(" · ")
       : t("No habits match this filter.");
@@ -301,11 +355,12 @@ export function createCalendarView({
         String(Number(day.date.slice(8))),
         () => {
           calendarDate = day.date;
+          detailsRevealed = true;
+          detailsTitle.parentElement.classList.add("is-revealed");
+          updateCompactControl();
           render();
-          if (narrow.matches) {
-            detailsTitle.focus({ preventScroll: true });
-            detailsTitle.scrollIntoView({ block: "start", behavior: "auto" });
-          }
+          detailsTitle.focus({ preventScroll: true });
+          detailsTitle.scrollIntoView({ block: "start", behavior: "auto" });
         },
         t("Show habits for ") + dateText(day.date, { year: "numeric" }),
         "calendar-date-select"
@@ -376,24 +431,23 @@ export function createCalendarView({
     }
     render();
   });
-  on("calendar-month", "change", (event) => {
-    if (event.target.checkValidity()) {
-      calendarMonth = event.target.value;
-      render();
-    }
+  on("calendar-month", "input", () => {
+    monthDraft = monthField.value;
+    monthError = "";
+    monthField.setCustomValidity("");
+    updateMonthFeedback();
   });
+  on("calendar-month", "change", validateMonth);
+  on("calendar-month", "blur", validateMonth);
   on("calendar-prev", "click", () => {
-    calendarMonth = D.shiftMonth(calendarMonth, -1);
-    render();
+    applyMonth(D.shiftMonth(calendarMonth, -1));
   });
   on("calendar-next", "click", () => {
-    calendarMonth = D.shiftMonth(calendarMonth, 1);
-    render();
+    applyMonth(D.shiftMonth(calendarMonth, 1));
   });
   on("calendar-today", "click", () => {
     calendarDate = now();
-    calendarMonth = calendarDate.slice(0, 7);
-    render();
+    applyMonth(calendarDate.slice(0, 7));
   });
   return {
     render: renderCalendar,

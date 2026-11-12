@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.23.0
+
+- Combine navigation and Add habit into one compact toolbar, keeping the page heading accessible without duplicating the host title (#44).
+- Align date/month fields and navigation controls; keep calendar numerals centered when daily notes are present (#46, #47).
+- Reuse the configured app-wide Add task shortcut inside the focused Habits view, with editable-field/modal guards and no change to native task controls (#45).
+- Explain days without assessable goals and empty calendar filters; retain invalid month drafts with visible validation and applied-month context (#48–#50).
+- Keep persistence status available in every view without displaying idle status as toolbar clutter (#51).
+- Reveal desktop date details when requested and keep non-editable future entries readable (#52, #53).
+
 ## 0.22.0
 
 - Protect unsaved quantities and reduction plans on every dismissal path; lock complete forms while saving (#24–#26).

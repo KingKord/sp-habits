@@ -76,6 +76,15 @@ export function installExportBridge(api, window, document, tasks, styles, applic
         reply({ ok: true, ...(await tasks.request(message)) });
         return;
       }
+      if (message.asset === "shortcuts") {
+        const state = await api.getAppState?.();
+        const configured = state?.globalConfig?.keyboard?.addNewTask;
+        reply({
+          ok: true,
+          addNewTask: typeof configured === "string" && configured.length <= 100 ? configured : null
+        });
+        return;
+      }
       if (message.asset === "application") {
         if (
           typeof applicationSource !== "string" ||

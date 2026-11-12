@@ -4,7 +4,7 @@ Track habits, build routines and keep unwanted habits within limits — inside [
 
 Set a goal such as reading for 20 minutes a day, limit coffee to two cups, or aim for three workouts over seven days. Record your progress and see your history in one place.
 
-Current release: **0.22.0** · Requires **Super Productivity 19.3.1+** · [Download](https://github.com/KingKord/sp-habits/releases/latest) · [User guide](docs/user-guide.md)
+Current release: **0.23.0** · Requires **Super Productivity 19.3.1+** · [Download](https://github.com/KingKord/sp-habits/releases/latest) · [User guide](docs/user-guide.md)
 
 ![Habits in dark mode, showing example goals, daily counters and a week of progress](docs/images/habits-day.png)
 
@@ -38,11 +38,13 @@ First use **More → Export JSON** to save a backup. Upload the new ZIP through 
 
 ## Try your first habit
 
-1. Select **+ Add** and enter a name.
+1. Select **Add habit** and enter a name.
 2. Choose **Good** to build a habit or **Bad** to limit or avoid it.
 3. In **Tracking**, choose **Done / missed** or a quantity unit. For quantities, set the amount and period; for check-ins, optionally add a **No later than** time. Set the start date and save.
 4. Use the result buttons for a check-in or **+ / −** for quantities. Select a past day to correct it. Expand a row with its chevron to see recent history, notes and additional actions.
 5. Select **Reorder**, then drag a handle to move a habit within its group. Up/Down arrow keys on the handle and the **⋯** menu are alternatives. Select **Done reordering** to finish. Use **Manage groups** separately to organize groups.
+
+With focus inside Habits, your configured app-wide **Add task** shortcut (normally **Shift+A**) opens a new habit. The host header **+** and the system-wide desktop shortcut continue to create tasks.
 
 For example, choose Good, 20 min per day and a step of 5 for reading. Each **+** adds five minutes. For coffee, choose Bad and two cups per day: two is within the allowance, three is over it.
 
@@ -56,7 +58,7 @@ For optional review tasks, reduction plans, colour settings and full task-link b
 
 Habits stores its history through Super Productivity's plugin storage. Names, custom units and existing history are preserved in their original language. It does not send your data to a separate service; cross-device sync depends on your Super Productivity settings.
 
-Export before importing: an import replaces the complete plugin history after confirmation. Wait for **Ready** before closing after an edit. If a write fails, use **Reload data** to return to confirmed storage.
+Export before importing: an import replaces the complete plugin history after confirmation. Wait for saving to finish before closing after an edit. If a write fails, use **Reload data** to return to confirmed storage.
 
 The project is actively evolving. Keep these limits in mind:
 

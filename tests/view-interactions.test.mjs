@@ -93,6 +93,9 @@ function harness() {
       reportValidity() {
         return !this.querySelectorAll("*").some((child) => child.validationMessage);
       },
+      checkValidity() {
+        return !this.validationMessage;
+      },
       focus() {
         active = this;
       },
@@ -161,6 +164,7 @@ function harness() {
     on: (id, type, callback) => handlers.set(id + ":" + type, callback)
   };
   node("section").append(byId("calendar-day-title"), byId("calendar-day-habits"));
+  node("section").append(byId("calendar-summary"), byId("calendar-grid"));
   return {
     dom,
     byId,
@@ -305,7 +309,7 @@ test("narrow calendar selection reveals every habit and returns to its date with
   assert.equal(h.active().dataset.focusKey, "cal-date-2026-11-07");
   h.media(false);
   assert.equal(h.byId("calendar-compact").hidden, false);
-  assert.equal(back.hidden, true);
+  assert.equal(back.hidden, false);
   h.send("calendar-compact", "click");
   assert.equal(h.byId("calendar-compact").getAttribute("aria-pressed"), "true");
   h.media(true);
@@ -407,4 +411,205 @@ test("Day note shortcuts and motion feedback preserve data and only acknowledge 
   assert.equal(row().classList.contains("is-confirmed"), false);
   h.advance(3000);
   assert.equal(h.timers(), 0);
+});
+
+test("Day explains zero assessable goals for empty, rest, inactive and empty-filter views", () => {
+  const daily = D.createHabit(
+    D.emptyState("UTC"),
+    {
+      name: "Reading",
+      goal: "at-least",
+      limit: 1,
+      initialCount: 0,
+      startDate: "2026-11-01"
+    },
+    today,
+    "reading"
+  );
+  const rest = D.createHabit(
+    D.emptyState("UTC"),
+    {
+      name: "Practice",
+      goal: "at-least",
+      limit: 1,
+      initialCount: 0,
+      startDate: "2026-11-01",
+      manualSchedule: { type: "weekdays", days: [0] }
+    },
+    today,
+    "practice"
+  );
+  for (const scenario of [
+    { state: D.emptyState("UTC"), date: today, filter: "active", empty: true },
+    { state: rest, date: today, filter: "active" },
+    { state: daily, date: "2026-10-31", filter: "active" },
+    { state: daily, date: today, filter: "hidden" }
+  ]) {
+    const h = harness();
+    const state = scenario.state,
+      original = D.encodeState(state);
+    const snapshot = () => ({ state, pending: 0, blocked: false, busyRead: false });
+    const refresh = () => day.render(snapshot(), today);
+    const day = createDayView({
+      dom: h.dom,
+      store: { snapshot },
+      now: () => today,
+      render: refresh,
+      flash() {},
+      commit: () => assert.fail("Viewing an empty assessment must not write history"),
+      openEditor() {},
+      openCountEditor() {},
+      openNoteEditor() {},
+      openDetails() {},
+      confirm: () => true,
+      newId: () => "new"
+    });
+    day.prepare(today);
+    day.select(scenario.date);
+    h.send(scenario.filter, "click");
+    assert.equal(h.byId("summary").textContent, "No goals to assess for this day.");
+    if (scenario.empty)
+      assert.equal(
+        h
+          .byId("cards")
+          .querySelectorAll("*")
+          .some((el) => el.textContent === "Select Add habit to create a habit."),
+        true
+      );
+    assert.equal(D.encodeState(state), original);
+    day.dispose();
+  }
+});
+
+test("Calendar exposes a visible empty-filter message and preserves the applied month while a picker draft is invalid", () => {
+  const h = harness();
+  const state = D.createHabit(
+    D.emptyState("UTC"),
+    {
+      name: "Reading",
+      limit: 1,
+      initialCount: 0,
+      startDate: "2026-11-01"
+    },
+    today,
+    "reading"
+  );
+  const original = D.encodeState(state);
+  const refresh = () => calendar.render(state, today);
+  const calendar = createCalendarView({
+    dom: h.dom,
+    store: { snapshot: () => ({ state }) },
+    now: () => today,
+    render: refresh,
+    selectedDate: () => today,
+    selectDate() {},
+    openEditor() {},
+    openCountEditor() {},
+    openPlan() {}
+  });
+  refresh();
+  const message = h
+    .byId("calendar-summary")
+    .parentElement.children.find((el) => el.id === "calendar-empty-state");
+  assert.equal(message.hidden, true);
+  h.media(false);
+  h.send("calendar-archived", "click");
+  assert.equal(message.hidden, false);
+  assert.equal(message.textContent, "No habits match this filter.");
+  assert.equal(message.getAttribute("role"), "status");
+  const month = h.byId("calendar-month");
+  const feedback = h
+    .byId("calendar-summary")
+    .parentElement.children.find((el) => el.className === "calendar-month-feedback");
+  const error = feedback.children[0],
+    applied = feedback.children[1];
+  month.value = "";
+  h.send("calendar-month", "input");
+  assert.equal(error.hidden, true);
+  assert.match(applied.textContent, /Displayed month: November 2026/);
+  h.send("calendar-month", "blur");
+  assert.equal(error.hidden, false);
+  assert.match(error.textContent, /Choose a month/);
+  assert.equal(feedback.hidden, false);
+  refresh();
+  assert.equal(month.value, "");
+  assert.equal(
+    h.byId("calendar-grid").children.some((el) => el.dataset.date === "2026-11-01"),
+    true
+  );
+  month.value = "2026-10";
+  h.send("calendar-month", "input");
+  assert.equal(error.hidden, true);
+  h.send("calendar-month", "change");
+  assert.equal(feedback.hidden, true);
+  assert.equal(
+    h.byId("calendar-grid").children.some((el) => el.dataset.date === "2026-10-01"),
+    true
+  );
+  month.value = "";
+  h.send("calendar-month", "input");
+  h.send("calendar-month", "change");
+  h.send("calendar-prev", "click");
+  assert.equal(month.value, "2026-09");
+  assert.equal(month.validationMessage, "");
+  assert.equal(feedback.hidden, true);
+  assert.equal(D.encodeState(state), original);
+  calendar.dispose();
+});
+
+test("wide Calendar date selection reveals its controlled details and returns focus to the date", () => {
+  const h = harness();
+  h.media(false);
+  const state = D.createHabit(
+    D.emptyState("UTC"),
+    {
+      name: "Reading",
+      limit: 1,
+      initialCount: 0,
+      startDate: "2026-11-01"
+    },
+    today,
+    "reading"
+  );
+  const original = D.encodeState(state);
+  const refresh = () => calendar.render(state, today);
+  const calendar = createCalendarView({
+    dom: h.dom,
+    store: { snapshot: () => ({ state }) },
+    now: () => today,
+    render: refresh,
+    selectedDate: () => today,
+    selectDate() {},
+    openEditor() {},
+    openCountEditor() {},
+    openPlan() {}
+  });
+  refresh();
+  const title = h.byId("calendar-day-title"),
+    panel = title.parentElement;
+  const back = panel.children.find((el) => el.className.includes("calendar-return"));
+  assert.equal(panel.classList.contains("is-revealed"), false);
+  assert.equal(back.hidden, true);
+  const date = h
+    .byId("calendar-grid")
+    .querySelectorAll(".calendar-date-select")
+    .find((el) => el.dataset.focusKey === "cal-date-2026-11-07");
+  date.click();
+  assert.equal(panel.classList.contains("is-revealed"), true);
+  assert.equal(back.hidden, false);
+  assert.equal(h.active(), title);
+  assert.equal(title.scrolled.block, "start");
+  assert.match(
+    h.byId("calendar-day-habits").children[0].getAttribute("aria-label"),
+    /Reading.*7 November/
+  );
+  back.click();
+  assert.equal(h.active().dataset.focusKey, "cal-date-2026-11-07");
+  assert.equal(h.active().scrolled.block, "center");
+  h.media(true);
+  h.media(false);
+  assert.equal(back.hidden, false);
+  assert.equal(panel.classList.contains("is-revealed"), true);
+  assert.equal(D.encodeState(state), original);
+  calendar.dispose();
 });

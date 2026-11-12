@@ -339,3 +339,33 @@ test("postMessage failure is contained and never triggers a second error reply",
   assert.equal(deliveries, 1);
   assert.equal(h.completed(), 1);
 });
+
+test("shortcut settings are read-only, source checked and disclose only the configured add-task combo", async () => {
+  const h = harness(null);
+  let reads = 0;
+  h.api.getAppState = async () => {
+    reads++;
+    return {
+      globalConfig: {
+        keyboard: { addNewTask: "Ctrl+Alt+N", globalAddTask: "Ctrl+G" },
+        privateExtension: "not a bridge response"
+      },
+      tasks: { privateTask: {} }
+    };
+  };
+  h.api.loadSyncedData = async () => assert.fail("Shortcut lookup must not load habit history");
+  const request = { type: "HABITS_EXPORT_REQUEST", requestId: "shortcut", asset: "shortcuts" };
+  await h.dispatch(request, "https://elsewhere.test");
+  await h.dispatch(request, undefined, {});
+  assert.equal(reads, 0);
+  await h.dispatch(request);
+  assert.equal(h.response.addNewTask, "Ctrl+Alt+N");
+  assert.deepEqual(Object.keys(h.response).sort(), ["addNewTask", "ok", "requestId", "type"]);
+  assert.equal(h.saved, undefined);
+  h.api.getAppState = async () => ({ globalConfig: { keyboard: { addNewTask: null } } });
+  await h.dispatch(request);
+  assert.equal(h.response.addNewTask, null);
+  h.api.getAppState = async () => ({ globalConfig: { keyboard: { addNewTask: "x".repeat(101) } } });
+  await h.dispatch(request);
+  assert.equal(h.response.addNewTask, null);
+});

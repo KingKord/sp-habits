@@ -624,5 +624,10 @@
   "Some drafts could not be reopened. Their text is kept below so you can copy it before discarding.": "Some drafts could not be reopened. Their text is kept below so you can copy it before discarding.",
   "Discard unavailable drafts": "Discard unavailable drafts",
   "This habit may already have been saved. Review the latest list before creating another habit.": "This habit may already have been saved. Review the latest list before creating another habit.",
-  "Unable to discard saved drafts. Storage is unavailable. Copy the text or try again.": "Unable to discard saved drafts. Storage is unavailable. Copy the text or try again."
+  "Unable to discard saved drafts. Storage is unavailable. Copy the text or try again.": "Unable to discard saved drafts. Storage is unavailable. Copy the text or try again.",
+  "+ Add habit": "+ Add habit",
+  "No goals to assess for this day.": "No goals to assess for this day.",
+  "Select Add habit to create a habit.": "Select Add habit to create a habit.",
+  "Displayed month: ": "Displayed month: ",
+  "Choose a month from January 1900 through December 9999.": "Choose a month from January 1900 through December 9999."
 }

@@ -8,8 +8,16 @@
   <body hidden>
     <main class="shell">
       <header class="top">
-        <h1>Habits</h1>
-        <button id="add" class="quiet">+ Add</button>
+        <h1 class="sr-only">Habits</h1>
+        <nav class="view-switch" aria-label="Plugin section">
+          <button id="view-day" aria-pressed="true">Day</button
+          ><button id="view-calendar" aria-pressed="false">Calendar</button
+          ><button id="view-stats" aria-pressed="false">Statistics</button>
+        </nav>
+        <button id="add" class="quiet">+ Add habit</button>
+        <span id="save-status" class="save-status sr-only" role="status" aria-live="polite"
+          >Loading…</span
+        >
       </header>
       <section id="error" class="error" role="alert" hidden>
         <strong>Data needs attention</strong>
@@ -19,11 +27,6 @@
           ><button id="raw" hidden>Download original data</button>
         </div>
       </section>
-      <nav class="view-switch" aria-label="Plugin section">
-        <button id="view-day" aria-pressed="true">Day</button
-        ><button id="view-calendar" aria-pressed="false">Calendar</button
-        ><button id="view-stats" aria-pressed="false">Statistics</button>
-      </nav>
       <div id="day-view">
         <section class="toolbar" aria-label="Date and result">
           <div class="date-nav">
@@ -41,8 +44,7 @@
           ><button id="hidden" aria-pressed="false">Hidden</button
           ><button id="archived" aria-pressed="false">Archived</button
           ><button id="arrange" aria-pressed="false">Reorder</button
-          ><button id="manage-groups" aria-pressed="false">Manage groups</button
-          ><span id="save-status" role="status" aria-live="polite">Loading…</span>
+          ><button id="manage-groups" aria-pressed="false">Manage groups</button>
         </div>
         <p id="arrange-hint" class="hint" hidden>Drag a handle to reorder within its group.</p>
         <section id="organization" aria-label="Habit groups" hidden>
@@ -54,11 +56,7 @@
       </div>
 
       <section id="calendar-view" aria-labelledby="calendar-title" hidden>
-        <div class="stats-heading">
-          <div>
-            <h2 id="calendar-title">Calendar</h2>
-          </div>
-        </div>
+        <h2 id="calendar-title" class="sr-only">Calendar</h2>
         <div class="calendar-toolbar">
           <div class="periods" role="group" aria-label="Calendar habits">
             <button id="calendar-active" aria-pressed="true">Active</button
@@ -75,7 +73,8 @@
           <div class="date-nav">
             <button id="calendar-prev" aria-label="Previous month">←</button
             ><label
-              >Month<input
+              ><span class="sr-only">Month</span
+              ><input
                 id="calendar-month"
                 type="month"
                 min="1900-01"
@@ -205,7 +204,7 @@
           >
         </footer>
         <p class="footnote" id="zone"></p>
-        <p class="footnote">Habits · 0.22.0</p>
+        <p class="footnote">Habits · 0.23.0</p>
       </details>
     </main>
     <p class="form-error" id="task-sync-error" role="alert"></p>

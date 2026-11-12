@@ -212,8 +212,9 @@ export function createDayView({
       .map((h) => D.dayResult(h, selected, today))
       .filter((r) => r.editable && r.kind !== "rest");
     const good = tracked.filter((r) => ["success", "today-good"].includes(r.kind)).length;
-    byId("summary").textContent =
-      selected === today
+    byId("summary").textContent = !tracked.length
+      ? t("No goals to assess for this day.")
+      : selected === today
         ? t("Goals met so far: ") + good + t(" of ") + tracked.length
         : t("Successful: ") + good + t(" of ") + tracked.length;
     const focusKey = activeElement()?.dataset.focusKey;
@@ -240,7 +241,7 @@ export function createDayView({
               ? t("Hidden habits will appear here.")
               : hiddenCount
                 ? t("Restore habits from the Hidden tab.")
-                : t("Click + Add to create a habit.")
+                : t("Select Add habit to create a habit.")
         )
       );
       content.append(el);

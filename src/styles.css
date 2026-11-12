@@ -138,8 +138,24 @@ button.danger {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 4px;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--hl-line);
+}
+.top #add {
+  flex: 0 1 auto;
+  max-width: 100%;
+  padding: 8px;
+  line-height: 1.25;
+  white-space: normal;
+}
+.top #save-status {
+  flex: 1 0 100%;
+  margin: 0;
+  padding: 2px 4px;
+  text-align: end;
 }
 h1 {
   margin: 0;
@@ -152,11 +168,15 @@ h2 {
 }
 .view-switch {
   display: flex;
-  gap: 12px;
-  border-bottom: 1px solid var(--hl-line);
-  margin-bottom: 16px;
+  flex: 1 1 160px;
+  min-width: 0;
+  gap: 8px;
+  margin: 0;
 }
 .view-switch button {
+  flex: 0 1 auto;
+  min-width: 0;
+  line-height: 1.25;
   border: 0;
   border-radius: 0;
   padding: 8px 4px;
@@ -181,18 +201,60 @@ h2 {
   margin-bottom: 12px;
 }
 .date-nav {
+  --date-control-size: 36px;
   gap: 4px;
+  line-height: 1;
+}
+.date-nav > label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  margin: 0;
+}
+.date-nav > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--date-control-size);
+  height: var(--date-control-size);
+  margin: 0;
+  line-height: 1;
 }
 .date-nav > button:not(.quiet) {
-  width: 28px;
-  padding: 4px 0;
+  flex: 0 0 var(--date-control-size);
+  width: var(--date-control-size);
+  padding: 0;
+  font-size: 16px;
+}
+.date-nav > .quiet {
+  padding: 4px 8px;
 }
 .date-nav input {
-  width: 138px;
+  display: block;
+  width: 156px;
+  min-width: 0;
+  min-height: var(--date-control-size);
+  height: var(--date-control-size);
+  margin: 0;
   border: 0;
   background: transparent;
-  padding: 4px;
-  font-size: 12px;
+  padding: 0 6px;
+  font-size: 14px;
+  line-height: 1.2;
+  text-align: center;
+  vertical-align: middle;
+}
+.date-nav input::-webkit-datetime-edit {
+  padding: 0;
+  text-align: center;
+}
+.date-nav input::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+.date-nav input::-webkit-calendar-picker-indicator {
+  margin: 0 0 0 4px;
+  padding: 0;
 }
 .summary {
   color: var(--hl-muted);
@@ -906,7 +968,11 @@ form textarea {
   text-align: left;
 }
 .calendar-mark:disabled {
-  opacity: 0.45;
+  opacity: 1;
+  cursor: default;
+}
+.calendar-mark:disabled:hover {
+  background: transparent;
 }
 .calendar-mark-dot {
   width: 15px;
@@ -992,12 +1058,32 @@ form textarea {
   display: none;
 }
 .calendar-date-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  line-height: 1;
   border: 0;
   text-align: center;
   padding: 3px 6px;
   font-size: 12px;
   font-weight: 500;
   background: transparent;
+}
+.calendar-date-select .calendar-note-indicator {
+  position: absolute;
+  top: 2px;
+  right: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 10px;
+  height: 10px;
+  font-size: 9px;
+  line-height: 1;
+  pointer-events: none;
 }
 .calendar-date-select[aria-pressed="true"] {
   color: var(--hl-accent);
@@ -1016,6 +1102,9 @@ form textarea {
 }
 /* A month needs wider columns than the day list and statistics table. */
 @media (max-width: 900px) {
+  .calendar-toolbar .date-nav {
+    --date-control-size: 44px;
+  }
   .calendar-toolbar button,
   .calendar-toolbar input,
   .calendar-date-select {
@@ -1133,10 +1222,13 @@ form textarea {
     flex-wrap: wrap;
   }
   .view-switch {
-    gap: 8px;
+    gap: 4px;
   }
   .view-switch button {
-    flex: 1;
+    flex: 1 1 auto;
+  }
+  .date-nav {
+    --date-control-size: 44px;
   }
   .habit-title {
     font-size: 15px;
@@ -1409,6 +1501,9 @@ form textarea {
   overflow-wrap: anywhere;
 }
 @media (pointer: coarse) {
+  .date-nav {
+    --date-control-size: 44px;
+  }
   button,
   input,
   select {
@@ -1946,4 +2041,42 @@ form textarea {
     flex: 1 1 100%;
     margin-left: 0;
   }
+}
+
+/* A compact shared toolbar replaces the duplicate title band inside the host. */
+@media (max-width: 480px) {
+  .top {
+    gap: 4px;
+  }
+  .top .view-switch {
+    flex-basis: 176px;
+    gap: 0;
+  }
+  .top .view-switch button {
+    padding-inline: 2px;
+    font-size: 12px;
+  }
+  .top #add {
+    max-width: 100px;
+    padding-inline: 4px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 360px) {
+  #day-view .date-nav {
+    display: grid;
+    grid-template-columns: var(--date-control-size) minmax(0, 1fr) var(--date-control-size);
+    width: 100%;
+  }
+  #day-view .date-nav input {
+    width: 100%;
+  }
+  #day-view .date-nav > .quiet {
+    grid-column: 1 / -1;
+  }
+}
+
+.calendar-day-details.is-revealed {
+  display: block;
+  margin-top: 16px;
 }

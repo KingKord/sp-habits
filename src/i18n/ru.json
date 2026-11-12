@@ -629,5 +629,10 @@
   "Some drafts could not be reopened. Their text is kept below so you can copy it before discarding.": "Некоторые черновики не удалось открыть. Их текст приведён ниже: скопируйте его перед удалением черновиков.",
   "Discard unavailable drafts": "Отбросить недоступные черновики",
   "This habit may already have been saved. Review the latest list before creating another habit.": "Возможно, эта привычка уже сохранена. Проверьте актуальный список, прежде чем создавать её повторно.",
-  "Unable to discard saved drafts. Storage is unavailable. Copy the text or try again.": "Не удалось отбросить черновики: хранилище недоступно. Скопируйте текст или попробуйте ещё раз."
+  "Unable to discard saved drafts. Storage is unavailable. Copy the text or try again.": "Не удалось отбросить черновики: хранилище недоступно. Скопируйте текст или попробуйте ещё раз.",
+  "+ Add habit": "+ Привычка",
+  "No goals to assess for this day.": "Нет целей для оценки за этот день.",
+  "Select Add habit to create a habit.": "Нажмите «+ Привычка», чтобы создать привычку.",
+  "Displayed month: ": "Показан месяц: ",
+  "Choose a month from January 1900 through December 9999.": "Выберите месяц с января 1900 года по декабрь 9999 года."
 }
