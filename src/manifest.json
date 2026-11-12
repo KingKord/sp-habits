@@ -1,7 +1,7 @@
 {
   "id": "sp-habit-limits",
   "name": "Habits",
-  "version": "0.19.0",
+  "version": "0.19.1",
   "manifestVersion": 1,
   "minSupVersion": "19.3.1",
   "description": "Positive habit goals, event limits, recurring tasks, calendar and statistics. No separate server.",

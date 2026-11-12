@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.1
+
+- Refresh open views when persisted data changes, including histories without task links (#8).
+- Protect stale settings, totals and reduction plans from overwriting changed data; confirm before discarding habit form edits (#10).
+- Keep normal JSON backups compact and accept compatible formatted Unicode backups within a bounded 12 MB import envelope; validate storage capacity before writing (#9).
+- Explain check-in rate denominators and recorded-day coverage without treating unknown days as failures (#11).
+- Distinguish calendar outcomes with visible symbols in compact layouts (#12).
+- Keep host UI Kit heading colors readable when a temporary plugin theme differs from the app theme.
+- Report iframe build capacity and bundle contributors in CI, and correct obsolete deletion documentation (#22, #23).
+
 ## 0.19.0
 
 - Add a Delete button next to Archive in the habit editor; deleting asks for confirmation and permanently removes the habit and its history (#7).

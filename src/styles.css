@@ -21,6 +21,8 @@
   --bg: #212121;
   --card-bg: #292929;
   --text-color: #e0e0e0;
+  --text-color-most-intense: #fff;
+  --text-color-less-intense: rgba(224, 224, 224, 0.9);
   --text-color-muted: #a0a0a0;
   --divider-color: #414141;
   --c-primary: #90b4e5;
@@ -47,6 +49,8 @@
   --bg: #fafafa;
   --card-bg: #fff;
   --text-color: #303030;
+  --text-color-most-intense: #111;
+  --text-color-less-intense: rgba(48, 48, 48, 0.9);
   --text-color-muted: #747474;
   --divider-color: #dedede;
   --c-primary: #4878b8;

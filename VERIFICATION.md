@@ -1,5 +1,29 @@
 # Verification log
 
+## 0.19.1 — 2026-11-12
+
+### Integrated checks
+
+- Full npm run check passed: lint, formatting, 219 tests, version validation, JavaScript syntax and ZIP integrity.
+- New regressions exercise persisted-data invalidation, bursts during reads/writes, disposal, stale editor conflicts, dirty dismissal, Unicode/capacity backup boundaries, statistics coverage and non-color calendar outcomes.
+- Build budget reporting preserves the strict 100 KiB host boundary and reports actual bytes, baseline delta, headroom and source contributors. The runtime is 97,467 bytes; styles travel through the existing host resource bridge.
+
+### Isolated real-host review
+
+- Installed the integrated build in a separate Chromium Super Productivity 20.0.0 web instance (host revision 4db0e11236bc784d3184a9e252930b4bd53df823). The everyday desktop app was not opened or modified.
+- Created a synthetic reading habit, changed its quantity with +, and verified confirmed storage.
+- Changed plugin storage through the isolated iframe PluginAPI while settings were open. The visible habit updated through the host persistence hook; a stale form could not overwrite the changed name, retained its entered text and displayed the conflict explanation.
+- Verified that cancelling the discard confirmation kept the changed habit form available, and accepting dismissal did not save its input.
+- Imported six synthetic habits, including a check-in with one successful mark and five unknown completed days. Statistics showed 1 / 1 successful assessed outcomes and 1 / 6 marked-day coverage beside 100%.
+- Reviewed compact calendar symbols with more than four habits at 320 and 390 px in the real host: no horizontal iframe overflow; the overflow count and distinct outcomes remained visible. Also inspected dark-mode Statistics and corrected the host heading-color variable when the plugin theme differs from the host.
+- Downloaded the real-host JSON export: 1,389-byte compact backup with six habits. Reimported it through the file control and confirmed all six habits remained after a complete host reload.
+
+### Limits
+
+- Large ASCII/Unicode round trips are automated through the actual bundled export bridge and import validation; the multi-megabyte fixture was not rendered in the live host.
+- This verifies host-side persistence notifications, not actual delivery from another device. Minimum-host 19.3.1, physical iOS/Safari and concurrent-device editing remain unverified; issue #21 tracks the compatibility matrix.
+- No lossless distributed merge or cross-device locking is claimed.
+
 ## 0.18.2 — 2026-11-07
 
 ### Current candidate
