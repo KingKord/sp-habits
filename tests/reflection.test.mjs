@@ -35,6 +35,7 @@ function host(state = seed()) {
     },
     getCurrentLanguage: async () => "en",
     addTask: async (task) => {
+      assert.equal(task.projectId, "INBOX_PROJECT", "The host rejects unknown project IDs");
       calls.push(task);
       return "review";
     },
@@ -71,7 +72,7 @@ test("quick plus saves first and creates exactly one Inbox review for the entire
   assert.equal(JSON.parse(result.raw).habits[0].counts[today], 2);
   assert.equal(h.calls.length, 2);
   assert.equal(h.calls[0], "save");
-  assert.equal(h.calls[1].projectId, "INBOX");
+  assert.equal(h.calls[1].projectId, "INBOX_PROJECT");
   assert.equal(h.calls[1].timeEstimate, 180000);
   assert.match(h.calls[1].notes, /Quantity added: 2 times/);
   assert.match(result.effectMessage, /created/);

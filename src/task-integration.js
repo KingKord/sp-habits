@@ -8,7 +8,7 @@ export function reflectionTask(habit, date, zone, language) {
     normalizeLanguage(language) === "ru" ? (russian[source] ?? source) : source;
   return {
     title: t("Brief review: ") + habit.name,
-    projectId: "INBOX",
+    projectId: "INBOX_PROJECT",
     timeEstimate: 180000,
     notes: [
       t("Episode date: ") + date + " (" + zone + ")",
