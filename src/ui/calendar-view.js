@@ -14,6 +14,7 @@ import {
 } from "./format.js";
 
 export function calendarSymbol(day) {
+  if (day.zone === "paused") return "⏸";
   if (day.zone === "rest") return "–";
   if (day.kind === "future") return "›";
   if (day.kind === "inactive") return "·";
@@ -50,7 +51,8 @@ export function createCalendarView({
     neutral: t("No color"),
     inactive: t("Not tracked"),
     future: t("Future day"),
-    rest: t("Rest day")
+    rest: t("Rest day"),
+    paused: t("Paused")
   };
 
   function habitMark(habit, day, today, snapshot, prefix = "cal") {

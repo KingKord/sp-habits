@@ -4,6 +4,51 @@ const dayIndex = (date) => Date.parse(date + "T12:00:00Z") / 86400000 - 0.5;
 export const weekday = (index) => (((index + 3) % 7) + 7) % 7;
 export const manualScheduleForDate = (habit, date) =>
   habit.manualSchedules?.findLast((entry) => entry.from <= date) ?? { type: "daily" };
+export const pausedOn = (habit, date) =>
+  (habit.pauses ?? []).some((pause) => date >= pause.from && (!pause.to || date <= pause.to));
+
+export function validatePauses(habit, validDate) {
+  let previous = "";
+  if (habit.pauses === undefined) return;
+  if (
+    !Array.isArray(habit.pauses) ||
+    habit.pauses.length > 10000 ||
+    habit.pauses.some((pause) => {
+      const valid =
+        pause &&
+        validDate(pause.from) &&
+        pause.from >= habit.startDate &&
+        pause.from > previous &&
+        (pause.to === null || (validDate(pause.to) && pause.to >= pause.from)) &&
+        (!habit.endDate || (pause.to !== null && pause.to <= habit.endDate));
+      previous = pause?.to ?? "9999-12-31";
+      if (!valid) return true;
+      return (habit.taskSchedules ?? []).some(
+        (schedule, index, history) =>
+          schedule.repeatId &&
+          schedule.from <= (pause.to ?? "9999-12-31") &&
+          (!history[index + 1] || history[index + 1].from > pause.from)
+      );
+    })
+  )
+    throw new Error(t("Invalid pause intervals. Keep pauses separate from linked task schedules."));
+}
+
+export function mergePauses(pauses, interval) {
+  const result = [];
+  for (const pause of [...pauses, interval].sort((a, b) => a.from.localeCompare(b.from))) {
+    const previous = result.at(-1);
+    if (previous && pause.from <= (previous.to ?? "9999-12-31"))
+      previous.to =
+        previous.to === null || pause.to === null
+          ? null
+          : previous.to > pause.to
+            ? previous.to
+            : pause.to;
+    else result.push({ ...pause });
+  }
+  return result;
+}
 
 export function validateManualSchedules(habit, validDate) {
   const history = habit.manualSchedules;

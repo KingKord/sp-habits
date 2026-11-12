@@ -4,6 +4,7 @@ import { canonicalUnit } from "./i18n/units.js";
 import { MAX_STORAGE_CHARACTERS, MAX_BACKUP_BYTES } from "./data-limits.js";
 import { validateNotes, updatedNotes } from "./notes.js";
 import { validateManualSchedules, manualAssessedDays, putManualSchedule } from "./scheduling.js";
+import { validatePauses, pausedOn } from "./scheduling.js";
 export { manualScheduleForDate } from "./scheduling.js";
 export const MAX_VALUE = 1000000000;
 const VISIBILITY_ERROR = "Invalid habit visibility.";
@@ -188,6 +189,7 @@ export function validateState(state) {
       t("Invalid archive date.")
     );
     validateManualSchedules(habit, validDate);
+    validatePauses(habit, validDate);
     assert(
       Array.isArray(habit.limits) && habit.limits.length > 0 && habit.limits.length <= 10000,
       t("Limit history is missing.")
@@ -365,6 +367,7 @@ export function dayResult(habit, date, today) {
           0
         );
   const scheduled = assessedDays(habit, date, date) > 0;
+  const paused = pausedOn(habit, date);
   const recorded = Object.hasOwn(counts, date);
   const values = {
     count,
@@ -374,6 +377,7 @@ export function dayResult(habit, date, today) {
     periodCount,
     periodFrom,
     scheduled,
+    ...(paused ? { paused: true } : {}),
     ...(isCheckIn(habit)
       ? { recorded, tracking: "check-in", deadline: deadlineForDate(habit, date) }
       : {})
@@ -569,6 +573,8 @@ export function createHabit(state, input, today, id) {
   if (input.emoji !== undefined) next.habits.at(-1).emoji = input.emoji;
   if (input.manualSchedule !== undefined)
     putManualSchedule(next.habits.at(-1), input.manualSchedule, input.startDate);
+  if (input.pauses !== undefined && !(Array.isArray(input.pauses) && !input.pauses.length))
+    next.habits.at(-1).pauses = input.pauses;
   return finish(next);
 }
 
@@ -671,6 +677,10 @@ export function editHabit(state, id, input, today) {
   if (input.unit !== undefined) habit.unit = input.unit.trim();
   if (input.step !== undefined) habit.step = input.step;
   if (input.zones !== undefined) habit.zones = input.zones;
+  if (input.pauses !== undefined) {
+    if (Array.isArray(input.pauses) && !input.pauses.length) delete habit.pauses;
+    else habit.pauses = input.pauses;
+  }
   if (input.manualSchedule !== undefined) {
     assert(
       !scheduleForDate(habit, input.from)?.repeatId,
@@ -761,6 +771,10 @@ export function archiveHabit(state, id, today) {
   if (habit.manualSchedules)
     habit.manualSchedules = habit.manualSchedules.filter((entry) => entry.from <= today);
   habit.endDate = today;
+  if (habit.pauses)
+    habit.pauses = habit.pauses
+      .filter((pause) => pause.from <= today)
+      .map((pause) => ({ ...pause, to: !pause.to || pause.to > today ? today : pause.to }));
   return finish(next);
 }
 
@@ -920,11 +934,13 @@ export function calendarResult(habit, date, today) {
     yellowEnabled = zones?.yellowEnabled ?? zones?.yellowMax != null,
     yellowMax = yellowEnabled ? result.limit : null;
   let zone =
-    result.kind === "rest" || (result.kind === "future" && !result.scheduled)
-      ? "rest"
-      : result.editable
-        ? "neutral"
-        : result.kind;
+    result.paused && result.kind !== "inactive"
+      ? "paused"
+      : result.kind === "rest" || (result.kind === "future" && !result.scheduled)
+        ? "rest"
+        : result.editable
+          ? "neutral"
+          : result.kind;
   if (result.editable && result.kind !== "rest" && zones?.enabled !== false) {
     zone =
       result.tracking === "check-in"
@@ -1084,6 +1100,15 @@ function indexDate(index) {
   return new Date(index * 86400000).toISOString().slice(0, 10);
 }
 export function assessedDays(habit, from, to) {
+  let total = scheduledDays(habit, from, to);
+  for (const pause of habit.pauses ?? []) {
+    const start = pause.from > from ? pause.from : from;
+    const end = pause.to && pause.to < to ? pause.to : to;
+    if (start <= end) total -= scheduledDays(habit, start, end);
+  }
+  return total;
+}
+function scheduledDays(habit, from, to) {
   if (from > to) return 0;
   let total = 0;
   const history = [{ from: habit.startDate, repeatId: null }, ...(habit.taskSchedules ?? [])];

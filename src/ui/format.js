@@ -84,6 +84,7 @@ export function countText(result) {
 }
 
 export function resultLabel(result) {
+  if (result.paused && result.kind !== "inactive") return t("Paused");
   if (result.tracking === "check-in" && result.editable)
     return countText(result) + (result.kind.startsWith("today") ? t(" · day in progress") : "");
   if (result.kind === "rest") return t("Rest day");

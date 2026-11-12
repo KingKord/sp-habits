@@ -165,6 +165,8 @@ For amount reduction, choose the first future date, a 1–366-day interval, a de
 
 ## Daily totals and old journals
 
+**Pauses and exceptions** in a manual habit's settings accepts inclusive date ranges; equal dates make a single-day exception. **Until resumed** creates an open-ended pause, and **Resume today** ends it yesterday. Add/remove/resume actions are drafts until the habit is saved. Overlapping ranges are merged. Paused dates show ⏸, remain distinct from unknown or rest days, and neither earn nor break streaks. Existing quantities and marks remain in backups and totals, including their contribution to rolling windows. Linked-task pauses belong to the host and cannot overlap a local manual pause. Archiving closes pauses on the final tracked day.
+
 Storage records a total per date; new events do not create a time/comment journal. Quick controls and the amount editor only change that total.
 
 Old journals are read unchanged. On the first amount mutation, an existing journal is moved intact to optional `legacyJournal` and remains in backups. New detail entries are not added, shown or used in calculations. Opening, exporting or changing a name/emoji alone does not rewrite a journal.

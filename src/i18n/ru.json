@@ -507,5 +507,16 @@
   "Schedule anchor": "Начало расписания",
   "Due days": "Дни выполнения",
   "Schedule changes apply from the selected rule date. Rest-day recordings are kept in totals but are not assessed.": "Изменения расписания действуют с выбранной даты правила. Записи в дни отдыха сохраняются в итогах, но не оцениваются.",
-  "Select at least one weekday.": "Выберите хотя бы один день недели."
+  "Select at least one weekday.": "Выберите хотя бы один день недели.",
+  "Invalid pause intervals. Keep pauses separate from linked task schedules.": "Некорректные интервалы пауз. Паузы не должны пересекаться с расписанием связанной задачи.",
+  "Paused": "Пауза",
+  "Add pause or exception": "Добавить паузу или исключение",
+  "Choose a pause start and an end on or after it.": "Выберите начало паузы и дату окончания не раньше начала.",
+  "Pause from": "Пауза с",
+  "Pause through": "Пауза по",
+  "Until resumed": "До возобновления",
+  "Pauses and exceptions": "Паузы и исключения",
+  "Pause dates are inclusive. Recorded values stay in totals; paused days do not earn or break streaks.": "Даты паузы включены в интервал. Записи сохраняются в итогах; дни паузы не увеличивают и не прерывают серию.",
+  "Resume today": "Возобновить сегодня",
+  "Remove pause": "Удалить паузу"
 }

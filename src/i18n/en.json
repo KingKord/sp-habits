@@ -502,5 +502,16 @@
   "Schedule anchor": "Schedule anchor",
   "Due days": "Due days",
   "Schedule changes apply from the selected rule date. Rest-day recordings are kept in totals but are not assessed.": "Schedule changes apply from the selected rule date. Rest-day recordings are kept in totals but are not assessed.",
-  "Select at least one weekday.": "Select at least one weekday."
+  "Select at least one weekday.": "Select at least one weekday.",
+  "Invalid pause intervals. Keep pauses separate from linked task schedules.": "Invalid pause intervals. Keep pauses separate from linked task schedules.",
+  "Paused": "Paused",
+  "Add pause or exception": "Add pause or exception",
+  "Choose a pause start and an end on or after it.": "Choose a pause start and an end on or after it.",
+  "Pause from": "Pause from",
+  "Pause through": "Pause through",
+  "Until resumed": "Until resumed",
+  "Pauses and exceptions": "Pauses and exceptions",
+  "Pause dates are inclusive. Recorded values stay in totals; paused days do not earn or break streaks.": "Pause dates are inclusive. Recorded values stay in totals; paused days do not earn or break streaks.",
+  "Resume today": "Resume today",
+  "Remove pause": "Remove pause"
 }

@@ -345,24 +345,26 @@ export function createDayView({
         }
         const r = D.calendarResult(habit, date, today);
         const mark =
-          r.tracking === "check-in"
-            ? r.recorded
-              ? ["success", "today-good"].includes(r.kind)
-                ? "✓"
-                : "×"
-              : "—"
-            : r.count > 0 && r.editable
-              ? new Intl.NumberFormat(getLocale(), {
-                  notation: "compact",
-                  maximumFractionDigits: 1
-                }).format(r.count)
-              : r.kind === "success"
-                ? "✓"
-                : r.kind === "failure"
-                  ? "×"
-                  : r.kind.startsWith("today")
-                    ? String(r.count)
-                    : "—";
+          r.paused && r.kind !== "inactive"
+            ? "⏸"
+            : r.tracking === "check-in"
+              ? r.recorded
+                ? ["success", "today-good"].includes(r.kind)
+                  ? "✓"
+                  : "×"
+                : "—"
+              : r.count > 0 && r.editable
+                ? new Intl.NumberFormat(getLocale(), {
+                    notation: "compact",
+                    maximumFractionDigits: 1
+                  }).format(r.count)
+                : r.kind === "success"
+                  ? "✓"
+                  : r.kind === "failure"
+                    ? "×"
+                    : r.kind.startsWith("today")
+                      ? String(r.count)
+                      : "—";
         const day = button(
           "",
           () => openCountEditor(habit, date, habit.id + "-" + date),
