@@ -581,7 +581,7 @@
   "Unmarked assessments: ": "Unmarked assessments: ",
   "Completed assessed periods for each habit": "Completed assessed periods for each habit",
   "Rates are separate for daily and weekly goals": "Rates are separate for daily and weekly goals",
-  "Unknown weeks: ": "Unknown weeks: ",
   "Unsuccessful assessed periods: ": "Unsuccessful assessed periods: ",
-  "Successful period rate: ": "Successful period rate: "
+  "Successful period rate: ": "Successful period rate: ",
+  "Daily minimum for a successful-day goal must be at least 1.": "Daily minimum for a successful-day goal must be at least 1."
 }

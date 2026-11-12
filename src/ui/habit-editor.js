@@ -195,6 +195,7 @@ export function createHabitEditor({
     for (const option of byId("unit-choice").options)
       option.disabled = !!habit && (option.value === "check-in") !== D.isCheckIn(habit);
     const week = weeklyGoal.value();
+    byId("limit").min = week?.type === "days" && !binary ? "1" : "0";
     if (week) {
       for (const id of ["period-label", "period-hint", "zone-settings"]) byId(id).hidden = true;
       byId("zones-ideal").disabled = true;
@@ -380,6 +381,12 @@ export function createHabitEditor({
         ? { enabled: true, idealMax: 1, yellowMax: null, yellowEnabled: false }
         : editorZones()
     };
+    if (input.weekGoal?.type === "days" && !checkIn() && limit < 1) {
+      byId("editor-error").textContent = t(
+        "Daily minimum for a successful-day goal must be at least 1."
+      );
+      return;
+    }
     if (
       !name ||
       !D.wholeNumber(limit) ||

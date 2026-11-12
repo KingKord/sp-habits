@@ -18,6 +18,7 @@ export function validWeeklyRule(rule) {
       Number.isSafeInteger(goal.target) &&
       goal.target >= 1 &&
       goal.target <= (goal.type === "days" ? 7 : 1000000000) &&
+      (goal.type !== "days" || rule.tracking === "check-in" || rule.value >= 1) &&
       (rule.tracking !== "check-in" || goal.type === "days"))
   );
 }

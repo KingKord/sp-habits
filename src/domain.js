@@ -1063,7 +1063,7 @@ export function calendarResult(habit, date, today) {
               ? "warning"
               : "neutral";
   }
-  if (result.weekly && result.editable && result.kind !== "rest")
+  if (result.weekly && result.tracking !== "check-in" && result.editable && result.kind !== "rest")
     zone =
       result.weekly.partial || result.weekly.unknown
         ? "neutral"

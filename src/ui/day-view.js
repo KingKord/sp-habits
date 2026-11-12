@@ -19,7 +19,8 @@ import {
   goalText,
   checkInRule,
   streakLabels,
-  countText
+  countText,
+  checkInSymbol
 } from "./format.js";
 
 export function createDayView({
@@ -228,10 +229,16 @@ export function createDayView({
       title.append(description);
       const schedule = D.scheduleForDate(habit, selected);
       description.hidden = !!schedule?.repeatId;
-      if (result.weekly)
+      if (result.weekly) {
         description.textContent = weeklyRuleDescription(D.ruleForDate(habit, selected), unit);
+        if (result.tracking === "check-in") description.textContent += " · " + checkInRule(result);
+        else if (result.weekly.type === "days")
+          description.textContent += " · " + t("Daily minimum") + ": " + result.limit + " " + unit;
+      }
       if (!schedule?.repeatId && habit.manualSchedules?.length)
         description.textContent += " · " + scheduleDescription(habit, selected);
+      if (result.weekly)
+        description.title = description.textContent + " · " + usageText(result, unit);
       if (schedule?.repeatId)
         title.append(
           node(
@@ -351,11 +358,7 @@ export function createDayView({
           r.paused && r.kind !== "inactive"
             ? "⏸"
             : r.tracking === "check-in"
-              ? r.recorded
-                ? ["success", "today-good"].includes(r.kind)
-                  ? "✓"
-                  : "×"
-                : "—"
+              ? checkInSymbol(r)
               : r.count > 0 && r.editable
                 ? new Intl.NumberFormat(getLocale(), {
                     notation: "compact",

@@ -11,6 +11,7 @@ import {
   goalText,
   checkInRule,
   countText,
+  checkInSymbol,
   resultLabel
 } from "./format.js";
 
@@ -19,6 +20,7 @@ export function calendarSymbol(day) {
   if (day.zone === "rest") return "–";
   if (day.kind === "future") return "›";
   if (day.kind === "inactive") return "·";
+  if (day.tracking === "check-in" && day.weekly) return checkInSymbol(day, "?");
   if (day.tracking === "check-in" && !day.recorded) return "?";
   return { ideal: "✦", warning: "✓", red: "×", neutral: "○" }[day.zone] ?? "·";
 }

@@ -95,10 +95,14 @@ export function countText(result) {
     : String(result.count);
 }
 
+export function checkInSymbol(result, unmarked = "—") {
+  return result.recorded ? (result.count === 1 ? "✓" : "×") : unmarked;
+}
+
 export function resultLabel(result) {
   if (result.paused && result.kind !== "inactive") return t("Paused");
-  if (result.weekly && result.editable && result.kind !== "rest")
-    return result.weekly.partial
+  if (result.weekly && result.editable && result.kind !== "rest") {
+    const label = result.weekly.partial
       ? t("Partial week · progress only")
       : !result.weekly.complete
         ? t("Week in progress")
@@ -107,6 +111,8 @@ export function resultLabel(result) {
           : result.weekly.met
             ? t("Weekly goal met")
             : t("Weekly goal not met");
+    return result.tracking === "check-in" ? countText(result) + " · " + label : label;
+  }
   if (result.tracking === "check-in" && result.editable)
     return countText(result) + (result.kind.startsWith("today") ? t(" · day in progress") : "");
   if (result.kind === "rest") return t("Rest day");
@@ -123,8 +129,13 @@ export function resultLabel(result) {
   return t(labels[result.kind]);
 }
 export function resultClass(result) {
+  if (result.tracking === "check-in")
+    return !result.editable || result.kind === "rest" || !result.recorded
+      ? "inactive"
+      : result.count === 1
+        ? "good"
+        : "bad";
   if (result.weekly && (result.weekly.partial || result.weekly.unknown)) return "inactive";
-  if (result.tracking === "check-in" && !result.recorded) return "inactive";
   if (result.zone === "warning") return "warning";
   return ["success", "today-good"].includes(result.kind)
     ? "good"

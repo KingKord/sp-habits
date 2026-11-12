@@ -553,7 +553,7 @@
   "Success rate: ": "Доля успешных результатов: ",
   "Mixed daily and weekly assessments have no combined success rate.": "Для смешанных дневных и недельных оценок общий процент не рассчитывается.",
   "Completed weeks: ": "Завершённые недели: ",
-  "Unknown weeks: ": "Недели без данных: ",
+  "Unknown weeks: ": "Недель без достаточных отметок: ",
   "Streak at range end: ": "Серия на конец периода: ",
   "Best through range end: ": "Лучшая серия до конца периода: ",
   "Linked task": "Связанная задача",
@@ -586,7 +586,7 @@
   "Unmarked assessments: ": "Оценки без отметок: ",
   "Completed assessed periods for each habit": "Завершённые оценённые периоды для каждой привычки",
   "Rates are separate for daily and weekly goals": "Показатели дневных и недельных целей рассчитываются отдельно",
-  "Unknown weeks: ": "Недель без достаточных отметок: ",
   "Unsuccessful assessed periods: ": "Неуспешных оценённых периодов: ",
-  "Successful period rate: ": "Доля успешных периодов: "
+  "Successful period rate: ": "Доля успешных периодов: ",
+  "Daily minimum for a successful-day goal must be at least 1.": "Дневной минимум для цели по успешным дням должен быть не меньше 1."
 }

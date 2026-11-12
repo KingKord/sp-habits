@@ -478,3 +478,23 @@ test("adding, removing and resuming pause drafts participate in discard protecti
   assert.equal(h.prompts.length, 2);
   assert.equal(h.writes(), 0);
 });
+
+test("the editor requires a positive minimum only for weekly quantity distinct-day goals", async () => {
+  const h = await harness();
+  await h.open();
+  h.byId("name").value = "Weekly practice";
+  h.byId("limit").value = "0";
+  h.byId("week-goal").value = "days";
+  h.byId("week-goal").listeners.get("change")();
+  assert.equal(h.byId("limit").min, "1");
+  await h.send("habit-form", "submit");
+  assert.match(h.byId("editor-error").textContent, /at least 1/);
+  assert.equal(h.writes(), 0);
+  assert.equal(h.store.snapshot().blocked, false);
+  h.byId("week-goal").value = "daily";
+  h.byId("week-goal").listeners.get("change")();
+  assert.equal(h.byId("limit").min, "0");
+  await h.send("habit-form", "submit");
+  assert.equal(h.writes(), 1);
+  assert.equal(h.data().habits[0].limits[0].value, 0);
+});
