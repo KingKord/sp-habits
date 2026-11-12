@@ -41,6 +41,7 @@ jobs:
           path: |
             dist/sp-habits.zip
             dist/sp-habits.zip.sha256
+            dist/build-budget.json
           if-no-files-found: error
           retention-days: 14
 

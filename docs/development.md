@@ -78,3 +78,9 @@ The initial host contract was checked against Super Productivity v19.3.1:
 - [Plugin Development Guide](https://github.com/super-productivity/super-productivity/blob/v19.3.1/docs/plugin-development.md)
 - [Plugin API types](https://github.com/super-productivity/super-productivity/blob/v19.3.1/packages/plugin-api/src/types.ts)
 - [Iframe bridge and API restrictions](https://github.com/super-productivity/super-productivity/blob/v19.3.1/src/app/plugins/util/plugin-iframe.util.ts)
+
+## Iframe capacity budget
+
+Each build writes ignored `dist/build-budget.json` with exact iframe bytes, headroom against the strict 102,400-byte boundary, the delta from the 94,524-byte v0.19.0 baseline, and esbuild input contributions for the application and host bundles. CI attaches the report to its build artifact and summarizes it in the job. A warning begins at 95 KiB; the existing hard limit still rejects an iframe of 100 KiB or larger. Contributor byte counts exclude bundler glue and are diagnostic rather than an alternative total.
+
+The application domain, view modules and English source catalogue contribute to iframe size. Styles, Russian translations and the emoji catalogue already travel through the verified host resource bridge. For substantial new screens, first inspect the report and keep domain calculations shared rather than duplicating them in view code. If the remaining budget is insufficient, extend the existing source/origin-checked offline bridge to supply a bundled application resource to a small iframe loader, and verify that loader on the minimum host before adoption. Arbitrary relative ZIP files and runtime CDN requests are not a portable replacement. This is an extension strategy, not a claim that a new loader has already been verified.
