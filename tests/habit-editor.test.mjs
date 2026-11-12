@@ -196,8 +196,12 @@ async function harness(existing = false) {
       await el.listeners.get("click")({ preventDefault() {} });
     },
     prompts,
-    open: async () => {
-      editor.open(existing ? store.snapshot().state.habits[0] : null);
+    open: async (habitId = existing ? "reading" : null) => {
+      editor.open(
+        habitId === null
+          ? null
+          : store.snapshot().state.habits.find((habit) => habit.id === habitId)
+      );
       await settle();
     },
     answer: (value) => {
@@ -216,6 +220,90 @@ async function harness(existing = false) {
     writes: () => writes
   };
 }
+
+async function weeklyAndLinkedFixture() {
+  const h = await harness(true);
+  await h.replace((state) => {
+    let next = D.editHabit(
+      state,
+      "reading",
+      {
+        name: "Weekly reading",
+        goal: "at-least",
+        limit: 1,
+        from: today,
+        weekGoal: { type: "quantity", target: 3, weekStart: 0 }
+      },
+      today
+    );
+    next = D.createHabit(
+      next,
+      { name: "Linked practice", goal: "at-least", limit: 1, startDate: today, initialCount: 0 },
+      today,
+      "linked"
+    );
+    return D.setTaskSchedule(
+      next,
+      "linked",
+      {
+        repeatId: "series",
+        title: "Linked practice",
+        anchor: today,
+        every: 1,
+        time: null,
+        until: null,
+        paused: false
+      },
+      today
+    );
+  });
+  return h;
+}
+
+test("opening a linked habit before a weekly habit cannot erase its weekly goal on rename", async () => {
+  const h = await weeklyAndLinkedFixture();
+  const expected = structuredClone(h.data().habits.find((habit) => habit.id === "reading").limits);
+  await h.open("linked");
+  assert.equal(h.byId("task-series").value, "series");
+  await h.send("close-editor", "click");
+  await h.open("reading");
+  assert.equal(h.byId("task-series").value, "");
+  assert.equal(h.byId("week-goal").value, "quantity");
+  assert.equal(h.byId("week-target").value, "3");
+  h.byId("name").value = "Renamed weekly reading";
+  await h.send("habit-form", "submit");
+  assert.equal(h.byId("editor").open, false);
+  const saved = h.data().habits.find((habit) => habit.id === "reading");
+  assert.equal(saved.name, "Renamed weekly reading");
+  assert.deepEqual(saved.limits, expected);
+});
+
+test("weekly editor state does not leak into linked edits or the next default habit", async () => {
+  const h = await weeklyAndLinkedFixture();
+  const expected = structuredClone(h.data().habits.find((habit) => habit.id === "linked"));
+  await h.open("reading");
+  assert.equal(h.byId("week-goal").value, "quantity");
+  await h.send("close-editor", "click");
+  await h.open("linked");
+  assert.equal(h.byId("task-series").value, "series");
+  assert.equal(h.byId("week-goal").value, "daily");
+  h.byId("name").value = "Renamed linked practice";
+  await h.send("habit-form", "submit");
+  const linked = h.data().habits.find((habit) => habit.id === "linked");
+  assert.deepEqual(linked.taskSchedules, expected.taskSchedules);
+  assert.deepEqual(linked.limits, expected.limits);
+  assert.equal(linked.name, "Renamed linked practice");
+  await h.open(null);
+  assert.equal(h.byId("task-series").value, "");
+  assert.equal(h.byId("week-goal").value, "daily");
+  assert.equal(h.byId("unit-choice").value, "times");
+  h.byId("name").value = "New default habit";
+  await h.send("habit-form", "submit");
+  const created = h.data().habits.find((habit) => habit.id === "new-habit");
+  assert.ok(created);
+  assert.equal(created.limits[0].weekGoal, undefined);
+  assert.equal(created.taskSchedules, undefined);
+});
 
 test("habit dismissal protects dirty values for close, Escape and backdrop while unchanged forms close freely", async () => {
   for (const route of ["button", "escape", "backdrop"]) {
