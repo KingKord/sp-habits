@@ -6,6 +6,7 @@ import { createScope } from "./ui/scope.js";
 import { createDOM } from "./ui/dom.js";
 import { createHabitEditor } from "./ui/habit-editor.js";
 import { createCountEditor } from "./ui/count-editor.js";
+import { createHabitDetails } from "./ui/habit-details.js";
 import { createNoteEditor } from "./ui/note-editor.js";
 import { createPlanEditor } from "./ui/plan-editor.js";
 import { createDayView } from "./ui/day-view.js";
@@ -77,6 +78,7 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
     systemEmoji: exportClient.systemEmoji,
     loadSchedules: async () => (await taskRequest({ action: "list" })).schedules
   });
+  const details = createHabitDetails({ dom, store, now });
   const note = createNoteEditor({ dom, store, now, commit, confirm });
   const count = createCountEditor({ dom, store, now, commit, openNoteEditor: note.open });
   const plan = createPlanEditor({ dom, store, now, commit });
@@ -91,7 +93,8 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
     openCountEditor: count.open,
     confirm,
     newId: () => window.crypto.randomUUID(),
-    openNoteEditor: note.open
+    openNoteEditor: note.open,
+    openDetails: details.open
   });
   const calendar = createCalendarView({
     dom,
@@ -136,6 +139,7 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
   function render() {
     if (scope.disposed) return;
     const snapshot = store.snapshot();
+    details.render();
     byId("error").hidden = !snapshot.error;
     byId("error-text").textContent = snapshot.error;
     byId("raw").hidden = typeof snapshot.raw !== "string";

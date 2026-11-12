@@ -33,7 +33,8 @@ export function createDayView({
   openCountEditor,
   confirm,
   newId,
-  openNoteEditor
+  openNoteEditor,
+  openDetails
 }) {
   const { byId, node, button, fragment, on, activeElement, restoreFocus } = dom;
   const organization = createOrganizationControls({ dom, commit, render, confirm, newId });
@@ -393,7 +394,15 @@ export function createDayView({
         day.dataset.focusKey = habit.id + "-" + date;
         week.append(day);
       }
-      top.append(counter, note);
+      const details = button(
+        t("Details"),
+        () => openDetails(habit, selected),
+        t("Habit details: ") + habit.name,
+        "quiet habit-details-action"
+      );
+      details.disabled = locked || s.pending > 0;
+      details.dataset.focusKey = habit.id + "-details";
+      top.append(counter, note, details);
       const history = node("div", undefined, "habit-history");
       const progress =
         streak.unit === "weeks"

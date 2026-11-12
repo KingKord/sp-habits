@@ -1497,3 +1497,63 @@ form textarea {
   margin: 20px 0 4px;
   overflow-wrap: anywhere;
 }
+
+#habit-details {
+  width: min(960px, calc(100vw - 24px));
+}
+.detail-range,
+.detail-pager {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.detail-range label {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+.detail-pager {
+  align-items: center;
+  justify-content: space-between;
+}
+.detail-pager span {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.detail-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.detail-table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12px;
+}
+.detail-table th,
+.detail-table td {
+  vertical-align: top;
+  padding: 8px;
+  border-bottom: 1px solid var(--hl-line);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.detail-table tbody th {
+  font-weight: 500;
+  min-width: 110px;
+}
+.detail-table small {
+  display: block;
+  color: var(--hl-muted);
+}
+.detail-table td {
+  max-width: 240px;
+}
+.detail-quantity-bar {
+  display: block;
+  height: 4px;
+  background: var(--hl-accent);
+  margin-top: 6px;
+}

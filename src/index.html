@@ -570,6 +570,72 @@
         </div>
       </form>
     </dialog>
+    <dialog id="habit-details" aria-labelledby="details-title">
+      <div class="dialog-top">
+        <h2 id="details-title">Habit details</h2>
+        <button id="close-details" type="button" class="quiet" aria-label="Close habit details">
+          ×
+        </button>
+      </div>
+      <form id="details-range" class="detail-range">
+        <label>From<input id="details-from" type="date" min="1900-01-01" required /></label>
+        <label>To<input id="details-to" type="date" min="1900-01-01" required /></label>
+        <button type="submit">Show</button>
+      </form>
+      <p id="details-range-caption" class="hint" aria-live="polite"></p>
+      <p id="details-error" class="form-error" role="alert"></p>
+      <div id="details-summary" class="hint" aria-live="polite"></div>
+      <p class="hint">
+        Daily amounts and goal-period assessments are separate. Unknown check-ins stay unmarked.
+        Today is provisional and excluded from final rates and streaks.
+      </p>
+      <h3>Daily history</h3>
+      <p class="hint">
+        Bars compare daily quantities on the current page. Values and outcomes are also shown as
+        text. Newest dates appear first.
+      </p>
+      <div class="detail-pager">
+        <button id="details-newer" type="button">Newer dates</button
+        ><span id="details-page" role="status"></span
+        ><button id="details-older" type="button">Older dates</button>
+      </div>
+      <div class="detail-table-scroll" tabindex="0" role="region" aria-label="Daily habit history">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Daily amount or check-in</th>
+              <th scope="col">Outcome</th>
+              <th scope="col">Goal-period usage</th>
+              <th scope="col">Daily note</th>
+            </tr>
+          </thead>
+          <tbody id="details-rows"></tbody>
+        </table>
+      </div>
+      <h3>Dated rules</h3>
+      <p class="hint">
+        Rules overlapping the selected range are shown with their original effective dates. Earlier
+        outcomes use the rule that applied on that day.
+      </p>
+      <div class="detail-pager">
+        <button id="details-rules-newer" type="button">Newer rules</button
+        ><span id="details-rule-page" role="status"></span
+        ><button id="details-rules-older" type="button">Older rules</button>
+      </div>
+      <div class="detail-table-scroll" tabindex="0" role="region" aria-label="Dated habit rules">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th scope="col">From</th>
+              <th scope="col">To</th>
+              <th scope="col">Goal or condition</th>
+            </tr>
+          </thead>
+          <tbody id="details-rule-rows"></tbody>
+        </table>
+      </div>
+    </dialog>
     <dialog id="info" aria-labelledby="info-title">
       <div class="dialog-top">
         <h2 id="info-title">How it works</h2>

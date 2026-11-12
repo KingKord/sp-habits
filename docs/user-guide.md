@@ -185,6 +185,12 @@ Each habit shows its total in its own unit, successful completed days out of tra
 
 The overall percentage weights habit-days, rather than averaging habit percentages: two habits on one date contribute two assessments. No completed tracking days yields “—”, not a fabricated zero or 100%. Statistics are read-only and operate on rule segments and recorded intervals instead of visiting every date. Rolling assessments can need records before the requested range; amount totals include only dates inside it.
 
+## Habit details
+
+Select **Details** on a Day card to inspect one habit without changing its settings. The view starts with up to 30 days ending on the selected Day date (or the habit's archive boundary). Choose an inclusive From/To range ending no later than today. Daily history and overlapping dated rules are separately paginated, with at most 31 rows per page and newest dates first.
+
+The read-only table separates daily quantities/check-ins, the outcome assessed using that date's rule, goal-period usage and daily notes. Quantity bars compare only the dates on the current page; the same values remain available as text. Unknown marks, rest days, linked-task results and provisional today use the same rules as the other views. Range quantity may include today; success rates and streaks exclude it. Streak and best values are evaluated through the selected range end, with their history before the range retained. Rule dates show their original boundaries, including the rule already active when the range starts. Changing ranges or pages does not write history.
+
 ## Storage and limitations
 
 Data is stored through the plugin's own synced API storage. Built-in habits are not modified, and task links use the official read APIs. Optional episode reviews create tasks through PluginAPI.addTask. There are no runtime HTTP/CDN requests, separate accounts, Node execution or server hosting.
