@@ -3,6 +3,8 @@ import { validateOrganization, removeHabitOrganization } from "./organization.js
 import { canonicalUnit } from "./i18n/units.js";
 import { MAX_STORAGE_CHARACTERS, MAX_BACKUP_BYTES } from "./data-limits.js";
 import { validateNotes, updatedNotes } from "./notes.js";
+import { validateManualSchedules, manualAssessedDays, putManualSchedule } from "./scheduling.js";
+export { manualScheduleForDate } from "./scheduling.js";
 export const MAX_VALUE = 1000000000;
 const VISIBILITY_ERROR = "Invalid habit visibility.";
 
@@ -185,6 +187,7 @@ export function validateState(state) {
       habit.endDate === null || (validDate(habit.endDate) && habit.endDate >= habit.startDate),
       t("Invalid archive date.")
     );
+    validateManualSchedules(habit, validDate);
     assert(
       Array.isArray(habit.limits) && habit.limits.length > 0 && habit.limits.length <= 10000,
       t("Limit history is missing.")
@@ -564,6 +567,8 @@ export function createHabit(state, input, today, id) {
   if (input.reflectionTask !== undefined) next.habits.at(-1).reflectionTask = input.reflectionTask;
   if (input.zones !== undefined) next.habits.at(-1).zones = input.zones;
   if (input.emoji !== undefined) next.habits.at(-1).emoji = input.emoji;
+  if (input.manualSchedule !== undefined)
+    putManualSchedule(next.habits.at(-1), input.manualSchedule, input.startDate);
   return finish(next);
 }
 
@@ -666,6 +671,13 @@ export function editHabit(state, id, input, today) {
   if (input.unit !== undefined) habit.unit = input.unit.trim();
   if (input.step !== undefined) habit.step = input.step;
   if (input.zones !== undefined) habit.zones = input.zones;
+  if (input.manualSchedule !== undefined) {
+    assert(
+      !scheduleForDate(habit, input.from)?.repeatId,
+      t("Set the schedule in the linked task.")
+    );
+    putManualSchedule(habit, input.manualSchedule, input.from);
+  }
   const existingRule = ruleForDate(habit, input.from) ?? habit.limits[0];
   assert(
     input.tracking === undefined || ["quantity", "check-in"].includes(input.tracking),
@@ -746,6 +758,8 @@ export function archiveHabit(state, id, today) {
     t("You cannot archive before the recorded history.")
   );
   habit.limits = habit.limits.filter((l) => l.from <= today);
+  if (habit.manualSchedules)
+    habit.manualSchedules = habit.manualSchedules.filter((entry) => entry.from <= today);
   habit.endDate = today;
   return finish(next);
 }
@@ -1082,7 +1096,7 @@ export function assessedDays(habit, from, to) {
     );
     if (lo > hi) continue;
     if (!schedule.repeatId) {
-      total += hi - lo + 1;
+      total += manualAssessedDays(habit, indexDate(lo), indexDate(hi));
       continue;
     }
     if (schedule.paused) continue;

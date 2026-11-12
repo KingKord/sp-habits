@@ -4,6 +4,7 @@ import { orderedHabits, groupedHabits, moveHabit } from "../organization.js";
 import { getLocale } from "../i18n/index.js";
 import { unitText } from "./units.js";
 import { completionControls } from "./completion-controls.js";
+import { scheduleDescription } from "./schedule-fields.js";
 import { progressPanel, recordText } from "./progress-view.js";
 import { noteForDate } from "../notes.js";
 import * as D from "../domain.js";
@@ -225,6 +226,8 @@ export function createDayView({
       title.append(description);
       const schedule = D.scheduleForDate(habit, selected);
       description.hidden = !!schedule?.repeatId;
+      if (!schedule?.repeatId && habit.manualSchedules?.length)
+        description.textContent += " · " + scheduleDescription(habit, selected);
       if (schedule?.repeatId)
         title.append(
           node(

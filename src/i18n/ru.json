@@ -494,5 +494,18 @@
   "Close note editor": "Закрыть редактор заметки",
   "Note": "Заметка",
   "Up to 500 characters. Leave empty to remove the note. Notes do not change quantities or results.": "До 500 символов. Оставьте поле пустым, чтобы удалить заметку. Заметки не меняют количество или результат.",
-  "Remove note": "Удалить заметку"
+  "Remove note": "Удалить заметку",
+  "Invalid manual schedule history.": "Некорректная история расписания привычки.",
+  "Set the schedule in the linked task.": "Настройте расписание в связанной задаче.",
+  "Daily": "Ежедневно",
+  "Every ": "Каждые ",
+  " days from ": " дн. начиная с ",
+  "Selected weekdays": "Выбранные дни недели",
+  "Every N days": "Каждые N дней",
+  "Scheduled weekdays": "Дни по расписанию",
+  "Interval in days": "Интервал в днях",
+  "Schedule anchor": "Начало расписания",
+  "Due days": "Дни выполнения",
+  "Schedule changes apply from the selected rule date. Rest-day recordings are kept in totals but are not assessed.": "Изменения расписания действуют с выбранной даты правила. Записи в дни отдыха сохраняются в итогах, но не оцениваются.",
+  "Select at least one weekday.": "Выберите хотя бы один день недели."
 }

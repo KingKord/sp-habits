@@ -90,6 +90,8 @@ Statistics keep different units separate. Standard aliases are combined for disp
 
 ## Daily check-ins and optional time conditions
 
+Manual habits can use **Due days → Daily**, **Selected weekdays**, or **Every N days** with a saved schedule anchor. Changes use the selected rule effective date; earlier schedules remain in history. Days before an interval anchor are rest days. Rest days neither earn nor break streaks and are excluded from completion denominators. You can correct or record a rest-day amount/mark: it is preserved in totals but is not assessed. A linked task owns its schedule instead of these manual fields.
+
 Choose **Done / missed** in **Tracking**. Good habits use **Mark done** and **Missed**; bad habits use **No slip** and **Slipped**. The buttons describe whether the goal was met. A slip is not rewarded as a completion. Repeating the selected action clears it back to **Not marked**, and selecting the other outcome replaces it. Past days can be corrected from the history or calendar; future days cannot be marked.
 
 A check-in has no quantity, step, rolling period or yellow zone. Without a mark, the day stays neutral and unknown, earns no success, and interrupts the confirmed streak. Explicit success is green and failure is red. Today is provisional. Check-in totals count successful marks; their completion percentages exclude unmarked completed days, which are shown separately. The successful-day fraction retains all scheduled completed days as its denominator, making missing confirmations visible.

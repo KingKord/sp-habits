@@ -1,5 +1,6 @@
 import { t } from "../i18n/index.js";
 import { unitText } from "./units.js";
+import { scheduleDescription } from "./schedule-fields.js";
 import * as D from "../domain.js";
 import {
   dateText,
@@ -172,6 +173,8 @@ export function createCalendarView({
     plan.disabled = settings.disabled || habit.endDate !== null;
     plan.hidden = reference.goal === "at-least" || reference.tracking === "check-in";
     actions.append(plan);
+    if (!D.scheduleForDate(habit, today)?.repeatId && habit.manualSchedules?.length)
+      description.append(node("small", scheduleDescription(habit, habit.endDate || today)));
     row.append(description, actions);
     return row;
   }

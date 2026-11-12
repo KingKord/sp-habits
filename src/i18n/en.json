@@ -489,5 +489,18 @@
   "Close note editor": "Close note editor",
   "Note": "Note",
   "Up to 500 characters. Leave empty to remove the note. Notes do not change quantities or results.": "Up to 500 characters. Leave empty to remove the note. Notes do not change quantities or results.",
-  "Remove note": "Remove note"
+  "Remove note": "Remove note",
+  "Invalid manual schedule history.": "Invalid manual schedule history.",
+  "Set the schedule in the linked task.": "Set the schedule in the linked task.",
+  "Daily": "Daily",
+  "Every ": "Every ",
+  " days from ": " days from ",
+  "Selected weekdays": "Selected weekdays",
+  "Every N days": "Every N days",
+  "Scheduled weekdays": "Scheduled weekdays",
+  "Interval in days": "Interval in days",
+  "Schedule anchor": "Schedule anchor",
+  "Due days": "Due days",
+  "Schedule changes apply from the selected rule date. Rest-day recordings are kept in totals but are not assessed.": "Schedule changes apply from the selected rule date. Rest-day recordings are kept in totals but are not assessed.",
+  "Select at least one weekday.": "Select at least one weekday."
 }

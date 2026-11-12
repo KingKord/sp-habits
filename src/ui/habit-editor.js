@@ -5,6 +5,7 @@ import { createEmojiPicker } from "./emoji-picker.js";
 import { closeOnBackdrop, dismissKeyboardOnReturn } from "./dialog.js";
 import { unitChoice, selectedUnit } from "./units.js";
 import { settingsVersion, assertSettingsVersion, EditConflictError } from "../edit-session.js";
+import { createScheduleFields } from "./schedule-fields.js";
 
 export function createHabitEditor({
   dom,
@@ -28,6 +29,7 @@ export function createHabitEditor({
     openedVersion = null,
     initialForm = "";
   const { byId, on, activeElement } = dom;
+  const manualSchedule = createScheduleFields(dom);
   const checkIn = () => byId("unit-choice").value === "check-in";
   const formValues = () =>
     JSON.stringify(
@@ -39,6 +41,7 @@ export function createHabitEditor({
   dismissKeyboardOnReturn(dom, "habit-form");
   function updateTaskFields() {
     const linked = !!byId("task-series").value;
+    manualSchedule.update(linked);
     for (const id of ["goal", "limit", "period-days", "unit-choice", "step"])
       byId(id).disabled = linked || (checkIn() && ["limit", "period-days", "step"].includes(id));
     byId("task-series-hint").textContent = linked
@@ -205,6 +208,7 @@ export function createHabitEditor({
     lastFocusKey = lastFocus?.dataset.focusKey;
     const today = now(),
       from = habit ? habit.endDate || today : today;
+    manualSchedule.open(habit, from);
     byId("editor-title").textContent = habit ? t("Habit settings") : t("New habit");
     byId("name").value = habit ? habit.name : "";
     setEmoji(habit?.emoji ?? "");
@@ -320,6 +324,7 @@ export function createHabitEditor({
   on("habit-form", "submit", async (event) => {
     event.preventDefault();
     if (saving || store.snapshot().pending || store.snapshot().blocked) return;
+    if (!manualSchedule.checkValidity()) return;
     if (!byId("habit-form").reportValidity()) return;
     const name = byId("name").value.trim(),
       limit = checkIn() ? 1 : Number(byId("limit").value),
@@ -336,6 +341,7 @@ export function createHabitEditor({
       limit,
       from,
       startDate: from,
+      manualSchedule: manualSchedule.value(),
       initialCount: checkIn() ? 0 : Number(byId("initial").value),
       unit: checkIn()
         ? "times"
