@@ -456,5 +456,11 @@
   "Unmarked check-ins are excluded from the rate. Quantity days use recorded totals, with missing totals counted as zero. Today is excluded.": "Дни без отметки не входят в процент. Количественные привычки оцениваются по записанным итогам; отсутствие записи считается нулём. Сегодняшний день не учитывается.",
   "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction uses the same assessed-day denominator as the rate.": "Итоги отметок считают успешные дни. Дни без отметки остаются неизвестными и не входят в процент выполнения. Доля успешных дней использует то же количество оценённых дней, что и процент.",
   "This habit changed while the form was open. Your input is kept. Reopen the form to review the latest data before saving.": "Привычка изменилась, пока форма была открыта. Введённые данные сохранены в форме. Откройте форму заново, чтобы проверить актуальные данные перед сохранением.",
-  "Discard unsaved habit changes? Choose Cancel to keep editing.": "Отменить несохранённые изменения привычки? Нажмите «Отмена», чтобы продолжить редактирование."
+  "Discard unsaved habit changes? Choose Cancel to keep editing.": "Отменить несохранённые изменения привычки? Нажмите «Отмена», чтобы продолжить редактирование.",
+  "Invalid habit order.": "Некорректный порядок привычек.",
+  "Choose two different habits to reorder.": "Выберите две разные привычки для изменения порядка.",
+  "Move up": "Выше",
+  "Move down": "Ниже",
+  "Arrange": "Упорядочить",
+  "Moves swap adjacent habits in this filtered list. Hidden and archived habits keep their place. New habits appear at the end.": "Перемещение меняет местами соседние привычки в выбранном списке. Скрытые и архивные привычки сохраняют место. Новые привычки появляются в конце."
 }

@@ -48,6 +48,8 @@ Above 700 px, the habit details and history use two columns with one shared date
 
 **Calendar** uses the full available width. At 900 px and below, the month becomes a compact date grid with up to four status dots and a count of remaining habits. Select a date to see full habit names and amounts below the month. Future dates can be inspected but their amounts cannot be edited. An empty filter keeps the grid and shows an explanation. On month changes, the selected Day date is preferred if it belongs to that month, then today, then the first of the month.
 
+Use **Arrange** in Day to reveal keyboard-accessible **Move up / Move down** controls. A move swaps adjacent habits in the selected Active, Hidden or Archived list; habits outside that filter retain their positions. The saved order survives hiding, archiving and backups. New habits appear after existing habits, and old backups retain their original array order without being rewritten on read.
+
 The calendar's **Compact view** switch shows only each habit's status mark and emoji (habits without an emoji keep their name); the choice is remembered.
 
 **Statistics** uses a full-width table on larger screens and labelled habit cards at 700 px and below. The same data and table semantics serve both layouts. Summary metrics stack vertically on small screens.

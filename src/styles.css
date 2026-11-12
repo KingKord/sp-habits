@@ -1448,3 +1448,18 @@ form textarea {
     min-height: 44px;
   }
 }
+
+.habit-order {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 8px 0;
+}
+.habit-order button {
+  min-height: 32px;
+}
+@media (max-width: 700px) {
+  .habit-order button {
+    min-height: 44px;
+  }
+}

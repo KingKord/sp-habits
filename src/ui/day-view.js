@@ -1,4 +1,5 @@
 import { t } from "../i18n/index.js";
+import { orderedHabits, moveHabit } from "../organization.js";
 import { getLocale } from "../i18n/index.js";
 import { unitText } from "./units.js";
 import { completionControls } from "./completion-controls.js";
@@ -31,7 +32,8 @@ export function createDayView({
   const filters = ["active", "hidden", "archived"];
   let selected = "",
     lastToday = "",
-    filter = "active";
+    filter = "active",
+    arranging = false;
   function weekHeadings(className = "week") {
     const days = node("div", undefined, className);
     days.setAttribute("aria-hidden", "true");
@@ -59,6 +61,9 @@ export function createDayView({
   }
   function renderDay(s, today) {
     const locked = s.blocked || s.busyRead || !s.state;
+    byId("arrange").disabled = locked || s.pending > 0 || !s.state?.habits.length;
+    byId("arrange").setAttribute("aria-pressed", String(arranging));
+    byId("arrange-hint").hidden = !arranging;
     for (const key of filters) byId(key).setAttribute("aria-pressed", String(filter === key));
     if (!s.state) {
       byId("cards").replaceChildren();
@@ -75,7 +80,7 @@ export function createDayView({
     byId("today").disabled = selected === today;
     byId("zone").textContent =
       t("Time zone: ") + state.timeZone + t(" · Day: 00:00–24:00 · Stored in Super Productivity");
-    const visible = state.habits.filter((h) => D.habitMatchesFilter(h, filter));
+    const visible = orderedHabits(state).filter((h) => D.habitMatchesFilter(h, filter));
     const hiddenCount = state.habits.filter((h) => D.habitMatchesFilter(h, "hidden")).length;
     byId("hidden").textContent = t("Hidden") + (hiddenCount ? " (" + hiddenCount + ")" : "");
     const tracked = visible
@@ -159,6 +164,27 @@ export function createDayView({
         heading.append(visibility);
       }
       title.append(heading, node("p", resultLabel(result), "sr-only"));
+      if (arranging) {
+        const controls = node("div", undefined, "habit-order");
+        const position = visible.indexOf(habit);
+        for (const [offset, label, suffix] of [
+          [-1, t("Move up"), "up"],
+          [1, t("Move down"), "down"]
+        ]) {
+          const neighbor = visible[position + offset];
+          const move = button(
+            label,
+            () => {
+              void commit((latest) => moveHabit(latest, habit.id, neighbor.id));
+            },
+            label + ": " + habit.name
+          );
+          move.disabled = edit.disabled || !neighbor;
+          move.dataset.focusKey = habit.id + "-move-" + suffix;
+          controls.append(move);
+        }
+        title.append(controls);
+      }
       const rule =
         result.tracking === "check-in"
           ? checkInRule(result)
@@ -340,6 +366,10 @@ export function createDayView({
     byId("cards").replaceChildren(content);
     restoreFocus(focusKey);
   }
+  on("arrange", "click", () => {
+    arranging = !arranging;
+    render();
+  });
   on("date", "change", (event) => {
     if (event.target.checkValidity()) go(event.target.value);
     else render();

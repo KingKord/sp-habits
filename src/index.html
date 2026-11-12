@@ -40,8 +40,13 @@
           <button id="active" aria-pressed="true">Active</button
           ><button id="hidden" aria-pressed="false">Hidden</button
           ><button id="archived" aria-pressed="false">Archived</button
+          ><button id="arrange" aria-pressed="false">Arrange</button
           ><span id="save-status" role="status" aria-live="polite">Loading…</span>
         </div>
+        <p id="arrange-hint" class="hint" hidden>
+          Moves swap adjacent habits in this filtered list. Hidden and archived habits keep their
+          place. New habits appear at the end.
+        </p>
         <section id="cards" class="cards" aria-label="Habits"></section>
         <p class="hint">
           Streaks count completed days; ✦ counts ideal days within the streak. Your best streak and

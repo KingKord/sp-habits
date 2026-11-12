@@ -1,4 +1,5 @@
 import { t } from "./i18n/index.js";
+import { validateOrganization, removeHabitOrganization } from "./organization.js";
 import { canonicalUnit } from "./i18n/units.js";
 import { MAX_STORAGE_CHARACTERS, MAX_BACKUP_BYTES } from "./data-limits.js";
 export const MAX_VALUE = 1000000000;
@@ -134,6 +135,7 @@ export function validateState(state) {
     Array.isArray(state.habits) && state.habits.length <= 500,
     t("Invalid habit list (maximum 500).")
   );
+  validateOrganization(state);
   const ids = new Set();
   for (const habit of state.habits) {
     assert(
@@ -720,6 +722,7 @@ export function deleteHabit(state, id) {
   const next = copy(state);
   find(next, id);
   next.habits = next.habits.filter((h) => h.id !== id);
+  removeHabitOrganization(next, id);
   return finish(next);
 }
 
