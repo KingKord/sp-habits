@@ -48,7 +48,9 @@ Above 700 px, the habit details and history use two columns with one shared date
 
 **Calendar** uses the full available width. At 900 px and below, the month becomes a compact date grid with up to four status dots and a count of remaining habits. Select a date to see full habit names and amounts below the month. Future dates can be inspected but their amounts cannot be edited. An empty filter keeps the grid and shows an explanation. On month changes, the selected Day date is preferred if it belongs to that month, then today, then the first of the month.
 
-Use **Arrange** in Day to reveal keyboard-accessible **Move up / Move down** controls. A move swaps adjacent habits in the selected Active, Hidden or Archived list; habits outside that filter retain their positions. The saved order survives hiding, archiving and backups. New habits appear after existing habits, and old backups retain their original array order without being rewritten on read.
+Use **Arrange** in Day to reveal keyboard-accessible **Move up / Move down** controls. A move swaps adjacent habits within one group in the selected Active, Hidden or Archived list; habits outside that filter retain their positions. The saved order survives hiding, archiving and backups. New habits appear after existing habits in Ungrouped, and old backups retain their original array order without being rewritten on read.
+
+**Arrange** also manages optional single-level groups. Add or rename a group with a name of 1–80 characters, and use the group row’s Move buttons to change group order. Each habit’s Group selector moves it to a group or Ungrouped. Within a group, habits retain their manual relative order. Removing a group leaves its habits and history in Ungrouped. Hidden and archived habits retain membership; empty groups can be managed in Arrange even when the selected list has no members. Group changes affect Day organization only and do not change counts, rules or statistics.
 
 The calendar's **Compact view** switch shows only each habit's status mark and emoji (habits without an emoji keep their name); the choice is remembered.
 

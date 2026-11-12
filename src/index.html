@@ -44,9 +44,14 @@
           ><span id="save-status" role="status" aria-live="polite">Loading…</span>
         </div>
         <p id="arrange-hint" class="hint" hidden>
-          Moves swap adjacent habits in this filtered list. Hidden and archived habits keep their
-          place. New habits appear at the end.
+          Moves swap adjacent habits within each group in this filtered list. Hidden and archived
+          habits keep their place. New habits appear at the end of Ungrouped.
         </p>
+        <section id="organization" aria-label="Habit groups" hidden>
+          <h2>Groups</h2>
+          <div id="group-manager"></div>
+          <p id="group-error" class="form-error" role="alert"></p>
+        </section>
         <section id="cards" class="cards" aria-label="Habits"></section>
         <p class="hint">
           Streaks count completed days; ✦ counts ideal days within the streak. Your best streak and

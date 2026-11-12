@@ -86,7 +86,9 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
     render,
     flash,
     openEditor: editor.open,
-    openCountEditor: count.open
+    openCountEditor: count.open,
+    confirm,
+    newId: () => window.crypto.randomUUID()
   });
   const calendar = createCalendarView({
     dom,

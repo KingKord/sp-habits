@@ -1,5 +1,6 @@
 import { t } from "../i18n/index.js";
-import { orderedHabits, moveHabit } from "../organization.js";
+import { createOrganizationControls } from "./organization-controls.js";
+import { orderedHabits, groupedHabits, moveHabit } from "../organization.js";
 import { getLocale } from "../i18n/index.js";
 import { unitText } from "./units.js";
 import { completionControls } from "./completion-controls.js";
@@ -26,9 +27,12 @@ export function createDayView({
   render,
   flash,
   openEditor,
-  openCountEditor
+  openCountEditor,
+  confirm,
+  newId
 }) {
   const { byId, node, button, fragment, on, activeElement, restoreFocus } = dom;
+  const organization = createOrganizationControls({ dom, commit, render, confirm, newId });
   const filters = ["active", "hidden", "archived"];
   let selected = "",
     lastToday = "",
@@ -61,7 +65,7 @@ export function createDayView({
   }
   function renderDay(s, today) {
     const locked = s.blocked || s.busyRead || !s.state;
-    byId("arrange").disabled = locked || s.pending > 0 || !s.state?.habits.length;
+    byId("arrange").disabled = locked || s.pending > 0;
     byId("arrange").setAttribute("aria-pressed", String(arranging));
     byId("arrange-hint").hidden = !arranging;
     for (const key of filters) byId(key).setAttribute("aria-pressed", String(filter === key));
@@ -80,7 +84,10 @@ export function createDayView({
     byId("today").disabled = selected === today;
     byId("zone").textContent =
       t("Time zone: ") + state.timeZone + t(" · Day: 00:00–24:00 · Stored in Super Productivity");
-    const visible = orderedHabits(state).filter((h) => D.habitMatchesFilter(h, filter));
+    const visible = groupedHabits(
+      state,
+      orderedHabits(state).filter((h) => D.habitMatchesFilter(h, filter))
+    );
     const hiddenCount = state.habits.filter((h) => D.habitMatchesFilter(h, "hidden")).length;
     byId("hidden").textContent = t("Hidden") + (hiddenCount ? " (" + hiddenCount + ")" : "");
     const tracked = visible
@@ -92,6 +99,7 @@ export function createDayView({
         ? t("Goals met so far: ") + good + t(" of ") + tracked.length
         : t("Successful: ") + good + t(" of ") + tracked.length;
     const focusKey = activeElement()?.dataset.focusKey;
+    organization.management(state, locked || s.pending > 0, arranging);
     const content = fragment();
     if (!visible.length) {
       const el = node("div", undefined, "empty");
@@ -126,7 +134,18 @@ export function createDayView({
       header.append(weekHeadings());
       content.append(header);
     }
+    let lastGroup = null;
     for (const habit of visible) {
+      if (state.groups?.length && lastGroup !== (habit.groupId ?? "")) {
+        content.append(
+          node(
+            "h2",
+            state.groups.find((group) => group.id === habit.groupId)?.name ?? t("Ungrouped"),
+            "habit-group-title"
+          )
+        );
+        lastGroup = habit.groupId ?? "";
+      }
       const result = D.calendarResult(habit, selected, today);
       const unit = unitText(D.unitOf(habit)),
         increment = D.stepOf(habit);
@@ -166,12 +185,13 @@ export function createDayView({
       title.append(heading, node("p", resultLabel(result), "sr-only"));
       if (arranging) {
         const controls = node("div", undefined, "habit-order");
-        const position = visible.indexOf(habit);
+        const peers = visible.filter((entry) => entry.groupId === habit.groupId);
+        const position = peers.indexOf(habit);
         for (const [offset, label, suffix] of [
           [-1, t("Move up"), "up"],
           [1, t("Move down"), "down"]
         ]) {
-          const neighbor = visible[position + offset];
+          const neighbor = peers[position + offset];
           const move = button(
             label,
             () => {
@@ -183,6 +203,7 @@ export function createDayView({
           move.dataset.focusKey = habit.id + "-move-" + suffix;
           controls.append(move);
         }
+        controls.append(organization.membership(habit, state, edit.disabled));
         title.append(controls);
       }
       const rule =
