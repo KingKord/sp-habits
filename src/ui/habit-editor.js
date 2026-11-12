@@ -34,12 +34,14 @@ export function createHabitEditor({
   const pauses = createPauseFields(dom);
   const checkIn = () => byId("unit-choice").value === "check-in";
   const formValues = () =>
-    JSON.stringify(
+    JSON.stringify([
       [...byId("habit-form").querySelectorAll("input, select")].map((field) => [
         field.id,
         field.type === "checkbox" ? field.checked : field.value
-      ])
-    );
+      ]),
+      manualSchedule.value(),
+      pauses.value()
+    ]);
   dismissKeyboardOnReturn(dom, "habit-form");
   function updateTaskFields() {
     const linked = !!byId("task-series").value;

@@ -26,12 +26,30 @@ async function harness(existing = false) {
     answer = false,
     failWrites = false;
   const prompts = [],
+    created = [],
     elements = new Map(),
     handlers = new Map();
   function element(id = "") {
-    let value = "";
+    let value = "",
+      elementId = id;
     return {
-      id,
+      get id() {
+        return elementId;
+      },
+      set id(input) {
+        elementId = input;
+        elements.set(input, this);
+      },
+      listeners: new Map(),
+      addEventListener(type, fn) {
+        this.listeners.set(type, fn);
+      },
+      setCustomValidity(message) {
+        this.validationMessage = message;
+      },
+      checkValidity() {
+        return !this.validationMessage;
+      },
       type: "text",
       checked: false,
       disabled: false,
@@ -101,7 +119,10 @@ async function harness(existing = false) {
     "zones-yellow-enabled",
     "initial"
   ];
-  byId("habit-form").querySelectorAll = () => fields.map(byId);
+  byId("habit-form").querySelectorAll = () => [
+    ...fields.map(byId),
+    ...created.filter((el) => ["INPUT", "SELECT"].includes(el.tagName))
+  ];
   for (const id of ["has-deadline", "reflection-task", "zones-enabled", "zones-yellow-enabled"])
     byId(id).type = "checkbox";
   for (const value of ["check-in", "times", "items", "ml", "g", "min", "custom"]) {
@@ -120,7 +141,21 @@ async function harness(existing = false) {
   await store.reload();
   const dom = {
     byId,
-    node: () => element(),
+    node: (tag, text = "") => {
+      const el = element();
+      el.tagName = tag.toUpperCase();
+      el.textContent = text;
+      created.push(el);
+      return el;
+    },
+    button: (text, action) => {
+      const el = element();
+      el.tagName = "BUTTON";
+      el.textContent = text;
+      el.listeners.set("click", action);
+      created.push(el);
+      return el;
+    },
     on: (id, type, fn) => {
       handlers.set(id + ":" + type, fn);
     },
@@ -155,6 +190,11 @@ async function harness(existing = false) {
     byId,
     store,
     send,
+    clickButton: async (text) => {
+      const el = created.findLast((node) => node.tagName === "BUTTON" && node.textContent === text);
+      assert.ok(el, text);
+      await el.listeners.get("click")({ preventDefault() {} });
+    },
     prompts,
     open: async () => {
       editor.open(existing ? store.snapshot().state.habits[0] : null);
@@ -305,4 +345,48 @@ test("quantity updates and visibility changes do not prevent saving a settings d
   assert.equal(h.data().habits[0].name, "Renamed reading");
   assert.equal(h.data().habits[0].counts[today], 2);
   assert.equal(h.data().habits[0].hidden, true);
+});
+
+test("dated schedules and pauses delivered during an edit cannot be overwritten by a stale form", async () => {
+  for (const [field, value] of [
+    ["manualSchedules", [{ from: today, type: "weekdays", days: [0, 2, 4] }]],
+    ["pauses", [{ from: today, to: today }]]
+  ]) {
+    const h = await harness(true);
+    await h.open();
+    h.byId("name").value = "Local draft";
+    await h.replace((state) => {
+      state.habits[0][field] = value;
+      return state;
+    });
+    await h.send("habit-form", "submit");
+    assert.deepEqual(h.data().habits[0][field], value);
+    assert.equal(h.byId("name").value, "Local draft");
+    assert.match(h.byId("editor-error").textContent, /changed while the form was open/);
+    assert.equal(h.store.snapshot().blocked, false);
+    assert.equal(h.writes(), 0);
+  }
+});
+
+test("adding, removing and resuming pause drafts participate in discard protection", async () => {
+  const h = await harness(true);
+  await h.open();
+  await h.clickButton("Add pause or exception");
+  await h.send("close-editor", "click");
+  assert.equal(h.byId("editor").open, true);
+  assert.equal(h.prompts.length, 1);
+  await h.clickButton("Remove pause");
+  await h.send("close-editor", "click");
+  assert.equal(h.byId("editor").open, false);
+  assert.equal(h.prompts.length, 1);
+  await h.replace((state) => {
+    state.habits[0].pauses = [{ from: today, to: null }];
+    return state;
+  });
+  await h.open();
+  await h.clickButton("Resume today");
+  await h.send("editor", "cancel");
+  assert.equal(h.byId("editor").open, true);
+  assert.equal(h.prompts.length, 2);
+  assert.equal(h.writes(), 0);
 });

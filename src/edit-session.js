@@ -27,7 +27,9 @@ export function settingsVersion(state, id) {
       "endDate",
       "limits",
       "zones",
-      "taskSchedules"
+      "taskSchedules",
+      "manualSchedules",
+      "pauses"
     ].map((field) => habit[field])
   ]);
 }
