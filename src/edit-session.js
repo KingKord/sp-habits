@@ -1,12 +1,12 @@
 import { t } from "./i18n/index.js";
 
 export class EditConflictError extends Error {
-  constructor() {
-    super(
-      t(
-        "This habit changed while the form was open. Your input is kept. Reopen the form to review the latest data before saving."
-      )
-    );
+  constructor(
+    message = t(
+      "This habit changed while the form was open. Your input is kept. Reopen the form to review the latest data before saving."
+    )
+  ) {
+    super(message);
     this.name = "EditConflictError";
   }
 }

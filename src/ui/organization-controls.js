@@ -1,4 +1,5 @@
 import { t } from "../i18n/index.js";
+import { EditConflictError } from "../edit-session.js";
 import {
   createGroup,
   renameGroup,
@@ -39,21 +40,51 @@ export function createOrganizationControls({ dom, commit, render, confirm, newId
     byId("organization").hidden = !visible;
     if (!visible) return;
     const content = dom.fragment();
-    for (const [index, group] of (state.groups ?? []).entries()) {
+    const groups = [...(state.groups ?? [])];
+    const currentIds = new Set(groups.map((group) => group.id));
+    for (const [id, draft] of names)
+      if (!currentIds.has(id)) groups.push({ id, name: draft.expected });
+    for (const [index, group] of groups.entries()) {
+      const removed = !currentIds.has(group.id);
       const row = node("form", undefined, "group-controls");
       const field = input(
-        names.get(group.id) ?? group.name,
+        names.get(group.id)?.value ?? group.name,
         "group-name-" + group.id,
         t("Group name: ") + group.name,
-        (value) => names.set(group.id, value)
+        (value) => {
+          names.set(group.id, { value, expected: names.get(group.id)?.expected ?? group.name });
+          cancel.hidden = false;
+        }
       );
       const save = button(t("Rename"), () => {});
       save.type = "submit";
       row.append(field, save);
+      const cancel = button(t("Cancel rename"), () => {
+        names.delete(group.id);
+        byId("group-error").textContent = "";
+        render();
+        if (currentIds.has(group.id)) dom.restoreFocus("group-name-" + group.id);
+      });
+      cancel.hidden = !names.has(group.id);
+      cancel.dataset.focusKey = "group-cancel-" + group.id;
+      cancel.disabled = disabled;
+      row.append(cancel);
+      if (removed) row.append(node("small", t("This group no longer exists.")));
       row.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (disabled || !row.reportValidity() || !checkName(state, field.value, group.id)) return;
-        const ok = await commit((latest) => renameGroup(latest, group.id, field.value));
+        const expected = names.get(group.id)?.expected ?? group.name;
+        const value = field.value;
+        const ok = await commit((latest) => {
+          if (latest.groups?.find((entry) => entry.id === group.id)?.name !== expected) {
+            const message = t(
+              "This group changed while you were editing. Your input is kept. Cancel the rename to review the latest name."
+            );
+            byId("group-error").textContent = message;
+            throw new EditConflictError(message);
+          }
+          return renameGroup(latest, group.id, value);
+        });
         if (ok) {
           names.delete(group.id);
           render();
@@ -71,7 +102,7 @@ export function createOrganizationControls({ dom, commit, render, confirm, newId
           text + ": " + group.name
         );
         move.dataset.focusKey = "group-move-" + group.id + "-" + offset;
-        move.disabled = disabled || !(state.groups ?? [])[index + offset];
+        move.disabled = disabled || removed || !(state.groups ?? [])[index + offset];
         row.append(move);
       }
       const remove = button(
@@ -92,7 +123,8 @@ export function createOrganizationControls({ dom, commit, render, confirm, newId
         },
         t("Remove group: ") + group.name
       );
-      remove.disabled = field.disabled = save.disabled = disabled;
+      remove.disabled = disabled || removed;
+      field.disabled = save.disabled = disabled;
       row.append(remove);
       content.append(row);
     }

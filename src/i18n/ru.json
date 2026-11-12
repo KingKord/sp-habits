@@ -518,5 +518,7 @@
   "Pauses and exceptions": "Паузы и исключения",
   "Pause dates are inclusive. Recorded values stay in totals; paused days do not earn or break streaks.": "Даты паузы включены в интервал. Записи сохраняются в итогах; дни паузы не увеличивают и не прерывают серию.",
   "Resume today": "Возобновить сегодня",
-  "Remove pause": "Удалить паузу"
+  "Remove pause": "Удалить паузу",
+  "Cancel rename": "Отменить переименование",
+  "This group changed while you were editing. Your input is kept. Cancel the rename to review the latest name.": "Группа изменилась во время редактирования. Введённое имя сохранено в поле. Отмените переименование, чтобы увидеть актуальное имя."
 }

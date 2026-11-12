@@ -513,5 +513,7 @@
   "Pauses and exceptions": "Pauses and exceptions",
   "Pause dates are inclusive. Recorded values stay in totals; paused days do not earn or break streaks.": "Pause dates are inclusive. Recorded values stay in totals; paused days do not earn or break streaks.",
   "Resume today": "Resume today",
-  "Remove pause": "Remove pause"
+  "Remove pause": "Remove pause",
+  "Cancel rename": "Cancel rename",
+  "This group changed while you were editing. Your input is kept. Cancel the rename to review the latest name.": "This group changed while you were editing. Your input is kept. Cancel the rename to review the latest name."
 }
