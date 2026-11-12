@@ -80,7 +80,9 @@ export function createStatisticsView({ dom, store, now, render }) {
       (data.rows.some((row) => row.weekly) ? t("Assessed periods: ") : t("Assessed habit-days: ")) +
       coverage.coverage +
       " · " +
-      t("Unmarked check-in days: ") +
+      (data.rows.some((row) => row.weekly)
+        ? t("Unmarked assessments: ")
+        : t("Unmarked check-in days: ")) +
       number(coverage.unmarkedDays) +
       ". " +
       t(
@@ -106,12 +108,16 @@ export function createStatisticsView({ dom, store, now, render }) {
       [
         data.rows.some((row) => row.weekly) ? t("Successful periods") : t("Successful days"),
         coverage.successful,
-        t("Completed days for each habit")
+        data.rows.some((row) => row.weekly)
+          ? t("Completed assessed periods for each habit")
+          : t("Completed days for each habit")
       ],
       [
         t("Completion"),
         percent(data.total.successRate),
-        t("Completed days across all selected habits")
+        data.rows.some((row) => row.weekly)
+          ? t("Rates are separate for daily and weekly goals")
+          : t("Completed days across all selected habits")
       ]
     ]) {
       const card = node("div", undefined, "stat-metric");
@@ -152,6 +158,8 @@ export function createStatisticsView({ dom, store, now, render }) {
               row.weekly.progress.target
           )
         );
+      if (row.weekly?.unknown)
+        name.append(node("small", t("Unknown weeks: ") + number(row.weekly.unknown)));
       if (row.tracking === "check-in" && !row.weekly)
         name.append(
           node(
@@ -164,12 +172,14 @@ export function createStatisticsView({ dom, store, now, render }) {
           )
         );
       if (!row.trackedDays) name.append(node("small", t("No data")));
-      tr.title = row.trackedDays
-        ? t("Unsuccessful days: ") +
-          row.exceededDays +
-          t(". Daily average: ") +
-          amount(row.average, row.unit)
-        : t("Not tracked in this period");
+      tr.title = row.weekly
+        ? t("Unsuccessful assessed periods: ") + row.exceededDays
+        : row.trackedDays
+          ? t("Unsuccessful days: ") +
+            row.exceededDays +
+            t(". Daily average: ") +
+            amount(row.average, row.unit)
+          : t("Not tracked in this period");
       tr.append(
         name,
         metricCell(t("Total"), amount(row.events, row.unit)),
@@ -181,7 +191,10 @@ export function createStatisticsView({ dom, store, now, render }) {
         const bar = node("progress");
         bar.max = 1;
         bar.value = row.successRate;
-        bar.setAttribute("aria-label", t("Successful day rate: ") + row.name);
+        bar.setAttribute(
+          "aria-label",
+          (row.weekly ? t("Successful period rate: ") : t("Successful day rate: ")) + row.name
+        );
         value.append(bar);
       }
       tr.append(share);

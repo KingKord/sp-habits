@@ -577,5 +577,11 @@
   "Choose an active fixed daily or weekly repeat.": "Choose an active fixed daily or weekly repeat.",
   "Fixed daily and weekly repeats are supported. Set the schedule and time in Super Productivity.": "Fixed daily and weekly repeats are supported. Set the schedule and time in Super Productivity.",
   " · every ": " · every ",
-  " weeks": " weeks"
+  " weeks": " weeks",
+  "Unmarked assessments: ": "Unmarked assessments: ",
+  "Completed assessed periods for each habit": "Completed assessed periods for each habit",
+  "Rates are separate for daily and weekly goals": "Rates are separate for daily and weekly goals",
+  "Unknown weeks: ": "Unknown weeks: ",
+  "Unsuccessful assessed periods: ": "Unsuccessful assessed periods: ",
+  "Successful period rate: ": "Successful period rate: "
 }

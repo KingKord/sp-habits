@@ -582,5 +582,11 @@
   "Choose an active fixed daily or weekly repeat.": "Выберите активное фиксированное дневное или недельное повторение.",
   "Fixed daily and weekly repeats are supported. Set the schedule and time in Super Productivity.": "Поддерживаются фиксированные дневные и недельные повторения. Настройте расписание и время в Super Productivity.",
   " · every ": " · каждые ",
-  " weeks": " нед."
+  " weeks": " нед.",
+  "Unmarked assessments: ": "Оценки без отметок: ",
+  "Completed assessed periods for each habit": "Завершённые оценённые периоды для каждой привычки",
+  "Rates are separate for daily and weekly goals": "Показатели дневных и недельных целей рассчитываются отдельно",
+  "Unknown weeks: ": "Недель без достаточных отметок: ",
+  "Unsuccessful assessed periods: ": "Неуспешных оценённых периодов: ",
+  "Successful period rate: ": "Доля успешных периодов: "
 }
