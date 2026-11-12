@@ -2,12 +2,14 @@ import { t } from "../i18n/index.js";
 import * as D from "../domain.js";
 import { dateText, ruleText, habitName, goalText } from "./format.js";
 import { closeOnBackdrop } from "./dialog.js";
+import { settingsVersion, assertSettingsVersion } from "../edit-session.js";
 
 export function createPlanEditor({ dom, store, now, commit }) {
   const { byId, node, button, on } = dom;
   let planning = null,
     planSaving = false,
-    lastFocusKey = null;
+    lastFocusKey = null,
+    openedVersion = null;
   const timeGoal = () =>
     planning &&
     D.goalForDate(
@@ -99,6 +101,7 @@ export function createPlanEditor({ dom, store, now, commit }) {
     const state = store.snapshot().state,
       habit = state.habits.find((h) => h.id === planning);
     try {
+      assertSettingsVersion(state, planning, openedVersion);
       const stages =
         byId("plan-mode").value === "frequency"
           ? D.frequencyPreview(habit, frequencyInputs(), now(state))
@@ -134,6 +137,7 @@ export function createPlanEditor({ dom, store, now, commit }) {
     )
       return;
     planning = habit.id;
+    openedVersion = settingsVersion(s.state, habit.id);
     lastFocusKey = dom.activeElement()?.dataset.focusKey;
     const today = now();
     byId("plan-context").textContent =
@@ -227,7 +231,10 @@ export function createPlanEditor({ dom, store, now, commit }) {
     if (planSaving) return;
     planSaving = true;
     for (const id of ["save-plan", "cancel-reduction", "close-plan"]) byId(id).disabled = true;
-    const ok = await commit(transform);
+    const ok = await commit((state) => {
+      assertSettingsVersion(state, planning, openedVersion);
+      return transform(state);
+    });
     planSaving = false;
     if (!dom.isActive()) return;
     for (const id of ["save-plan", "cancel-reduction", "close-plan"]) byId(id).disabled = false;

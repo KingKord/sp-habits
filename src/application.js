@@ -20,8 +20,7 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
   const dom = createDOM(document, scope);
   const { byId, on } = dom;
   const exportClient = createExportClient(window);
-  let expectedRaw = null,
-    needsReload = false;
+  let expectedRaw = null;
   const taskRequest = (payload) => exportClient.request(false, "tasks", payload);
   const storageAPI = {
     loadSyncedData: async () => {
@@ -43,6 +42,7 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
   };
   const store = createStore(api ? storageAPI : api, render);
   scope.add(exportClient.dispose);
+  scope.add(store.dispose);
   let currentView = "day";
 
   const now = (state = store.snapshot().state) => todayInZone(state.timeZone, instant());
@@ -166,18 +166,8 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
   });
   const refresh = () => {
     if (store.snapshot().state && now() !== day.lastToday()) render();
-    const snapshot = store.snapshot();
-    if (needsReload && !snapshot.pending && !snapshot.busyRead && !snapshot.blocked) {
-      needsReload = false;
-      void store.reload();
-    }
   };
-  scope.add(
-    exportClient.subscribe(() => {
-      needsReload = true;
-      refresh();
-    })
-  );
+  scope.add(exportClient.subscribe(store.invalidate));
   scope.on(window, "focus", refresh);
   scope.on(document, "visibilitychange", () => {
     if (!document.hidden) refresh();

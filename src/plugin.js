@@ -9,6 +9,7 @@ let tasks = null,
   disposed = false;
 if (PluginAPI.registerHook && PluginAPI.getAppState) {
   const notify = () => {
+    if (disposed) return;
     for (const frame of document.querySelectorAll("iframe")) {
       try {
         if (frame.contentDocument?.title === "Habits")
@@ -22,8 +23,12 @@ if (PluginAPI.registerHook && PluginAPI.getAppState) {
     }
   };
   tasks = createTaskIntegration(PluginAPI, notify);
-  for (const hook of ["taskComplete", "taskUpdate", "anyTaskUpdate", "persistedDataChanged"])
+  for (const hook of ["taskComplete", "taskUpdate", "anyTaskUpdate"])
     PluginAPI.registerHook(hook, tasks.refresh);
+  PluginAPI.registerHook("persistedDataChanged", () => {
+    notify();
+    return tasks.refresh();
+  });
   PluginAPI.onReady?.(() => {
     if (started || disposed) return;
     started = true;

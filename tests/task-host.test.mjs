@@ -36,6 +36,7 @@ function harness() {
     stopped = false,
     frames = [],
     appTasks = {};
+  let writes = 0;
   const hooks = new Map(),
     messages = [];
   const source = { postMessage: (m) => messages.push(m) };
@@ -53,6 +54,7 @@ function harness() {
   const api = {
     loadSyncedData: async () => raw,
     persistDataSynced: async (value) => {
+      writes++;
       raw = value;
     },
     getAppState: async () => ({ tasks: appTasks, taskRepeatCfgs: { series: cfg } }),
@@ -75,6 +77,10 @@ function harness() {
     ready: () => ready(),
     unload: () => unload(),
     raw: () => raw,
+    replace: (state) => {
+      raw = JSON.stringify(state);
+    },
+    writes: () => writes,
     timers: () => timerCount,
     stopped: () => stopped,
     mount: () => {
@@ -121,6 +127,29 @@ test("shipped host registers hooks, records a completion with the tracker closed
   assert.equal(h.stopped(), true);
   h.ready();
   assert.equal(h.timers(), 1);
+});
+
+test("persistence deliveries invalidate the shipped iframe without a reconciliation write", async () => {
+  for (const linked of [false, true]) {
+    const h = harness();
+    h.mount();
+    const state = JSON.parse(h.raw());
+    state.habits[0].taskCompletions = {};
+    if (!linked) {
+      delete state.habits[0].taskSchedules;
+      delete state.habits[0].taskCompletions;
+    }
+    state.habits[0].name = "Delivered name";
+    h.replace(state);
+    await Promise.all(Array.from({ length: 6 }, () => h.hooks.get("persistedDataChanged")()));
+    assert.equal(h.writes(), 0);
+    assert.ok(h.messages.some((message) => message.type === "HABITS_DATA_CHANGED"));
+    const count = h.messages.length;
+    h.unload();
+    await h.hooks.get("persistedDataChanged")();
+    assert.equal(h.messages.length, count);
+    assert.equal(h.writes(), 0);
+  }
 });
 
 test("shipped bridge accepts task reads only from its iframe and reports stale writes without overwriting", async () => {

@@ -4,6 +4,7 @@ import { dateText } from "./format.js";
 import { createEmojiPicker } from "./emoji-picker.js";
 import { closeOnBackdrop, dismissKeyboardOnReturn } from "./dialog.js";
 import { unitChoice, selectedUnit } from "./units.js";
+import { settingsVersion, assertSettingsVersion, EditConflictError } from "../edit-session.js";
 
 export function createHabitEditor({
   dom,
@@ -23,9 +24,18 @@ export function createHabitEditor({
     lastLimit = 0,
     saving = false,
     originalRepeatId = "",
-    loadGeneration = 0;
+    loadGeneration = 0,
+    openedVersion = null,
+    initialForm = "";
   const { byId, on, activeElement } = dom;
   const checkIn = () => byId("unit-choice").value === "check-in";
+  const formValues = () =>
+    JSON.stringify(
+      [...byId("habit-form").querySelectorAll("input, select")].map((field) => [
+        field.id,
+        field.type === "checkbox" ? field.checked : field.value
+      ])
+    );
   dismissKeyboardOnReturn(dom, "habit-form");
   function updateTaskFields() {
     const linked = !!byId("task-series").value;
@@ -190,6 +200,7 @@ export function createHabitEditor({
     const s = store.snapshot();
     if (saving || s.blocked || s.pending || s.busyRead || !s.state) return;
     editing = habit ? habit.id : null;
+    openedVersion = habit ? settingsVersion(s.state, habit.id) : null;
     lastFocus = activeElement();
     lastFocusKey = lastFocus?.dataset.focusKey;
     const today = now(),
@@ -241,11 +252,18 @@ export function createHabitEditor({
     originalRepeatId = D.scheduleForDate(habit ?? {}, today)?.repeatId ?? "";
     void populateSchedules(habit, originalRepeatId);
     byId("editor-error").textContent = "";
+    initialForm = formValues();
     byId("editor").showModal();
     byId("name").focus();
   }
-  function closeEditor() {
+  function closeEditor(confirmed = false) {
     if (saving) return;
+    if (
+      !confirmed &&
+      formValues() !== initialForm &&
+      !confirm(t("Discard unsaved habit changes? Choose Cancel to keep editing."))
+    )
+      return;
     loadGeneration++;
     byId("editor").close();
     if (lastFocus && lastFocus.isConnected) lastFocus.focus();
@@ -293,8 +311,8 @@ export function createHabitEditor({
   });
   on("clear-emoji", "click", () => setEmoji(""));
   on("add", "click", () => openEditor());
-  on("close-editor", "click", closeEditor);
-  closeOnBackdrop(dom, "editor", closeEditor);
+  on("close-editor", "click", () => closeEditor());
+  closeOnBackdrop(dom, "editor", () => closeEditor());
   on("editor", "cancel", (event) => {
     event.preventDefault();
     closeEditor();
@@ -363,10 +381,12 @@ export function createHabitEditor({
     byId("delete-habit").disabled = true;
     const repeatId = byId("task-series").value;
     const ok = await commit(
-      (state) =>
-        isEditing
+      (state) => {
+        if (isEditing) assertSettingsVersion(state, id, openedVersion);
+        return isEditing
           ? D.editHabit(state, id, input, now(state))
-          : D.createHabit(state, input, now(state), id),
+          : D.createHabit(state, input, now(state), id);
+      },
       repeatId !== originalRepeatId ? { id, repeatId: repeatId || null } : undefined
     );
     saving = false;
@@ -375,12 +395,16 @@ export function createHabitEditor({
     byId("close-editor").disabled = false;
     byId("archive-habit").disabled = false;
     byId("delete-habit").disabled = false;
-    if (ok) closeEditor();
+    if (ok) closeEditor(true);
     else byId("editor-error").textContent = store.snapshot().error;
   });
   on("archive-habit", "click", async () => {
     const state = store.snapshot().state,
       habit = state.habits.find((h) => h.id === editing);
+    if (!habit) {
+      byId("editor-error").textContent = new EditConflictError().message;
+      return;
+    }
     if (
       !confirm(
         t("Stop tracking “") +
@@ -390,13 +414,23 @@ export function createHabitEditor({
     )
       return;
     const id = editing;
-    if ((await commit((state) => D.archiveHabit(state, id, now(state)))) && dom.isActive())
-      closeEditor();
+    if (
+      (await commit((state) => {
+        assertSettingsVersion(state, id, openedVersion);
+        return D.archiveHabit(state, id, now(state));
+      })) &&
+      dom.isActive()
+    )
+      closeEditor(true);
+    else if (dom.isActive()) byId("editor-error").textContent = store.snapshot().error;
   });
   on("delete-habit", "click", async () => {
     const state = store.snapshot().state,
       habit = state.habits.find((h) => h.id === editing);
-    if (!habit) return;
+    if (!habit) {
+      byId("editor-error").textContent = new EditConflictError().message;
+      return;
+    }
     if (
       !confirm(
         t("Delete “") +
@@ -408,7 +442,15 @@ export function createHabitEditor({
     )
       return;
     const id = editing;
-    if ((await commit((state) => D.deleteHabit(state, id))) && dom.isActive()) closeEditor();
+    if (
+      (await commit((state) => {
+        assertSettingsVersion(state, id, openedVersion);
+        return D.deleteHabit(state, id);
+      })) &&
+      dom.isActive()
+    )
+      closeEditor(true);
+    else if (dom.isActive()) byId("editor-error").textContent = store.snapshot().error;
   });
   return { open: openEditor };
 }

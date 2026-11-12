@@ -4,6 +4,7 @@ import * as D from "../domain.js";
 import { dateText, usageText, habitName } from "./format.js";
 import { completionControls } from "./completion-controls.js";
 import { closeOnBackdrop } from "./dialog.js";
+import { settingsVersion, assertSettingsVersion, EditConflictError } from "../edit-session.js";
 
 export function createCountEditor({ dom, store, now, commit }) {
   const { byId, on, restoreFocus } = dom;
@@ -14,7 +15,13 @@ export function createCountEditor({ dom, store, now, commit }) {
     if (s.blocked || s.pending || s.busyRead || !s.state) return;
     const result = D.dayResult(habit, date, now());
     if (!result.editable || result.readOnly) return;
-    countEditing = { id: habit.id, date, focusKey };
+    countEditing = {
+      id: habit.id,
+      date,
+      focusKey,
+      version: settingsVersion(s.state, habit.id),
+      amount: habit.counts[date]
+    };
     const completion = result.tracking === "check-in";
     byId("count-editor-title").textContent = completion ? t("Daily check-in") : t("Daily quantity");
     byId("count-amount-field").hidden = completion;
@@ -93,7 +100,7 @@ export function createCountEditor({ dom, store, now, commit }) {
     event.preventDefault();
     if (!countEditing || countSaving || !byId("count-form").reportValidity()) return;
     if (byId("save-count").hidden) return;
-    const { id, date } = countEditing,
+    const { id, date, version, amount } = countEditing,
       value = Number(byId("count-amount").value);
     const snapshot = store.snapshot();
     if (snapshot.blocked || snapshot.pending || snapshot.busyRead || !snapshot.state) return;
@@ -106,7 +113,12 @@ export function createCountEditor({ dom, store, now, commit }) {
     countSaving = true;
     for (const key of ["save-count", "close-count", "cancel-count", "count-amount"])
       byId(key).disabled = true;
-    const ok = await commit((state) => D.setCount(state, id, date, value, now(state)));
+    const ok = await commit((state) => {
+      assertSettingsVersion(state, id, version);
+      if (state.habits.find((habit) => habit.id === id).counts[date] !== amount)
+        throw new EditConflictError();
+      return D.setCount(state, id, date, value, now(state));
+    });
     countSaving = false;
     if (!dom.isActive()) return;
     for (const key of ["save-count", "close-count", "cancel-count", "count-amount"])

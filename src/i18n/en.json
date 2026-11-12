@@ -449,5 +449,7 @@
   "Marked days: ": "Marked days: ",
   "Successful / assessed": "Successful / assessed",
   "Unmarked check-ins are excluded from the rate. Quantity days use recorded totals, with missing totals counted as zero. Today is excluded.": "Unmarked check-ins are excluded from the rate. Quantity days use recorded totals, with missing totals counted as zero. Today is excluded.",
-  "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction uses the same assessed-day denominator as the rate.": "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction uses the same assessed-day denominator as the rate."
+  "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction uses the same assessed-day denominator as the rate.": "Check-in totals count successful marks. Unmarked days stay unknown and are excluded from their completion rate. The successful-day fraction uses the same assessed-day denominator as the rate.",
+  "This habit changed while the form was open. Your input is kept. Reopen the form to review the latest data before saving.": "This habit changed while the form was open. Your input is kept. Reopen the form to review the latest data before saving.",
+  "Discard unsaved habit changes? Choose Cancel to keep editing.": "Discard unsaved habit changes? Choose Cancel to keep editing."
 }
