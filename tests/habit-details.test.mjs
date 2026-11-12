@@ -133,3 +133,16 @@ test("archive boundaries, hidden habits and linked-task rest days use the shared
   assert.equal(history.rows.find((row) => row.date === "2026-11-06").kind, "inactive");
   assert.equal(history.statistics.to, "2026-11-05");
 });
+
+test("weekly check-in rule details preserve the daily clock condition", () => {
+  const rule = {
+    from: "2026-11-02",
+    value: 1,
+    goal: "at-least",
+    tracking: "check-in",
+    deadline: 480,
+    weekGoal: { type: "days", target: 3, weekStart: 0 }
+  };
+  assert.match(detailRuleText({ unit: "times" }, rule), /No later than 08:00/);
+  assert.doesNotMatch(detailRuleText({ unit: "times" }, rule), /Daily minimum: 1/);
+});

@@ -27,7 +27,11 @@ export function detailRuleText(habit, rule) {
       (rule.weekGoal.type === "days" ? t("successful days") : unitText(unit)) +
       t(" per calendar week (Monday start)");
     return rule.weekGoal.type === "days"
-      ? weekly + " · " + t("Daily minimum: ") + amount(rule.value, unit)
+      ? weekly +
+          " · " +
+          (rule.tracking === "check-in"
+            ? checkInRule({ deadline: rule.deadline ?? null })
+            : t("Daily minimum: ") + amount(rule.value, unit))
       : weekly;
   }
   if (rule.tracking === "check-in" || rule.goal === "before-time")
@@ -89,7 +93,7 @@ export function createHabitDetails({ dom, store, now }) {
         t("Success rate: ") + percent(stats.assessmentUnit === "mixed" ? null : stats.successRate)
       )
     );
-    if (stats.tracking === "check-in")
+    if (stats.tracking === "check-in" && !stats.weekly)
       summary.append(node("p", t("Unmarked days: ") + number(stats.unmarkedDays)));
     if (stats.assessmentUnit === "mixed")
       summary.append(

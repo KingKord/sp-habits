@@ -124,3 +124,26 @@ test("background detail refresh preserves a pending date draft and date edits cl
   assert.equal(h.byId("details-rows").children.length, 1);
   assert.equal(h.writes(), 0);
 });
+
+test("weekly detail coverage labels unknown weeks without presenting them as unknown days", () => {
+  const h = harness();
+  const habit = h.state.habits[0];
+  habit.startDate = "2026-11-02";
+  habit.unit = "times";
+  habit.limits = [
+    {
+      from: "2026-11-02",
+      value: 1,
+      goal: "at-least",
+      tracking: "check-in",
+      deadline: 480,
+      weekGoal: { type: "days", target: 3, weekStart: 0 }
+    }
+  ];
+  habit.counts = { "2026-11-02": 1 };
+  h.view.open(habit, "2026-11-12");
+  const summary = h.text(h.byId("details-summary"));
+  assert.match(summary, /Unknown weeks: 1/);
+  assert.doesNotMatch(summary, /Unmarked days:/);
+  assert.equal(h.writes(), 0);
+});
