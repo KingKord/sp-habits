@@ -1,5 +1,30 @@
 # Verification log
 
+## 0.21.0 — 2026-11-12
+
+### Automated checks
+
+- Full `npm run check` passed: ESLint, Prettier, 295 tests, version/changelog validation, bundled JavaScript syntax and ZIP integrity.
+- Added regressions for multi-position insertion, preserving invisible/other-group slots and exact habit histories, pointer and touch-handle events, keyboard/menu alternatives, cancellation, edge scrolling and disabled controls.
+- The UI version, package, lockfile, manifest and current README entry are 0.21.0. The final iframe is 25,938 bytes, below the 100 KiB host boundary.
+
+### Isolated packaged-build review
+
+- Used a separate browser iframe harness with the built host plugin, built loader/application, host UI Kit and synthetic local storage. No personal data or desktop profile was loaded or modified.
+- Six visible habits render as collapsed rows measuring approximately 59.4 px at the wide desktop size. The fixture also contains a hidden habit, an archived habit, daily notes and an archived legacy journal.
+- Dragged Coffee across several rows with actual pointer input. It was inserted at the indicated destination, preserving intermediate relative order. Confirmed storage changed only order metadata; all habit fields and histories remained exactly equal to the fixture. The resulting order survived a complete preview reload.
+- Verified keyboard arrow movement and the compact move menu. A grouped fixture retained group membership and other-group positions. Domain and controller tests also reject moves across groups and invalid drop destinations.
+- Verified quick quantity increment/decrement and check-in/undo. After undo, all eight synthetic habit objects matched their original values, including notes and the legacy journal.
+- Simulated a failed persistence call: confirmed order/history stayed unchanged, saving paused visibly, and Reload data recovered the confirmed state. No optimistic order was presented as saved.
+- Expanded inline history and confirmed the seven daily markers, streak/best information, notes, visibility and full-details actions remain accessible. Entering Reorder closes the expanded panel.
+- Checked English/dark and Russian/light layouts at wide, 780 px and 320 px plugin widths. At 320 px, both expanded history and reordering had matching client/scroll widths of 320 px; long names wrapped without horizontal overflow.
+
+### Limits
+
+- This iteration tests the packaged offline resource bridge and host styling in an isolated browser harness. A fresh real-host installation, native Electron/Safari, physical touch devices and cross-device sync were not rerun for this UI change. Touch behavior is covered by controller events and touch target CSS, rather than a physical device.
+- Existing 0.20.0 host/API and serial-sync evidence remains below; no concurrent-device ordering merge is claimed. Background data refresh cancels an unfinished drag, and a committed move derives its peers from freshly read confirmed data.
+
+
 ## 0.20.0 — 2026-11-12
 
 ### Build and regression checks

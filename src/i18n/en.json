@@ -583,5 +583,20 @@
   "Rates are separate for daily and weekly goals": "Rates are separate for daily and weekly goals",
   "Unsuccessful assessed periods: ": "Unsuccessful assessed periods: ",
   "Successful period rate: ": "Successful period rate: ",
-  "Daily minimum for a successful-day goal must be at least 1.": "Daily minimum for a successful-day goal must be at least 1."
+  "Daily minimum for a successful-day goal must be at least 1.": "Daily minimum for a successful-day goal must be at least 1.",
+  "Reorder": "Reorder",
+  "Done reordering": "Done reordering",
+  "Manage groups": "Manage groups",
+  "Moving: ": "Moving: ",
+  "Reordering cancelled.": "Reordering cancelled.",
+  "Drag to reorder: ": "Drag to reorder: ",
+  "Drag to reorder. Use Up and Down arrow keys to move within this group.": "Drag to reorder. Use Up and Down arrow keys to move within this group.",
+  "Reorder options: ": "Reorder options: ",
+  "This list changed. Review the current order and try again.": "This list changed. Review the current order and try again.",
+  "Habit order saved.": "Habit order saved.",
+  "Show history and actions: ": "Show history and actions: ",
+  "Show habit": "Show habit",
+  "Hide habit": "Hide habit",
+  "Drag a handle to move a habit within its group. Use Up and Down arrow keys on a handle or choose Move up / Move down from its menu. Other lists keep their order.": "Drag a handle to move a habit within its group. Use Up and Down arrow keys on a handle or choose Move up / Move down from its menu. Other lists keep their order.",
+  "Drag a handle to reorder within its group.": "Drag a handle to reorder within its group."
 }

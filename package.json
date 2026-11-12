@@ -1,6 +1,6 @@
 {
   "name": "sp-habits",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "private": true,
   "type": "module",
   "description": "Habit goals and event limits for Super Productivity",

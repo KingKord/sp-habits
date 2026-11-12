@@ -198,19 +198,20 @@ h2 {
   display: flex;
   flex-direction: column;
 }
-.habit-header,
 .habit-row {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hl-line);
+  position: relative;
+}
+.habit-summary {
   display: grid;
-  grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.4fr);
-  gap: clamp(16px, 2vw, 32px);
+  grid-template-columns: minmax(120px, 1fr) auto auto 32px;
+  gap: 12px;
   align-items: center;
 }
-.habit-row {
-  padding: 12px 0;
-  border-bottom: 1px solid var(--hl-line);
-}
-.habit-header {
-  margin-bottom: 4px;
+.habit-row.is-reordering .habit-summary {
+  grid-template-columns: 28px minmax(120px, 1fr) auto auto 32px 32px;
+  gap: 8px;
 }
 .habit-info {
   min-width: 0;
@@ -1115,14 +1116,6 @@ form textarea {
   .view-switch button {
     flex: 1;
   }
-  .habit-header {
-    display: none;
-  }
-  .habit-row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
-    padding: 16px 0;
-  }
   .habit-title {
     font-size: 15px;
     white-space: normal;
@@ -1454,21 +1447,6 @@ form textarea {
   }
 }
 
-.habit-order {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin: 8px 0;
-}
-.habit-order button {
-  min-height: 32px;
-}
-@media (max-width: 700px) {
-  .habit-order button {
-    min-height: 44px;
-  }
-}
-
 .group-controls {
   display: flex;
   align-items: end;
@@ -1484,11 +1462,11 @@ form textarea {
 .group-controls label {
   flex: 1 1 180px;
 }
-.habit-order label {
+.habit-extra-actions label {
   min-width: 0;
   max-width: 100%;
 }
-.habit-order select {
+.habit-extra-actions select {
   min-width: 0;
   max-width: 180px;
 }
@@ -1556,4 +1534,252 @@ form textarea {
   height: 4px;
   background: var(--hl-accent);
   margin-top: 6px;
+}
+
+/* The day list keeps entry actions visible; history and less frequent actions expand inline. */
+.habit-summary .habit-title {
+  min-height: 0;
+  padding: 0;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.habit-summary .habit-rule {
+  margin-top: 2px;
+  font-size: 12px;
+}
+.habit-streak-compact {
+  color: var(--hl-muted);
+  font-size: 12px;
+  max-width: 180px;
+}
+.habit-summary .counter {
+  margin: 0;
+  max-width: 250px;
+  gap: 5px;
+}
+.habit-summary .count {
+  order: 1;
+  text-align: center;
+  margin: 0;
+  padding: 4px;
+  min-height: 32px;
+  min-width: 54px;
+  max-width: 144px;
+  font-size: 14px;
+}
+.habit-summary .count small {
+  font-size: 12px;
+}
+.habit-summary .minus {
+  order: 0;
+}
+.habit-summary .plus {
+  order: 2;
+}
+.habit-summary .step,
+.habit-expand,
+.habit-drag-handle,
+.habit-reorder-menu > summary,
+.habit-summary .completion-check {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+.habit-expand,
+.habit-drag-handle,
+.habit-reorder-menu > summary {
+  background: transparent;
+  color: var(--hl-muted);
+  border: 1px solid transparent;
+  font-size: 18px;
+}
+.habit-drag-handle {
+  width: 28px;
+  min-width: 28px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.habit-drag-handle:active {
+  cursor: grabbing;
+}
+.habit-dragging {
+  opacity: 0.5;
+}
+.habit-row.drop-before::before,
+.habit-row.drop-after::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--hl-accent);
+  pointer-events: none;
+}
+.habit-row.drop-before::before {
+  top: 0;
+}
+.habit-row.drop-after::after {
+  bottom: 0;
+}
+.habit-reorder-menu {
+  position: relative;
+}
+.habit-reorder-menu > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.habit-reorder-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.habit-reorder-actions {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 3;
+  min-width: 150px;
+  padding: 4px;
+  border: 1px solid var(--hl-line);
+  border-radius: 6px;
+  background: var(--hl-card);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--hl-text) 12%, transparent);
+}
+.habit-reorder-actions button {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  text-align: left;
+  padding: 6px 10px;
+  border: 0;
+  background: transparent;
+}
+.habit-summary .completion-controls {
+  margin: 0;
+}
+.habit-summary .completion-status {
+  display: none;
+}
+.habit-summary .completion-actions {
+  flex-wrap: nowrap;
+  gap: 5px;
+}
+.habit-history:not([hidden]) {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.65fr) minmax(0, 1.4fr);
+  gap: 12px 24px;
+  padding: 14px 0 2px;
+}
+.habit-history[hidden] {
+  display: none;
+}
+.habit-recent {
+  min-width: 0;
+}
+.habit-history .habit-week-headings {
+  display: grid;
+  margin-bottom: 6px;
+}
+.habit-extra-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.habit-extra-actions .habit-note {
+  margin: 0;
+}
+.habit-extra-actions label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+@media (max-width: 1000px) {
+  .habit-streak-compact {
+    display: none;
+  }
+  .habit-summary {
+    grid-template-columns: minmax(120px, 1fr) auto 32px;
+  }
+  .habit-row.is-reordering .habit-summary {
+    grid-template-columns: 28px minmax(120px, 1fr) auto 32px 32px;
+  }
+}
+@media (pointer: coarse), (max-width: 700px) {
+  .habit-summary .step,
+  .habit-expand,
+  .habit-reorder-menu > summary,
+  .habit-summary .completion-check {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .habit-drag-handle {
+    min-height: 44px;
+  }
+  .habit-summary .count {
+    min-height: 44px;
+  }
+  .habit-summary {
+    grid-template-columns: minmax(120px, 1fr) auto 44px;
+  }
+  .habit-row.is-reordering .habit-summary {
+    grid-template-columns: 28px minmax(120px, 1fr) auto 44px 44px;
+  }
+}
+@media (max-width: 600px) {
+  .habit-summary {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 6px;
+  }
+  .habit-row.is-reordering .habit-summary {
+    grid-template-columns: 28px minmax(0, 1fr) 44px 44px;
+    gap: 6px;
+  }
+  .habit-summary .counter,
+  .habit-summary .completion-controls {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    justify-self: end;
+    max-width: 100%;
+  }
+  .habit-row.is-reordering .counter,
+  .habit-row.is-reordering .completion-controls {
+    grid-column: 2 / -1;
+  }
+  .habit-summary .habit-rule {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .habit-history:not([hidden]) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+
+@media (pointer: coarse) {
+  .habit-summary .habit-streak-compact {
+    display: none;
+  }
+  .habit-drag-handle {
+    width: 44px;
+    min-width: 44px;
+  }
+  .habit-row.is-reordering .habit-summary {
+    grid-template-columns: 44px minmax(120px, 1fr) auto 44px 44px;
+  }
+}
+@media (pointer: coarse) and (max-width: 600px) {
+  .habit-row.is-reordering .habit-summary {
+    grid-template-columns: 44px minmax(0, 1fr) 44px 44px;
+  }
 }

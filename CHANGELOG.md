@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.0
+
+- Replace tall day cards with compact habit rows and quick quantity/check-in actions. Expand a row for recent history, streaks, badges, notes and additional actions.
+- Reorder habits by dragging their handles, with insertion indicators, edge scrolling, keyboard arrows and a compact move menu. Moves stay within the selected list and group, preserving other positions and all history.
+- Separate group management from reordering, and cancel unfinished drags safely when data changes or the view closes.
+
 ## 0.20.0
 
 - Arrange habits with accessible persisted ordering and optional named groups (#13, #14).

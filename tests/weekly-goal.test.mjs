@@ -235,6 +235,7 @@ test("the rendered Day history uses explicit marks and keeps the weekly check-in
   const h = fieldsHarness([
     "arrange",
     "arrange-hint",
+    "manage-groups",
     "active",
     "hidden",
     "archived",
@@ -250,7 +251,16 @@ test("the rendered Day history uses explicit marks and keeps the weekly check-in
   const originalNode = h.dom.node;
   h.dom.node = (tag, text, className) => {
     const element = originalNode(tag, text);
-    Object.assign(element, { className, dataset: {}, style: {}, getAttribute: () => null });
+    Object.assign(element, {
+      className,
+      dataset: {},
+      style: {},
+      getAttribute: () => null,
+      classList: { toggle() {} },
+      prepend(...items) {
+        this.children.unshift(...items);
+      }
+    });
     return element;
   };
   h.dom.button = (text, action, label, className) => {
@@ -265,6 +275,8 @@ test("the rendered Day history uses explicit marks and keeps the weekly check-in
     activeElement: () => null,
     restoreFocus: () => {}
   });
+  h.byId("cards").ownerDocument = { defaultView: {} };
+  h.byId("cards").querySelectorAll = () => [];
   const snapshot = { state, pending: 0, blocked: false, busyRead: false };
   const day = createDayView({
     dom: h.dom,

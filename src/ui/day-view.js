@@ -1,12 +1,14 @@
 import { t } from "../i18n/index.js";
 import { createOrganizationControls } from "./organization-controls.js";
-import { orderedHabits, groupedHabits, moveHabit } from "../organization.js";
+import { orderedHabits, groupedHabits, insertHabit } from "../organization.js";
 import { getLocale } from "../i18n/index.js";
 import { unitText } from "./units.js";
 import { completionControls } from "./completion-controls.js";
 import { scheduleDescription, linkedScheduleDescription } from "./schedule-fields.js";
 import { weeklyRuleDescription } from "../weekly-goals.js";
 import { progressPanel, recordText } from "./progress-view.js";
+import { EditConflictError } from "../edit-session.js";
+import { createHabitReordering } from "./habit-reordering.js";
 import { noteForDate } from "../notes.js";
 import * as D from "../domain.js";
 import {
@@ -43,7 +45,32 @@ export function createDayView({
   let selected = "",
     lastToday = "",
     filter = "active",
-    arranging = false;
+    arranging = false,
+    managingGroups = false,
+    expanded = null;
+  const reordering = createHabitReordering({ dom, move: reorder, flash });
+
+  async function reorder(id, targetId, placement, groupId, focusKey) {
+    const currentFilter = filter;
+    const ok = await commit((latest) => {
+      const peers = orderedHabits(latest).filter(
+        (habit) => D.habitMatchesFilter(habit, currentFilter) && (habit.groupId ?? "") === groupId
+      );
+      if (![id, targetId].every((entry) => peers.some((habit) => habit.id === entry)))
+        throw new EditConflictError(
+          t("This list changed. Review the current order and try again.")
+        );
+      return insertHabit(
+        latest,
+        id,
+        targetId,
+        peers.map((habit) => habit.id),
+        placement
+      );
+    });
+    if (ok) flash(t("Habit order saved."));
+    restoreFocus(focusKey);
+  }
   function weekHeadings(className = "week") {
     const days = node("div", undefined, className);
     days.setAttribute("aria-hidden", "true");
@@ -70,10 +97,14 @@ export function createDayView({
     render();
   }
   function renderDay(s, today) {
+    reordering.cancel();
     const locked = s.blocked || s.busyRead || !s.state;
     byId("arrange").disabled = locked || s.pending > 0;
     byId("arrange").setAttribute("aria-pressed", String(arranging));
+    byId("arrange").textContent = arranging ? t("Done reordering") : t("Reorder");
     byId("arrange-hint").hidden = !arranging;
+    byId("manage-groups").disabled = locked || s.pending > 0;
+    byId("manage-groups").setAttribute("aria-pressed", String(managingGroups));
     for (const key of filters) byId(key).setAttribute("aria-pressed", String(filter === key));
     if (!s.state) {
       byId("cards").replaceChildren();
@@ -105,7 +136,7 @@ export function createDayView({
         ? t("Goals met so far: ") + good + t(" of ") + tracked.length
         : t("Successful: ") + good + t(" of ") + tracked.length;
     const focusKey = activeElement()?.dataset.focusKey;
-    organization.management(state, locked || s.pending > 0, arranging);
+    organization.management(state, locked || s.pending > 0, managingGroups);
     const content = fragment();
     if (!visible.length) {
       const el = node("div", undefined, "empty");
@@ -133,13 +164,6 @@ export function createDayView({
       );
       content.append(el);
     }
-    if (visible.length) {
-      const header = node("div", undefined, "habit-header");
-      header.setAttribute("aria-hidden", "true");
-      header.append(node("span"));
-      header.append(weekHeadings());
-      content.append(header);
-    }
     let lastGroup = null;
     for (const habit of visible) {
       if (state.groups?.length && lastGroup !== (habit.groupId ?? "")) {
@@ -157,8 +181,10 @@ export function createDayView({
         increment = D.stepOf(habit);
       const card = node("article", undefined, "habit-row");
       card.dataset.habitId = habit.id;
-      const top = node("div", undefined, "habit-info"),
-        title = node("div");
+      card.dataset.groupId = habit.groupId ?? "";
+      card.classList.toggle("is-reordering", arranging);
+      const top = node("div", undefined, "habit-summary"),
+        title = node("div", undefined, "habit-info");
       const edit = button(
         habitName(habit),
         () => openEditor(habit),
@@ -170,47 +196,31 @@ export function createDayView({
       edit.dataset.focusKey = habit.id + "-edit";
       const heading = node("h2");
       heading.append(edit);
+      title.append(heading, node("p", resultLabel(result), "sr-only"));
+      const extras = node("div", undefined, "habit-extra-actions");
       if (habit.endDate === null) {
         const visibility = button(
-          "",
+          habit.hidden ? t("Show habit") : t("Hide habit"),
           async () => {
             if (await commit((state) => D.setHabitHidden(state, habit.id, !habit.hidden)))
               byId(filter).focus();
           },
           (habit.hidden ? t("Show habit: ") : t("Hide habit: ")) + habit.name,
-          "habit-visibility"
+          "quiet"
         );
-        visibility.innerHTML = habit.hidden
-          ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>'
-          : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-        visibility.title = visibility.getAttribute("aria-label");
-        visibility.setAttribute("aria-pressed", String(!!habit.hidden));
         visibility.disabled = edit.disabled;
-        heading.append(visibility);
+        extras.append(visibility);
       }
-      title.append(heading, node("p", resultLabel(result), "sr-only"));
+      if (state.groups?.length) extras.append(organization.membership(habit, state, edit.disabled));
+      let orderMenu;
       if (arranging) {
-        const controls = node("div", undefined, "habit-order");
-        const peers = visible.filter((entry) => entry.groupId === habit.groupId);
-        const position = peers.indexOf(habit);
-        for (const [offset, label, suffix] of [
-          [-1, t("Move up"), "up"],
-          [1, t("Move down"), "down"]
-        ]) {
-          const neighbor = peers[position + offset];
-          const move = button(
-            label,
-            () => {
-              void commit((latest) => moveHabit(latest, habit.id, neighbor.id));
-            },
-            label + ": " + habit.name
-          );
-          move.disabled = edit.disabled || !neighbor;
-          move.dataset.focusKey = habit.id + "-move-" + suffix;
-          controls.append(move);
-        }
-        controls.append(organization.membership(habit, state, edit.disabled));
-        title.append(controls);
+        const controls = reordering.controls(
+          habit,
+          visible.filter((entry) => entry.groupId === habit.groupId),
+          edit.disabled
+        );
+        top.append(controls.handle);
+        orderMenu = controls.menu;
       }
       const rule =
         result.tracking === "check-in"
@@ -251,6 +261,10 @@ export function createDayView({
             "habit-rule"
           )
         );
+      if (result.tracking === "check-in")
+        description.textContent = [description.textContent, countText(result)]
+          .filter(Boolean)
+          .join(" · ");
       const streak = D.habitProgress(habit, selected, today),
         streakText = streakLabels(streak),
         badges = node("div", undefined, "habit-streaks");
@@ -268,7 +282,8 @@ export function createDayView({
         badges.append(
           node("span", "✦ " + streakText.ideal, "streak-badge" + (streak.idealDays ? " ideal" : ""))
         );
-      title.append(
+      const expandedStreak = node("div", undefined, "habit-expanded-streak");
+      expandedStreak.append(
         badges,
         node(
           "small",
@@ -276,7 +291,14 @@ export function createDayView({
           "habit-record" + (streak.isRecord ? " new-record" : "")
         )
       );
-      top.append(title);
+      const compactStreak = node(
+        "small",
+        (streak.days ? "🔥 " : "") + streakText.days,
+        "habit-streak-compact"
+      );
+      compactStreak.title = badges.title;
+      expandedStreak.append(node("p", badges.title, "hint"));
+      top.append(title, compactStreak);
       let counter;
       if (result.tracking === "check-in") {
         counter = completionControls(dom, {
@@ -286,7 +308,8 @@ export function createDayView({
           disabled: locked || s.pending > 0 || !result.editable || result.readOnly,
           commit,
           now,
-          focusPrefix: habit.id
+          focusPrefix: habit.id,
+          compact: true
         });
       } else {
         counter = node("div", undefined, "counter");
@@ -404,13 +427,32 @@ export function createDayView({
       );
       details.disabled = locked || s.pending > 0;
       details.dataset.focusKey = habit.id + "-details";
-      top.append(counter, note, details);
+      extras.prepend(note, details);
+      const toggle = button(
+        expanded === habit.id ? "⌃" : "⌄",
+        () => {
+          expanded = expanded === habit.id ? null : habit.id;
+          render();
+          restoreFocus(habit.id + "-expand");
+        },
+        t("Show history and actions: ") + habit.name,
+        "habit-expand"
+      );
+      toggle.dataset.focusKey = habit.id + "-expand";
+      toggle.setAttribute("aria-expanded", String(expanded === habit.id));
+      toggle.setAttribute("aria-controls", habit.id + "-expanded");
+      top.append(counter, toggle);
+      if (orderMenu) top.append(orderMenu);
       const history = node("div", undefined, "habit-history");
+      history.id = habit.id + "-expanded";
+      history.hidden = expanded !== habit.id;
       const progress =
         streak.unit === "weeks"
           ? node("p", usageText(result, unit), "hint")
           : progressPanel(dom, habit, streak);
-      history.append(weekHeadings("week habit-week-headings"), week, progress);
+      const recent = node("div", undefined, "habit-recent");
+      recent.append(weekHeadings("week habit-week-headings"), week, progress);
+      history.append(expandedStreak, recent, extras);
       card.append(top, history);
       content.append(card);
     }
@@ -419,6 +461,11 @@ export function createDayView({
   }
   on("arrange", "click", () => {
     arranging = !arranging;
+    if (arranging) expanded = null;
+    render();
+  });
+  on("manage-groups", "click", () => {
+    managingGroups = !managingGroups;
     render();
   });
   on("date", "change", (event) => {
@@ -441,8 +488,13 @@ export function createDayView({
   function reset() {
     selected = "";
     filter = "active";
+    expanded = null;
+    arranging = false;
+    managingGroups = false;
+    reordering.cancel();
   }
   return {
+    cancelReordering: reordering.cancel,
     render: renderDay,
     prepare,
     reset,

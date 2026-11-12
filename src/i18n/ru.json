@@ -588,5 +588,20 @@
   "Rates are separate for daily and weekly goals": "Показатели дневных и недельных целей рассчитываются отдельно",
   "Unsuccessful assessed periods: ": "Неуспешных оценённых периодов: ",
   "Successful period rate: ": "Доля успешных периодов: ",
-  "Daily minimum for a successful-day goal must be at least 1.": "Дневной минимум для цели по успешным дням должен быть не меньше 1."
+  "Daily minimum for a successful-day goal must be at least 1.": "Дневной минимум для цели по успешным дням должен быть не меньше 1.",
+  "Reorder": "Изменить порядок",
+  "Done reordering": "Готово",
+  "Manage groups": "Управление группами",
+  "Moving: ": "Перемещение: ",
+  "Reordering cancelled.": "Перемещение отменено.",
+  "Drag to reorder: ": "Перетащить привычку: ",
+  "Drag to reorder. Use Up and Down arrow keys to move within this group.": "Перетащите за ручку. Для перемещения внутри группы используйте клавиши со стрелками вверх и вниз.",
+  "Reorder options: ": "Параметры перемещения: ",
+  "This list changed. Review the current order and try again.": "Список изменился. Проверьте текущий порядок и повторите попытку.",
+  "Habit order saved.": "Порядок привычек сохранён.",
+  "Show history and actions: ": "Показать историю и действия: ",
+  "Show habit": "Показать привычку",
+  "Hide habit": "Скрыть привычку",
+  "Drag a handle to move a habit within its group. Use Up and Down arrow keys on a handle or choose Move up / Move down from its menu. Other lists keep their order.": "Перетащите привычку за ручку внутри группы. Можно использовать клавиши вверх и вниз на ручке или пункты «Выше / Ниже» в её меню. Порядок в других списках сохраняется.",
+  "Drag a handle to reorder within its group.": "Перетащите привычку за ручку внутри группы."
 }

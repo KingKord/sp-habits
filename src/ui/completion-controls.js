@@ -5,7 +5,7 @@ import { countText } from "./format.js";
 // A completion mark is a report by the user, never inferred from the clock.
 export function completionControls(
   dom,
-  { habit, date, result, disabled, commit, now, focusPrefix, onSaved, onError }
+  { habit, date, result, disabled, commit, now, focusPrefix, onSaved, onError, compact = false }
 ) {
   const group = dom.node("div", undefined, "completion-controls");
   const status = dom.node("small", countText(result), "completion-status");
@@ -33,7 +33,7 @@ export function completionControls(
   ]) {
     const selected = result.recorded && result.count === value;
     const button = dom.button(
-      selected ? selectedLabel : label,
+      compact ? (value === 1 ? "✓" : "×") : selected ? selectedLabel : label,
       async () => {
         if (saving) return;
         saving = true;
@@ -54,6 +54,7 @@ export function completionControls(
       actionLabel + habit.name,
       "completion-check " + suffix
     );
+    button.title = selected ? selectedLabel : label;
     button.disabled = disabled;
     button.setAttribute("aria-pressed", String(selected));
     button.dataset.focusKey = focusPrefix + "-" + suffix;

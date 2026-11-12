@@ -96,6 +96,7 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
     openNoteEditor: note.open,
     openDetails: details.open
   });
+  scope.add(day.cancelReordering);
   const calendar = createCalendarView({
     dom,
     store,
@@ -131,6 +132,7 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
   };
   for (const [name, view] of Object.entries(views)) {
     on(view.button, "click", () => {
+      day.cancelReordering();
       currentView = name;
       render();
     });

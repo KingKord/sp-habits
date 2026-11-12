@@ -65,6 +65,24 @@ export function moveHabit(state, id, neighborId) {
   return validateOrganization({ ...structuredClone(state), habitOrder: order });
 }
 
+// Reorder only the visible peer slots. Invisible habits and other groups retain their positions.
+export function insertHabit(state, id, targetId, peerIds, placement = "before") {
+  const order = orderedHabits(state).map((habit) => habit.id);
+  const peers = order.filter((entry) => peerIds.includes(entry));
+  requireValue(
+    ["before", "after"].includes(placement) &&
+      peers.includes(id) &&
+      peers.includes(targetId) &&
+      id !== targetId,
+    "Choose two different habits to reorder."
+  );
+  peers.splice(peers.indexOf(id), 1);
+  peers.splice(peers.indexOf(targetId) + (placement === "after" ? 1 : 0), 0, id);
+  let index = 0;
+  const next = order.map((entry) => (peerIds.includes(entry) ? peers[index++] : entry));
+  return validateOrganization({ ...structuredClone(state), habitOrder: next });
+}
+
 export function removeHabitOrganization(state, id) {
   if (state.habitOrder !== undefined)
     state.habitOrder = state.habitOrder.filter((entry) => entry !== id);

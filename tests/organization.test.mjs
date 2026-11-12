@@ -4,6 +4,7 @@ import * as D from "../src/domain.js";
 import {
   orderedHabits,
   moveHabit,
+  insertHabit,
   createGroup,
   renameGroup,
   removeGroup,
@@ -195,4 +196,40 @@ test("failed group saves preserve confirmed membership and names", async () => {
     assert.deepEqual(store.snapshot().state, state);
     assert.equal(store.snapshot().blocked, true);
   }
+});
+
+test("drag insertion moves a habit across several peers without swapping endpoints or changing history", () => {
+  const state = fixture();
+  const raw = D.encodeState(state);
+  const up = insertHabit(state, "d", "a", ["a", "c", "d"], "before");
+  assert.deepEqual(ids(up), ["d", "b", "a", "c"]);
+  assert.deepEqual(up.habits, state.habits);
+  const down = insertHabit(state, "a", "d", ["a", "c", "d"], "after");
+  assert.deepEqual(ids(down), ["c", "b", "d", "a"]);
+  assert.deepEqual(down.habits, state.habits);
+  assert.deepEqual(ids(D.parseBackup(D.encodeState(down))), ids(down));
+  assert.equal(D.encodeState(state), raw);
+});
+
+test("drag insertion preserves hidden, archived and other-group slots, including legacy histories", () => {
+  let state = createGroup(fixture(), "g", "Routine");
+  state = setHabitGroup(state, "a", "g");
+  state = setHabitGroup(state, "d", "g");
+  state = D.archiveHabit(state, "c", today);
+  state.habits[0].notes = { [today]: "Keep this note" };
+  const next = insertHabit(state, "d", "a", ["a", "d"], "before");
+  assert.deepEqual(ids(next), ["d", "b", "c", "a"]);
+  assert.deepEqual(next.habits, state.habits);
+  assert.deepEqual(next.groups, state.groups);
+  assert.deepEqual(
+    D.statistics(next, today, today, today),
+    D.statistics(state, today, today, today)
+  );
+  for (const args of [
+    ["a", "missing", ["a", "d"], "before"],
+    ["a", "a", ["a", "d"], "before"],
+    ["a", "d", ["a"], "before"],
+    ["a", "d", ["a", "d"], "invalid"]
+  ])
+    assert.throws(() => insertHabit(state, ...args));
 });
