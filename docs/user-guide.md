@@ -173,6 +173,8 @@ Schema version 1 remains readable without a read-time migration. `goal` is optio
 
 Writes are serialized, including rapid clicks. Wait for **Ready** before closing. A failed write stops the queue; **Reload data** restores confirmed storage. Invalid JSON is surfaced rather than replaced with an empty history. Import validates the structure and replaces the entire plugin history after confirmation.
 
+Normal JSON exports use compact formatting so adding indentation cannot make a backup exceed its import limit. Import accepts files up to 12,000,000 UTF-8 bytes, including older indented exports, provided their compact JSON fits the existing storage capacity of 4,000,000 UTF-16 code units. This byte allowance preserves the full capacity for Unicode names, units and legacy notes. Formatting is not stored; history, unknown fields and user-entered text are preserved. Oversized imports and edits are rejected before writing. **Download original data** exports the original stored string unchanged for recovery.
+
 Sync depends on Super Productivity settings. Concurrent multi-device edits are unsupported because one JSON value cannot merge parallel changes. Delivery to a second client has not been verified.
 
 The timezone is captured from the system when the first state is saved and is then retained. Days run 00:00–24:00; a custom host start-of-day setting is not supported. Closed applications need no scheduled task: results are derived when opened.

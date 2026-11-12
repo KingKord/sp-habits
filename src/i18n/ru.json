@@ -89,6 +89,7 @@
   "Export sent to the app: ": "Экспорт передан приложению: ",
   "Unable to export: ": "Не удалось экспортировать: ",
   "File too large. Maximum: 4 MB.": "Файл слишком большой. Максимум — 4 МБ.",
+  "Backup too large. Maximum: 12 MB.": "Резервная копия слишком большая. Максимум — 12 МБ.",
   "Replace all Habits history with this file? Habits in the file: ": "Заменить всю историю Habits содержимым файла? Привычек в файле: ",
   ". First save the current history using Export JSON.": ". Сначала сохраните текущую историю через «Экспорт JSON».",
   "History imported.": "История импортирована.",

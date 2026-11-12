@@ -1,5 +1,6 @@
 import { t } from "./i18n/index.js";
 import { canonicalUnit } from "./i18n/units.js";
+import { MAX_STORAGE_CHARACTERS, MAX_BACKUP_BYTES } from "./data-limits.js";
 export const MAX_VALUE = 1000000000;
 const VISIBILITY_ERROR = "Invalid habit visibility.";
 
@@ -299,8 +300,22 @@ export function validateState(state) {
 
 export function parseState(raw) {
   assert(typeof raw === "string", t("Stored data must be a JSON string."));
-  assert(raw.length <= 4000000, t("File too large (maximum 4 million characters)."));
+  assert(raw.length <= MAX_STORAGE_CHARACTERS, t("File too large (maximum 4 million characters)."));
   return validateState(JSON.parse(raw));
+}
+
+export function encodeState(state) {
+  const raw = JSON.stringify(validateState(state));
+  assert(raw.length <= MAX_STORAGE_CHARACTERS, t("File too large (maximum 4 million characters)."));
+  return raw;
+}
+
+export function parseBackup(raw) {
+  assert(typeof raw === "string", t("Stored data must be a JSON string."));
+  assert(raw.length <= MAX_BACKUP_BYTES, t("Backup too large. Maximum: 12 MB."));
+  const state = JSON.parse(raw);
+  encodeState(state);
+  return state;
 }
 
 export function validPeriod(days) {

@@ -1,5 +1,5 @@
 import { t } from "./i18n/index.js";
-import { emptyState, parseState, validateState } from "./domain.js";
+import { emptyState, parseState, encodeState } from "./domain.js";
 
 export function createStore(api, notify = () => {}) {
   let state = null,
@@ -54,8 +54,7 @@ export function createStore(api, notify = () => {}) {
         try {
           // Read fresh data before each serialized mutation; this is not a cross-device lock.
           const latest = await read();
-          const candidate = validateState(transform(latest));
-          const encoded = JSON.stringify(candidate);
+          const encoded = encodeState(transform(latest));
           const confirmed = await api.persistDataSynced(encoded, metadata);
           raw = typeof confirmed === "string" ? confirmed : (confirmed?.raw ?? encoded);
           state = parseState(raw);

@@ -75,7 +75,7 @@ export function installExportBridge(api, window, document, tasks, styles) {
       let output = raw;
       if (!message.recovery) {
         try {
-          output = JSON.stringify(JSON.parse(raw), null, 2);
+          output = JSON.stringify(JSON.parse(raw));
         } catch {
           /* Preserve raw data for recovery. */
         }

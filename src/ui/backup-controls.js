@@ -1,5 +1,6 @@
 import { t } from "../i18n/index.js";
 import * as D from "../domain.js";
+import { MAX_BACKUP_BYTES } from "../data-limits.js";
 
 export function mountBackupControls({
   dom,
@@ -33,8 +34,8 @@ export function mountBackupControls({
     const file = event.target.files[0];
     if (!file) return;
     try {
-      if (file.size > 4000000) throw new Error(t("File too large. Maximum: 4 MB."));
-      const candidate = D.parseState(await file.text());
+      if (file.size > MAX_BACKUP_BYTES) throw new Error(t("Backup too large. Maximum: 12 MB."));
+      const candidate = D.parseBackup(await file.text());
       if (!dom.isActive()) return;
       if (
         !confirm(

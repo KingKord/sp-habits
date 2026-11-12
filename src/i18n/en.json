@@ -89,6 +89,7 @@
   "Export sent to the app: ": "Export sent to the app: ",
   "Unable to export: ": "Unable to export: ",
   "File too large. Maximum: 4 MB.": "File too large. Maximum: 4 MB.",
+  "Backup too large. Maximum: 12 MB.": "Backup too large. Maximum: 12 MB.",
   "Replace all Habits history with this file? Habits in the file: ": "Replace all Habits history with this file? Habits in the file: ",
   ". First save the current history using Export JSON.": ". First save the current history using Export JSON.",
   "History imported.": "History imported.",
