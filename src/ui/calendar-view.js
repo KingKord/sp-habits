@@ -12,6 +12,14 @@ import {
   resultLabel
 } from "./format.js";
 
+export function calendarSymbol(day) {
+  if (day.zone === "rest") return "–";
+  if (day.kind === "future") return "›";
+  if (day.kind === "inactive") return "·";
+  if (day.tracking === "check-in" && !day.recorded) return "?";
+  return { ideal: "✦", warning: "✓", red: "×", neutral: "○" }[day.zone] ?? "·";
+}
+
 export function createCalendarView({
   dom,
   store,
@@ -97,7 +105,7 @@ export function createCalendarView({
       snapshot.blocked ||
       snapshot.pending > 0 ||
       snapshot.busyRead;
-    const symbol = { ideal: "✓", warning: "✓", red: "×", rest: "–" }[day.zone] ?? "·";
+    const symbol = calendarSymbol(day);
     const dot = node("span", symbol, "calendar-mark-dot zone-" + day.zone);
     dot.setAttribute("aria-hidden", "true");
     const name = node("span", habit.name, "calendar-mark-name");
@@ -261,7 +269,9 @@ export function createCalendarView({
         const result = months[habitIndex].cells[index];
         marks.append(habitMark(habit, result, today, snapshot));
         if (habitIndex < 4)
-          overview.append(node("span", "", "calendar-overview-dot zone-" + result.zone));
+          overview.append(
+            node("span", calendarSymbol(result), "calendar-overview-dot zone-" + result.zone)
+          );
       }
       if (habits.length > 4) overview.append(node("small", "+" + (habits.length - 4)));
       cell.append(heading, overview, marks);

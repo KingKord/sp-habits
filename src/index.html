@@ -82,8 +82,14 @@
           </div>
         </div>
         <div class="calendar-legend" aria-label="Zones">
-          <span class="zone-ideal">Ideal</span><span class="zone-warning">Acceptable</span
-          ><span class="zone-red">Unsuccessful</span>
+          <span class="zone-ideal"><span aria-hidden="true">✦</span> Ideal</span>
+          <span class="zone-warning"><span aria-hidden="true">✓</span> Acceptable</span>
+          <span class="zone-red"><span aria-hidden="true">×</span> Unsuccessful</span>
+          <span><span aria-hidden="true">?</span> Not marked</span>
+          <span><span aria-hidden="true">–</span> Rest day</span>
+          <span><span aria-hidden="true">›</span> Future day</span>
+          <span><span aria-hidden="true">○</span> No color</span>
+          <span><span aria-hidden="true">·</span> Not tracked</span>
         </div>
         <p id="calendar-summary" class="sr-only" aria-live="polite"></p>
         <div class="calendar-weekdays" aria-hidden="true">
