@@ -229,6 +229,10 @@ export function createHabitEditor({
     lastFocusKey = lastFocus?.dataset.focusKey;
     const today = now(),
       from = habit ? habit.endDate || today : today;
+    originalRepeatId = D.scheduleForDate(habit ?? {}, today)?.repeatId ?? "";
+    // A previous editor may have left a different task selected. Reset it
+    // before any dependent field update can change the new habit's draft.
+    byId("task-series").value = originalRepeatId;
     manualSchedule.open(habit, from);
     pauses.open(habit, from, today);
     weeklyGoal.open(habit, from);
@@ -276,7 +280,6 @@ export function createHabitEditor({
           "Zero is a valid limit. Days without recorded events count as within the limit. Include events that have already happened today."
         );
     updateGoalFields();
-    originalRepeatId = D.scheduleForDate(habit ?? {}, today)?.repeatId ?? "";
     void populateSchedules(habit, originalRepeatId);
     byId("editor-error").textContent = "";
     initialForm = formValues();
