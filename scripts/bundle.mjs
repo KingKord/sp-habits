@@ -4,11 +4,32 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../", import.meta.url));
 
 // Real module resolution handles transitive imports, aliases and tree shaking.
-export async function bundle(entryPoint, { includeMetadata = false } = {}) {
+export async function bundle(entryPoint, { includeMetadata = false, application } = {}) {
   const result = await build({
     absWorkingDir: root,
     entryPoints: [entryPoint],
     bundle: true,
+    plugins: [
+      {
+        name: "offline-application",
+        setup(plugin) {
+          plugin.onResolve({ filter: /^habits:application$/ }, () => ({
+            path: "application",
+            namespace: "habits"
+          }));
+          plugin.onLoad({ filter: /^application$/, namespace: "habits" }, async () => {
+            const source = application ?? (await bundle("src/app.js"));
+            return {
+              contents:
+                "export default " +
+                JSON.stringify(typeof source === "string" ? source : source.code) +
+                ";",
+              loader: "js"
+            };
+          });
+        }
+      }
+    ],
     loader: { ".css": "text" },
     write: false,
     metafile: includeMetadata,

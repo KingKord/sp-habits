@@ -1,4 +1,5 @@
 import styles from "./styles.css";
+import applicationSource from "habits:application";
 import { installExportBridge } from "./host/export-host.js";
 import { createTaskIntegration } from "./task-integration.js";
 import { targetOrigin } from "./host/protocol.js";
@@ -36,7 +37,7 @@ if (PluginAPI.registerHook && PluginAPI.getAppState) {
     timer = window.setInterval(tasks.refresh, 30000);
   });
 }
-const dispose = installExportBridge(PluginAPI, window, document, tasks, styles);
+const dispose = installExportBridge(PluginAPI, window, document, tasks, styles, applicationSource);
 PluginAPI.onUnload?.(() => {
   disposed = true;
   dispose();

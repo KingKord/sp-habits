@@ -11,3 +11,5 @@ export function transportOrigin(origin) {
 export function targetOrigin(origin) {
   return transportOrigin(origin) === "null" ? "*" : origin;
 }
+
+export const MAX_APPLICATION_CHARACTERS = 4 * 1024 * 1024;

@@ -5,13 +5,14 @@ import {
   SYSTEM_EMOJI_REQUEST,
   SYSTEM_EMOJI_RESPONSE,
   transportOrigin,
-  targetOrigin
+  targetOrigin,
+  MAX_APPLICATION_CHARACTERS
 } from "./protocol.js";
 import { emojiData } from "../i18n/emoji-data.js";
 import messages from "../i18n/ru.json" with { type: "json" };
 
 // downloadFile exists on the host API. Only this plugin's own storage is read.
-export function installExportBridge(api, window, document, tasks, styles) {
+export function installExportBridge(api, window, document, tasks, styles, applicationSource) {
   const handleExport = async (event) => {
     const message = event.data;
     if (
@@ -55,6 +56,16 @@ export function installExportBridge(api, window, document, tasks, styles) {
       if (message.asset === "tasks") {
         if (!tasks) throw new Error(t("Task integration is unavailable. Update the plugin."));
         reply({ ok: true, ...(await tasks.request(message)) });
+        return;
+      }
+      if (message.asset === "application") {
+        if (
+          typeof applicationSource !== "string" ||
+          !applicationSource.trim() ||
+          applicationSource.length > MAX_APPLICATION_CHARACTERS
+        )
+          throw new Error("The bundled Habits application is unavailable. Reinstall the plugin.");
+        reply({ ok: true, source: applicationSource });
         return;
       }
       if (message.asset === "translations") {

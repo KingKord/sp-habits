@@ -16,6 +16,7 @@ import vm from "node:vm";
 import { bundle } from "./bundle.mjs";
 import { readReleaseVersion } from "./version.mjs";
 import { iframeBudget, assertIframeBudget } from "./iframe-budget.mjs";
+import { MAX_APPLICATION_CHARACTERS } from "../src/host/protocol.js";
 
 await readReleaseVersion();
 
@@ -25,12 +26,18 @@ await mkdir(dir, { recursive: true });
 const read = (name) => readFile(path.join(root, "src", name), "utf8");
 const manifest = JSON.parse(await read("manifest.json"));
 if (!manifest.iFrame || manifest.id !== "sp-habit-limits") throw new Error("Invalid manifest");
-const [application, host] = await Promise.all([
+const [application, loader] = await Promise.all([
   bundle("src/app.js", { includeMetadata: true }),
-  bundle("src/plugin.js", { includeMetadata: true })
+  bundle("src/loader.js", { includeMetadata: true })
 ]);
-const script = application.code,
+const host = await bundle("src/plugin.js", { includeMetadata: true, application });
+const script = loader.code,
   hostScript = host.code;
+new vm.Script(application.code);
+if (application.code.length > MAX_APPLICATION_CHARACTERS)
+  throw new Error("The application exceeds the offline loader resource limit");
+if (Buffer.byteLength(hostScript) > 10 * 1024 * 1024)
+  throw new Error("plugin.js exceeds the 10 MiB bundled resource limit");
 new vm.Script(script);
 new vm.Script(hostScript);
 const html = (await read("index.html"))
@@ -39,6 +46,9 @@ const html = (await read("index.html"))
   .replace("/* INLINE_SCRIPT */", () => script.replace(/<\/script/gi, "<\\/script"));
 const report = {
   ...iframeBudget(Buffer.byteLength(html)),
+  loader: loader.inputs,
+  applicationBytes: Buffer.byteLength(application.code),
+  hostBytes: Buffer.byteLength(hostScript),
   application: application.inputs,
   host: host.inputs
 };
