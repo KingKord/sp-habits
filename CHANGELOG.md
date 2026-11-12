@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.22.0
+
+- Protect unsaved quantities and reduction plans on every dismissal path; lock complete forms while saving (#24–#26).
+- Keep custom statistics ranges, group-name caret/selection, backdated pause dates and inactive goal-mode drafts intact (#27, #28, #32, #43).
+- Reload confirmed data inside failed-save dialogs while retaining input and original conflict checks (#36).
+- Keep unsaved habit, quantity, note and plan drafts in tab-local session storage, with explicit resume/discard after host navigation and recoverable text for unavailable contexts (#39).
+- Remember an explicit theme separately from habit history; Follow app removes the override and observes supported host theme changes (#33).
+- Follow responsive emoji columns with arrow keys, dismiss reorder menus with Escape/outside interaction, and hide the forced-compact mobile toggle while preserving its desktop preference (#29, #34, #35).
+- Bring selected mobile calendar details into view with a return action, expose saved notes in collapsed rows/calendar marks, and explain horizontally scrollable history tables with sticky dates (#37, #38, #42).
+- Improve primary-button contrast and touch settings targets; add restrained expansion and confirmed-action feedback with a static reduced-motion alternative (#30, #31, #40).
+- Clarify quantity zero-defaults, unknown check-ins and Undo in the in-app help and user guide (#41).
+
 ## 0.21.0
 
 - Replace tall day cards with compact habit rows and quick quantity/check-in actions. Expand a row for recent history, streaks, badges, notes and additional actions.

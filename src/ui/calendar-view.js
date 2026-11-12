@@ -2,6 +2,7 @@ import { t } from "../i18n/index.js";
 import { unitText } from "./units.js";
 import { scheduleDescription } from "./schedule-fields.js";
 import { weeklyRuleDescription } from "../weekly-goals.js";
+import { noteForDate } from "../notes.js";
 import * as D from "../domain.js";
 import {
   dateText,
@@ -37,6 +38,29 @@ export function createCalendarView({
   openPlan
 }) {
   const { byId, node, button, fragment, on } = dom;
+  const view = byId("calendar-grid").ownerDocument.defaultView;
+  const narrow = view.matchMedia("(max-width: 900px)");
+  const detailsTitle = byId("calendar-day-title");
+  detailsTitle.tabIndex = -1;
+  const returnToDate = button(
+    t("Back to selected date"),
+    () => {
+      const selected = [...byId("calendar-grid").querySelectorAll(".calendar-date-select")].find(
+        (control) => control.dataset.focusKey === "cal-date-" + calendarDate
+      );
+      selected?.focus({ preventScroll: true });
+      selected?.scrollIntoView({ block: "center", behavior: "auto" });
+    },
+    undefined,
+    "quiet calendar-return"
+  );
+  detailsTitle.after(returnToDate);
+  const updateCompactControl = () => {
+    byId("calendar-compact").hidden = narrow.matches;
+    returnToDate.hidden = !narrow.matches;
+  };
+  narrow.addEventListener("change", updateCompactControl);
+  updateCompactControl();
   let calendarMonth = "",
     calendarDate = "",
     filter = "active",
@@ -60,6 +84,7 @@ export function createCalendarView({
 
   function habitMark(habit, day, today, snapshot, prefix = "cal") {
     const unit = unitText(D.unitOf(habit));
+    const hasNote = !!noteForDate(habit, day.date);
     const label =
       habitName(habit) +
       " · " +
@@ -89,7 +114,8 @@ export function createCalendarView({
       (!habit.endDate || day.date <= habit.endDate)
         ? t(", plan: ") + goalText(day.goal) + ruleText(day.limit, day.periodDays, unit, day.goal)
         : "") +
-      (day.date === today ? t(" · provisional") : "");
+      (day.date === today ? t(" · provisional") : "") +
+      (hasNote ? t(" · Daily note available") : "");
     const mark = button(
       "",
       () => {
@@ -132,6 +158,11 @@ export function createCalendarView({
         "calendar-mark-value"
       )
     );
+    if (hasNote) {
+      const indicator = node("span", "✎", "calendar-note-indicator");
+      indicator.setAttribute("aria-hidden", "true");
+      mark.append(indicator);
+    }
     return mark;
   }
 
@@ -271,6 +302,10 @@ export function createCalendarView({
         () => {
           calendarDate = day.date;
           render();
+          if (narrow.matches) {
+            detailsTitle.focus({ preventScroll: true });
+            detailsTitle.scrollIntoView({ block: "start", behavior: "auto" });
+          }
         },
         t("Show habits for ") + dateText(day.date, { year: "numeric" }),
         "calendar-date-select"
@@ -279,6 +314,17 @@ export function createCalendarView({
       dateButton.setAttribute("aria-pressed", String(day.date === calendarDate));
       dateButton.setAttribute("aria-controls", "calendar-day-habits");
       if (day.date === today) dateButton.setAttribute("aria-current", "date");
+      if (habits.some((habit) => noteForDate(habit, day.date))) {
+        const indicator = node("span", "✎", "calendar-note-indicator");
+        indicator.setAttribute("aria-hidden", "true");
+        dateButton.append(indicator);
+        dateButton.setAttribute(
+          "aria-label",
+          t("Show habits for ") +
+            dateText(day.date, { year: "numeric" }) +
+            t(" · Daily notes available")
+        );
+      }
       heading.append(dateButton);
       const marks = node("div", undefined, "calendar-marks");
       const overview = node("div", undefined, "calendar-day-overview");
@@ -321,6 +367,7 @@ export function createCalendarView({
     render();
   });
   on("calendar-compact", "click", () => {
+    if (narrow.matches) return;
     compact = !compact;
     try {
       localStorage.setItem("habits-calendar-compact", compact ? "1" : "0");
@@ -348,5 +395,8 @@ export function createCalendarView({
     calendarMonth = calendarDate.slice(0, 7);
     render();
   });
-  return { render: renderCalendar };
+  return {
+    render: renderCalendar,
+    dispose: () => narrow.removeEventListener("change", updateCompactControl)
+  };
 }

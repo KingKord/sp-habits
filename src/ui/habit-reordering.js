@@ -7,14 +7,33 @@ export function createHabitReordering({ dom, move, flash }) {
   const document = container.ownerDocument;
   const view = document.defaultView;
   let drag = null;
+  let openMenu = null;
   let frame = null;
 
+  function closeMenu(restoreFocus = false) {
+    if (!openMenu) return;
+    const previous = openMenu;
+    openMenu = null;
+    previous.menu.open = false;
+    document.removeEventListener?.("pointerdown", outsideMenu);
+    document.removeEventListener?.("keydown", escapeMenu);
+    if (restoreFocus) previous.trigger.focus();
+  }
+  function outsideMenu(event) {
+    if (openMenu && !openMenu.menu.contains(event.target)) closeMenu();
+  }
+  function escapeMenu(event) {
+    if (event.key !== "Escape" || !openMenu) return;
+    event.preventDefault();
+    closeMenu(true);
+  }
   function clearTarget() {
     container.querySelectorAll(".drop-before, .drop-after").forEach((row) => {
       row.classList.remove("drop-before", "drop-after");
     });
   }
   function cancel() {
+    closeMenu();
     if (frame !== null) view.cancelAnimationFrame(frame);
     frame = null;
     clearTarget();
@@ -142,6 +161,35 @@ export function createHabitReordering({ dom, move, flash }) {
     const trigger = node("summary", "⋯");
     trigger.setAttribute("aria-label", t("Reorder options: ") + habit.name);
     trigger.dataset.focusKey = habit.id + "-order-menu";
+    trigger.setAttribute("aria-disabled", String(disabled));
+    function trackMenu() {
+      if (!menu.open) {
+        if (openMenu?.menu === menu) closeMenu();
+        return;
+      }
+      if (disabled) {
+        menu.open = false;
+        return;
+      }
+      if (openMenu?.menu === menu) return;
+      closeMenu();
+      openMenu = { menu, trigger };
+      document.addEventListener?.("pointerdown", outsideMenu);
+      document.addEventListener?.("keydown", escapeMenu);
+    }
+    trigger.addEventListener("click", (event) => {
+      // Native toggle events are deferred. Register dismissal before the next key or pointer event.
+      event.preventDefault();
+      if (disabled) return;
+      if (menu.open) {
+        menu.open = false;
+        if (openMenu?.menu === menu) closeMenu();
+      } else {
+        menu.open = true;
+        trackMenu();
+      }
+    });
+    menu.addEventListener("toggle", trackMenu);
     menu.append(trigger);
     const actions = node("div", undefined, "habit-reorder-actions");
     for (const [offset, label] of [
@@ -151,6 +199,7 @@ export function createHabitReordering({ dom, move, flash }) {
       const control = button(
         (offset < 0 ? "↑ " : "↓ ") + label,
         () => {
+          closeMenu();
           void step(offset);
         },
         label + ": " + habit.name

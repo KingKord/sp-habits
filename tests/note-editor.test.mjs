@@ -27,14 +27,32 @@ async function harness(note = "") {
     fail = false,
     answer = false,
     active,
-    writes = 0;
+    writes = 0,
+    releaseWrite = null,
+    hold = false;
   const fields = new Map(),
     handlers = new Map(),
     prompts = [];
   const byId = (id) => {
     if (!fields.has(id))
       fields.set(id, {
+        id,
         value: "",
+        children: [],
+        append(...children) {
+          this.children.push(...children);
+        },
+        setAttribute() {},
+        querySelectorAll(selector) {
+          return id === "note-form"
+            ? [
+                "note-text",
+                ...(selector.includes("button")
+                  ? ["save-note", "remove-note", "cancel-note", "close-note"]
+                  : [])
+              ].map(byId)
+            : [];
+        },
         disabled: false,
         open: false,
         dataset: {},
@@ -59,6 +77,10 @@ async function harness(note = "") {
   const store = createStore({
     loadSyncedData: async () => raw,
     persistDataSynced: async (value) => {
+      if (hold)
+        await new Promise((resolve) => {
+          releaseWrite = resolve;
+        });
       if (fail) throw new Error("Storage unavailable");
       raw = value;
       writes++;
@@ -68,6 +90,17 @@ async function harness(note = "") {
   const editor = createNoteEditor({
     dom: {
       byId,
+      node: (_tag, text = "") => {
+        const el = byId("created-" + fields.size);
+        el.textContent = text;
+        return el;
+      },
+      button: (text, action) => {
+        const el = byId("created-" + fields.size);
+        el.textContent = text;
+        el.action = action;
+        return el;
+      },
       on: (id, type, handler) => handlers.set(id + ":" + type, handler),
       activeElement: () => active,
       isActive: () => true,
@@ -93,6 +126,16 @@ async function harness(note = "") {
   return {
     byId,
     store,
+    editor,
+    recover: () =>
+      [...fields.values()].find((el) => el.textContent === "Reload data and keep editing").action(),
+    hold: () => {
+      hold = true;
+    },
+    release: () => {
+      hold = false;
+      releaseWrite();
+    },
     prompts,
     opener,
     open: () => editor.open(store.snapshot().state.habits[0], today),
@@ -101,8 +144,8 @@ async function harness(note = "") {
     data: () => JSON.parse(raw),
     writes: () => writes,
     active: () => active,
-    fail: () => {
-      fail = true;
+    fail: (value = true) => {
+      fail = value;
     },
     answer: () => {
       answer = true;
@@ -183,4 +226,62 @@ test("note cancellation protects unsaved text and does not write an outcome", as
   assert.deepEqual(h.data().habits[0].counts, {});
   assert.equal(h.data().habits[0].notes, undefined);
   assert.equal(h.writes(), 0);
+});
+
+test("a failed note can reload confirmed data inside its modal and save the same draft", async () => {
+  const h = await harness("Confirmed");
+  h.open();
+  h.byId("note-text").value = "Retained draft";
+  h.fail();
+  await h.send("note-form", "submit");
+  assert.equal(h.byId("save-note").disabled, true);
+  h.fail(false);
+  await h.recover();
+  assert.equal(h.byId("note-editor").open, true);
+  assert.equal(h.byId("note-text").value, "Retained draft");
+  assert.equal(h.byId("save-note").disabled, false);
+  await h.send("note-form", "submit");
+  assert.equal(h.data().habits[0].notes[today], "Retained draft");
+});
+
+test("all note controls are locked while persistence is pending", async () => {
+  const h = await harness();
+  h.open();
+  h.byId("note-text").value = "Submitted draft";
+  h.hold();
+  const save = h.send("note-form", "submit");
+  await settle();
+  for (const id of ["note-text", "save-note", "remove-note", "cancel-note", "close-note"])
+    assert.equal(h.byId(id).disabled, true, id);
+  h.release();
+  await save;
+  assert.equal(h.data().habits[0].notes[today], "Submitted draft");
+});
+
+test("restored note drafts retain their original conflict baseline", async () => {
+  const h = await harness("Original");
+  h.open();
+  h.byId("note-text").value = "My restored draft";
+  const draft = JSON.parse(JSON.stringify(h.editor.captureDraft()));
+  const restored = await harness("Delivered note");
+  assert.equal(restored.editor.restoreDraft(draft), true);
+  assert.equal(restored.byId("note-text").value, "My restored draft");
+  await restored.send("note-form", "submit");
+  assert.equal(restored.data().habits[0].notes[today], "Delivered note");
+  assert.equal(restored.byId("note-editor").open, true);
+  assert.match(restored.byId("note-error").textContent, /changed while the form was open/);
+});
+
+test("closing a restored note skips a connected but hidden resume opener", async () => {
+  const original = await harness();
+  original.open();
+  original.byId("note-text").value = "Restored text";
+  const saved = JSON.parse(JSON.stringify(original.editor.captureDraft()));
+  const restored = await harness();
+  restored.opener.getClientRects = () => [];
+  restored.byId("note-text").getClientRects = () => (restored.byId("note-editor").open ? [{}] : []);
+  assert.equal(restored.editor.restoreDraft(saved), true);
+  restored.answer();
+  await restored.send("cancel-note", "click");
+  assert.equal(restored.active(), restored.byId("view-day"));
 });

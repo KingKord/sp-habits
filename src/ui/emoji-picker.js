@@ -126,13 +126,37 @@ export function createEmojiPicker({ dom, select, loadData, systemEmoji }) {
     render();
   });
   on("emoji-results", "keydown", (event) => {
-    const offset = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 8, ArrowUp: -8 }[event.key];
-    if (!offset) return;
-    const items = [...byId("emoji-results").children],
+    if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(event.key)) return;
+    const grid = byId("emoji-results");
+    const items = [...grid.children],
       index = items.indexOf(event.target);
     if (index < 0) return;
     event.preventDefault();
-    items[Math.max(0, Math.min(items.length - 1, index + offset))]?.focus();
+    const boxes = items.map((item) => item.getBoundingClientRect());
+    const current = boxes[index];
+    let target = index;
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight")
+      target += event.key === "ArrowLeft" ? -1 : 1;
+    else {
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      const rows = boxes
+        .map((box, i) => ({ box, i }))
+        .filter(({ box }) => direction * (box.top - current.top) > 1);
+      if (rows.length) {
+        const nearestTop = rows.reduce(
+          (top, { box }) =>
+            Math.abs(box.top - current.top) < Math.abs(top - current.top) ? box.top : top,
+          rows[0].box.top
+        );
+        const candidates = rows.filter(({ box }) => Math.abs(box.top - nearestTop) <= 1);
+        target = candidates.reduce((best, next) =>
+          Math.abs(next.box.left - current.left) < Math.abs(best.box.left - current.left)
+            ? next
+            : best
+        ).i;
+      }
+    }
+    items[Math.max(0, Math.min(items.length - 1, target))]?.focus();
   });
   return { open };
 }

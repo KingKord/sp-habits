@@ -30,6 +30,7 @@ export function createStatisticsView({ dom, store, now, render }) {
   ];
   let statsPreset = "7d",
     statsRange = null,
+    rangeDraft = null,
     statsFilter = "all",
     statsHidden = true;
   function renderStatsPresets() {
@@ -55,8 +56,8 @@ export function createStatisticsView({ dom, store, now, render }) {
     }
     if (statsPreset !== "custom" || !statsRange)
       statsRange = D.periodRange(statsPreset === "custom" ? "7d" : statsPreset, today);
-    byId("stats-from").value = statsRange.from;
-    byId("stats-to").value = statsRange.to;
+    byId("stats-from").value = rangeDraft?.from ?? statsRange.from;
+    byId("stats-to").value = rangeDraft?.to ?? statsRange.to;
     byId("stats-from").max = today;
     byId("stats-to").max = today;
     renderStatsPresets();
@@ -214,7 +215,7 @@ export function createStatisticsView({ dom, store, now, render }) {
       dateText(data.from, { month: "short" }) +
       " — " +
       dateText(data.to, { year: "numeric", month: "short" });
-    byId("stats-caption").hidden = statsPreset === "custom";
+    byId("stats-caption").hidden = false;
     byId("stats-note").textContent =
       t(
         "A successful day meets the at-most limit or the at-least minimum. Only completed days are assessed. No entries count as zero. Volume, quantity and averages include today when it is in the period. "
@@ -232,6 +233,7 @@ export function createStatisticsView({ dom, store, now, render }) {
   for (const [key, label] of statsPresets) {
     const el = button(label, () => {
       statsPreset = key;
+      rangeDraft = null;
       byId("stats-to").setCustomValidity("");
       if (key !== "custom" && store.snapshot().state) statsRange = D.periodRange(key, now());
       render();
@@ -251,11 +253,13 @@ export function createStatisticsView({ dom, store, now, render }) {
     if (!byId("stats-form").reportValidity()) return;
     statsPreset = "custom";
     statsRange = { from, to };
+    rangeDraft = null;
     render();
   });
   const changeRange = () => {
     byId("stats-to").setCustomValidity("");
     statsPreset = "custom";
+    rangeDraft = { from: byId("stats-from").value, to: byId("stats-to").value };
     renderStatsPresets();
   };
   on("stats-from", "input", changeRange);

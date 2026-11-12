@@ -4,7 +4,7 @@ Track habits, build routines and keep unwanted habits within limits — inside [
 
 Set a goal such as reading for 20 minutes a day, limit coffee to two cups, or aim for three workouts over seven days. Record your progress and see your history in one place.
 
-Current release: **0.21.0** · Requires **Super Productivity 19.3.1+** · [Download](https://github.com/KingKord/sp-habits/releases/latest) · [User guide](docs/user-guide.md)
+Current release: **0.22.0** · Requires **Super Productivity 19.3.1+** · [Download](https://github.com/KingKord/sp-habits/releases/latest) · [User guide](docs/user-guide.md)
 
 ![Habits in dark mode, showing example goals, daily counters and a week of progress](docs/images/habits-day.png)
 
@@ -34,7 +34,7 @@ Plugins run inside Super Productivity and can access app data. Install builds yo
 
 ### Updating
 
-First use **More → Export JSON** to save a backup. Upload the new ZIP through the same settings screen, without removing the installed plugin. Habits keeps a stable plugin ID so compatible updates can reuse saved history and JSON backups. See the [verification log](VERIFICATION.md) for checked versions and platforms.
+First use **More → Export JSON** to save a backup. Upload the new ZIP through the same settings screen, without removing the installed plugin. Habits keeps a stable plugin ID so compatible updates can reuse saved history and JSON backups. Reload Super Productivity after installing an update so it loads the new plugin code. See the [verification log](VERIFICATION.md) for checked versions and platforms.
 
 ## Try your first habit
 

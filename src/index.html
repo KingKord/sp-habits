@@ -205,7 +205,7 @@
           >
         </footer>
         <p class="footnote" id="zone"></p>
-        <p class="footnote">Habits · 0.21.0</p>
+        <p class="footnote">Habits · 0.22.0</p>
       </details>
     </main>
     <p class="form-error" id="task-sync-error" role="alert"></p>
@@ -593,7 +593,16 @@
         ><span id="details-page" role="status"></span
         ><button id="details-older" type="button">Older dates</button>
       </div>
-      <div class="detail-table-scroll" tabindex="0" role="region" aria-label="Daily habit history">
+      <p id="details-history-scroll-hint" class="hint detail-scroll-hint">
+        Scroll sideways to see every column. The date stays visible.
+      </p>
+      <div
+        class="detail-table-scroll"
+        tabindex="0"
+        role="region"
+        aria-label="Daily habit history"
+        aria-describedby="details-history-scroll-hint"
+      >
         <table class="detail-table">
           <thead>
             <tr>
@@ -617,7 +626,16 @@
         ><span id="details-rule-page" role="status"></span
         ><button id="details-rules-older" type="button">Older rules</button>
       </div>
-      <div class="detail-table-scroll" tabindex="0" role="region" aria-label="Dated habit rules">
+      <p id="details-rules-scroll-hint" class="hint detail-scroll-hint">
+        Scroll sideways to see every column. The date stays visible.
+      </p>
+      <div
+        class="detail-table-scroll"
+        tabindex="0"
+        role="region"
+        aria-label="Dated habit rules"
+        aria-describedby="details-rules-scroll-hint"
+      >
         <table class="detail-table">
           <thead>
             <tr>
@@ -636,13 +654,19 @@
         <button id="close-info" class="quiet" aria-label="Close help">×</button>
       </div>
       <p>
-        Good habit: meet a minimum. Bad habit: stay within a limit. Today's result is provisional;
-        no entries count as zero.
+        Good habits meet a minimum. Bad habits stay within a limit. Today's result is provisional.
+        Missing quantities count as zero; unmarked check-ins stay unknown and are excluded from the
+        success rate.
       </p>
       <p>
-        Click a name for settings, or a number or circle for the daily total. The ± buttons adjust
-        it by the configured step. A period longer than a day is a rolling interval including the
-        selected day.
+        Select a habit name for settings or an amount to edit the daily total. The ± buttons use the
+        configured step. Periods longer than one day are rolling intervals that include the selected
+        day.
+      </p>
+      <p>
+        Use ✓ or × to report a check-in result: Done / Missed for Good, No slip / Slipped for Bad.
+        Select the chosen result again to undo it and leave the day unmarked. No actual completion
+        time is recorded.
       </p>
       <p>
         Data is stored in Super Productivity. Use Export JSON for backups. Editing from multiple

@@ -1,5 +1,32 @@
 # Verification log
 
+## 0.22.0 — 2026-11-12
+
+### Automated checks
+
+- Final `npm run check` passed: ESLint, Prettier, 333 tests, version/changelog validation, bundled JavaScript syntax and ZIP integrity. All version sources and the current README entry are 0.22.0.
+- Regressions cover dirty dismissal, complete pending-save locks, retained raw fields and original conflict baselines, backdated pauses, inactive goal drafts, tab-local recovery, storage failures, asynchronous restoration/disposal, acknowledged creation deduplication and safe late bridge replies.
+- View regressions cover unapplied statistics ranges, responsive emoji navigation, immediate Escape/outside dismissal, mobile calendar details and desktop preferences, group input identity/selection, confirmed feedback expiry and reduced-motion behavior.
+- The final iframe is 26,743 / 102,400 bytes, leaving 75,657 bytes of headroom. Local final ZIP SHA-256: `78f902e556e9d2259ab744f8f2b61a647c143415dead72e42896307cc4046688`.
+
+### Isolated browser and minimum-host review
+
+- Exercised the packaged build with synthetic data and the host UI Kit in an isolated Chromium profile. Checked 60 combinations: English/Russian, light/dark, 320/390/700/1024/1440 px, and Day/Calendar/Statistics. No horizontal page overflow; settled screenshots were reviewed for wrapping, clipping and readability.
+- At 320 px, Russian habit, emoji, quantity, note and reduction-plan dialogs fit their scroll containers. Emoji ArrowDown follows the six-column mobile grid. Primary button text contrast measured 5.99:1 in light and 7.18:1 in dark across default, hover, focus and active states. Mobile settings targets measure at least 44 px after layout settles.
+- Quantity and plan Escape dismissal retained raw input when dismissal was cancelled; explicit discard restored confirmed values. Goal-mode switching retained inactive rolling fields, and a new backdated habit accepted a pause inside its selected dates.
+- Full reload restored a new habit draft including a custom unit and Unicode input. Nested note/quantity drafts reopened together. Failed note saves retained text through Reload data and keep editing; stale restored settings refused to overwrite an external change.
+- Delayed habit and plan saves locked every form control until acknowledgement. Replacing the iframe during a delayed creation produced exactly one confirmed habit, retained the acknowledged draft as copyable recovery text, and emitted no page errors. Leaving a view during asynchronous restoration is also covered by automated lifecycle regressions.
+- Verified immediate menu Escape, mobile calendar focus/return with all habits visible, collapsed/calendar note access, keyboard horizontal table scrolling with sticky dates, and group-name node/caret/focus retention after synthetic external delivery.
+- Confirmed action feedback survives the persistence refresh. Reduced motion disables animation while retaining Saved text and an inset accent; normal expansion uses the short history animation.
+- Installed published 0.21.0, imported the eight-habit synthetic fixture, then upgraded to the final 0.22.0 candidate in the actual isolated 19.3.1WB host. Reloaded the host and verified installed application source against the final bundle. Exact plugin JSON, older history, notes and legacy journal remained unchanged. Navigating away and returning offered the retained draft and resumed its exact input.
+- Explicit dark survived a complete host reload; Follow app resolved the host theme. Automated tests cover subsequent host theme changes and unavailable preference storage. Repeated same-name test uploads can retain a stale selected file or loaded code: final verification used a distinct ZIP filename, cleared the file input and reloaded the host before checking the installed bundle.
+
+### Limits and evidence
+
+- The actual host uses official 19.3.1 embedded web assets on localhost, as described in 0.20.0 below. No personal desktop profile, account or synchronization configuration was opened or changed. Evidence is under ignored `output/playwright/ux-fixes-022/` (screenshots, matrix, form/contrast results and final candidate).
+- Draft recovery is bounded, tab-local session storage, requires an explicit resume/discard, and does not sync drafts between devices. Unavailable storage is reported visibly; original stale-edit conflict checks remain in force.
+- Native Electron/Safari, physical touch devices, a fresh 20.0.0 host installation and real cross-device synchronization were not rerun for this release. Existing compatibility and serial-sync evidence below is preserved without extending those claims.
+
 ## 0.21.0 — 2026-11-12
 
 ### Automated checks

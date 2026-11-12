@@ -2,14 +2,33 @@ import { t } from "../i18n/index.js";
 import * as D from "../domain.js";
 import { dateText, ruleText, habitName, goalText } from "./format.js";
 import { closeOnBackdrop } from "./dialog.js";
+import {
+  validFieldDraft,
+  captureFields,
+  restoreFields,
+  createFormLock,
+  createEditorRecovery
+} from "./form-session.js";
 import { settingsVersion, assertSettingsVersion } from "../edit-session.js";
 
-export function createPlanEditor({ dom, store, now, commit }) {
+export function createPlanEditor({ dom, store, now, commit, confirm = () => false }) {
   const { byId, node, button, on } = dom;
   let planning = null,
     planSaving = false,
     lastFocusKey = null,
-    openedVersion = null;
+    openedVersion = null,
+    initialForm = "";
+  const lock = createFormLock(byId("plan-form"));
+  const recovery = createEditorRecovery({
+    dom,
+    store,
+    formId: "plan-form",
+    saveIds: ["save-plan"],
+    errorId: "plan-error",
+    busy: () => planSaving
+  });
+  const formValues = () =>
+    JSON.stringify(captureFields(byId("plan-form")).map(({ value, checked }) => [value, checked]));
   const timeGoal = () =>
     planning &&
     D.goalForDate(
@@ -24,7 +43,7 @@ export function createPlanEditor({ dom, store, now, commit }) {
     }));
   }
   function addFrequencyStage(stage = null) {
-    if (byId("frequency-stages").children.length >= 120) return;
+    if (planSaving || byId("frequency-stages").children.length >= 120) return;
     const current = frequencyInputs(),
       previous = current.at(-1);
     if (!stage)
@@ -58,6 +77,7 @@ export function createPlanEditor({ dom, store, now, commit }) {
       button(
         "×",
         () => {
+          if (planSaving) return;
           row.remove();
           previewPlan();
         },
@@ -210,16 +230,24 @@ export function createPlanEditor({ dom, store, now, commit }) {
     byId("plan-mode").value =
       !timed && (existing.length || period > 1 || value === 1) ? "frequency" : "amount";
     updatePlanMode();
+    initialForm = formValues();
+    recovery.refresh();
     byId("plan-editor").showModal();
   }
-  function closePlan() {
+  function closePlan(confirmed = false) {
     if (planSaving) return;
+    if (
+      !confirmed &&
+      captureDraft() &&
+      !confirm(t("Discard unsaved plan changes? Choose Cancel to keep editing."))
+    )
+      return;
     byId("plan-editor").close();
     planning = null;
     if (lastFocusKey) dom.restoreFocus(lastFocusKey);
     else byId("view-calendar").focus();
   }
-  on("close-plan", "click", closePlan);
+  on("close-plan", "click", () => closePlan());
   closeOnBackdrop(dom, "plan-editor", closePlan);
   on("plan-editor", "cancel", (event) => {
     event.preventDefault();
@@ -230,15 +258,16 @@ export function createPlanEditor({ dom, store, now, commit }) {
   async function commitPlan(transform) {
     if (planSaving) return;
     planSaving = true;
-    for (const id of ["save-plan", "cancel-reduction", "close-plan"]) byId(id).disabled = true;
+    lock(true);
     const ok = await commit((state) => {
       assertSettingsVersion(state, planning, openedVersion);
       return transform(state);
     });
     planSaving = false;
     if (!dom.isActive()) return;
-    for (const id of ["save-plan", "cancel-reduction", "close-plan"]) byId(id).disabled = false;
-    if (ok) closePlan();
+    lock(false);
+    recovery.refresh();
+    if (ok) closePlan(true);
     else byId("plan-error").textContent = store.snapshot().error;
   }
   on("plan-form", "submit", async (event) => {
@@ -259,5 +288,53 @@ export function createPlanEditor({ dom, store, now, commit }) {
     const id = planning;
     await commitPlan((state) => D.cancelReduction(state, id, now(state)));
   });
-  return { open: openPlan };
+  function captureDraft() {
+    if (!planning || !byId("plan-editor").open || formValues() === initialForm) return null;
+    const stages = [...byId("frequency-stages").children].map((row) => ({
+      from: row.querySelector("input[type=date]").value,
+      value: row.querySelector(".stage-value").value,
+      periodDays: row.querySelector(".stage-period").value
+    }));
+    return {
+      kind: "plan",
+      context: { id: planning, openedVersion, lastFocusKey, initialForm },
+      fields: captureFields(byId("plan-form")),
+      stages,
+      scrollTop: byId("plan-editor").scrollTop
+    };
+  }
+  function restoreDraft(saved) {
+    const state = store.snapshot().state;
+    if (saved?.kind !== "plan" || !saved.context || !state || !validFieldDraft(saved.fields))
+      return false;
+    if (
+      typeof saved.context.id !== "string" ||
+      typeof saved.context.openedVersion !== "string" ||
+      typeof saved.context.initialForm !== "string" ||
+      !Array.isArray(saved.stages) ||
+      saved.stages.length > 120 ||
+      saved.stages.some(
+        (stage) =>
+          !stage ||
+          ![stage.from, stage.value, stage.periodDays].every(
+            (value) => typeof value === "string" && value.length <= 4096
+          )
+      )
+    )
+      return false;
+    const habit = state.habits.find((entry) => entry.id === saved.context.id);
+    if (!habit) return false;
+    openPlan(habit);
+    if (!byId("plan-editor").open || !planning) return false;
+    byId("frequency-stages").replaceChildren();
+    for (const stage of saved.stages ?? []) addFrequencyStage(stage);
+    restoreFields(byId("plan-form"), saved.fields);
+    openedVersion = saved.context.openedVersion;
+    lastFocusKey = saved.context.lastFocusKey;
+    initialForm = saved.context.initialForm;
+    updatePlanMode();
+    byId("plan-editor").scrollTop = saved.scrollTop || 0;
+    return true;
+  }
+  return { open: openPlan, captureDraft, restoreDraft, refresh: recovery.refresh };
 }

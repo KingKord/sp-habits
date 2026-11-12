@@ -13,9 +13,14 @@ import messages from "../i18n/ru.json" with { type: "json" };
 
 // downloadFile exists on the host API. Only this plugin's own storage is read.
 export function installExportBridge(api, window, document, tasks, styles, applicationSource) {
+  let disposed = false;
   const handleExport = async (event) => {
+    if (disposed) return;
     const message = event.data;
+    const source = event.source;
     if (
+      !source ||
+      typeof source.postMessage !== "function" ||
       transportOrigin(event.origin) !== transportOrigin(window.location.origin) ||
       ![EXPORT_REQUEST, SYSTEM_EMOJI_REQUEST].includes(message?.type) ||
       typeof message.requestId !== "string" ||
@@ -23,22 +28,35 @@ export function installExportBridge(api, window, document, tasks, styles, applic
     )
       return;
     const frame = [...document.querySelectorAll("iframe")].find(
-      (element) => element.contentWindow === event.source
+      (element) => element.contentWindow === source
     );
+    let frameDocument;
     try {
-      if (!frame || frame.contentDocument?.title !== "Habits") return;
+      frameDocument = frame?.contentDocument;
+      if (!frame || frameDocument?.title !== "Habits") return;
     } catch {
       return;
     }
-    const reply = (data) =>
-      event.source.postMessage(
-        {
-          type: message.type === SYSTEM_EMOJI_REQUEST ? SYSTEM_EMOJI_RESPONSE : EXPORT_RESPONSE,
-          requestId: message.requestId,
-          ...data
-        },
-        targetOrigin(event.origin)
-      );
+    const responseType =
+      message.type === SYSTEM_EMOJI_REQUEST ? SYSTEM_EMOJI_RESPONSE : EXPORT_RESPONSE;
+    const requestId = message.requestId;
+    const origin = targetOrigin(event.origin);
+    const reply = (data) => {
+      if (disposed) return;
+      try {
+        if (
+          frame.isConnected === false ||
+          frame.contentWindow !== source ||
+          frame.contentDocument !== frameDocument ||
+          source.closed === true
+        )
+          return;
+        source.postMessage({ type: responseType, requestId, ...data }, origin);
+      } catch {
+        // An authorized operation can finish after its original view has closed.
+        // Never retry a delivery or redirect it to a replacement iframe.
+      }
+    };
     try {
       if (message.type === SYSTEM_EMOJI_REQUEST) {
         const available =
@@ -99,5 +117,8 @@ export function installExportBridge(api, window, document, tasks, styles, applic
     }
   };
   window.addEventListener("message", handleExport);
-  return () => window.removeEventListener("message", handleExport);
+  return () => {
+    disposed = true;
+    window.removeEventListener("message", handleExport);
+  };
 }

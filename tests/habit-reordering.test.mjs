@@ -20,7 +20,15 @@ function harness() {
     },
     scrollBy: (...args) => calls.push(["scroll", ...args])
   };
-  const document = { defaultView: view, elementFromPoint: () => hit };
+  const documentHandlers = new Map();
+  const document = {
+    defaultView: view,
+    elementFromPoint: () => hit,
+    addEventListener: (type, fn) => documentHandlers.set(type, fn),
+    removeEventListener: (type, fn) => {
+      if (documentHandlers.get(type) === fn) documentHandlers.delete(type);
+    }
+  };
   const root = {
     ownerDocument: document,
     contains: (row) => rows.includes(row),
@@ -61,6 +69,9 @@ function harness() {
               ? this
               : this.row
             : null;
+      },
+      contains(target) {
+        return this === target || this.children.some((child) => child.contains(target));
       },
       focus() {
         this.focused = true;
@@ -132,7 +143,8 @@ function harness() {
       hit = row;
     },
     animation: () => callback,
-    habits
+    habits,
+    documentHandlers
   };
 }
 
@@ -236,4 +248,76 @@ test("compact menu controls respect edge positions and saving locks", () => {
   const locked = h.controller.controls(h.habits[1], h.habits, true);
   assert.equal(locked.handle.disabled, true);
   assert.ok(locked.menu.children[1].children.every((button) => button.disabled));
+});
+
+test("reorder popups dismiss with Escape, outside input and another popup without moving", () => {
+  const h = harness();
+  const first = h.rows[0].menu,
+    second = h.rows[1].menu;
+  first.open = true;
+  first.send("toggle");
+  let prevented = false;
+  h.documentHandlers.get("keydown")({
+    key: "Escape",
+    preventDefault() {
+      prevented = true;
+    }
+  });
+  assert.equal(prevented, true);
+  assert.equal(first.open, false);
+  assert.equal(first.children[0].focused, true);
+  assert.equal(h.documentHandlers.size, 0);
+  first.open = true;
+  first.send("toggle");
+  h.documentHandlers.get("pointerdown")({ target: first.children[1] });
+  assert.equal(first.open, true);
+  second.open = true;
+  second.send("toggle");
+  assert.equal(first.open, false);
+  assert.equal(second.open, true);
+  h.documentHandlers.get("pointerdown")({ target: h.handles[2] });
+  assert.equal(second.open, false);
+  assert.equal(h.documentHandlers.size, 0);
+  assert.deepEqual(h.calls, []);
+  first.open = true;
+  first.send("toggle");
+  h.controller.cancel();
+  assert.equal(first.open, false);
+  assert.equal(h.documentHandlers.size, 0);
+});
+
+test("summary activation registers dismissal before a deferred native toggle event", () => {
+  const h = harness();
+  const first = h.rows[0].menu,
+    second = h.rows[1].menu;
+  const activate = (menu) => {
+    let prevented = false;
+    menu.children[0].send("click", {
+      preventDefault() {
+        prevented = true;
+      }
+    });
+    assert.equal(prevented, true);
+  };
+  activate(first);
+  assert.equal(first.open, true);
+  assert.ok(h.documentHandlers.has("keydown"));
+  h.documentHandlers.get("keydown")({ key: "Escape", preventDefault() {} });
+  assert.equal(first.open, false);
+  assert.equal(first.children[0].focused, true);
+  // A queued native toggle event must observe the current state and cannot reopen it.
+  first.send("toggle");
+  assert.equal(first.open, false);
+  assert.equal(h.documentHandlers.size, 0);
+  activate(first);
+  activate(second);
+  assert.equal(first.open, false);
+  assert.equal(second.open, true);
+  h.documentHandlers.get("pointerdown")({ target: h.handles[2] });
+  assert.equal(second.open, false);
+  const locked = h.controller.controls(h.habits[1], h.habits, true).menu;
+  activate(locked);
+  assert.ok(!locked.open);
+  assert.equal(h.documentHandlers.size, 0);
+  assert.deepEqual(h.calls, []);
 });

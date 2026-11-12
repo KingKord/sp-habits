@@ -27,7 +27,10 @@ export function createPauseFields(dom) {
       message.textContent = t("Choose a pause start and an end on or after it.");
       return;
     }
-    if (!from.checkValidity() || (!ongoing.checked && !to.checkValidity())) return;
+    if (!from.checkValidity() || (!ongoing.checked && !to.checkValidity())) {
+      message.textContent = t("Choose pause dates within the proposed tracking dates.");
+      return;
+    }
     pauses = mergePauses(pauses, { from: from.value, to: ongoing.checked ? null : to.value });
     render();
   });
@@ -77,6 +80,22 @@ export function createPauseFields(dom) {
     }
   }
   return {
+    bounds(start, end = "9999-12-31") {
+      if (start) from.min = to.min = start;
+      from.max = to.max = end;
+      message.textContent = pauses.some(
+        (pause) => pause.from < start || (pause.to && pause.to > end)
+      )
+        ? t("Choose pause dates within the proposed tracking dates.")
+        : "";
+    },
+    snapshot() {
+      return structuredClone(pauses);
+    },
+    restore(saved) {
+      pauses = structuredClone(saved ?? []);
+      render();
+    },
     update(linked) {
       root.hidden = linked;
       for (const input of [from, to, ongoing, add]) input.disabled = linked;

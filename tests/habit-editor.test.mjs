@@ -10,7 +10,7 @@ const settle = async () => {
   for (let i = 0; i < 20; i++) await Promise.resolve();
 };
 
-async function harness(existing = false) {
+async function harness(existing = false, loadSchedules = async () => []) {
   let raw = JSON.stringify(
     existing
       ? D.createHabit(
@@ -24,7 +24,9 @@ async function harness(existing = false) {
   let writes = 0,
     active = null,
     answer = false,
-    failWrites = false;
+    failWrites = false,
+    holdWrites = false,
+    releaseWrite;
   const prompts = [],
     created = [],
     elements = new Map(),
@@ -119,9 +121,18 @@ async function harness(existing = false) {
     "zones-yellow-enabled",
     "initial"
   ];
-  byId("habit-form").querySelectorAll = () => [
+  byId("habit-form").querySelectorAll = (selector) => [
     ...fields.map(byId),
-    ...created.filter((el) => ["INPUT", "SELECT"].includes(el.tagName))
+    ...created.filter((el) => ["INPUT", "SELECT"].includes(el.tagName)),
+    ...(selector.includes("button")
+      ? ["save-habit", "close-editor", "archive-habit", "delete-habit", "choose-emoji"].map(byId)
+      : [])
+  ];
+  byId("count-form").querySelectorAll = (selector) => [
+    byId("count-amount"),
+    ...(selector.includes("button")
+      ? ["save-count", "close-count", "cancel-count", "count-note"].map(byId)
+      : [])
   ];
   for (const id of ["has-deadline", "reflection-task", "zones-enabled", "zones-yellow-enabled"])
     byId(id).type = "checkbox";
@@ -133,6 +144,10 @@ async function harness(existing = false) {
   const store = createStore({
     loadSyncedData: async () => raw,
     persistDataSynced: async (value) => {
+      if (holdWrites)
+        await new Promise((resolve) => {
+          releaseWrite = resolve;
+        });
       if (failWrites) throw new Error("Storage unavailable");
       raw = value;
       writes++;
@@ -182,14 +197,22 @@ async function harness(existing = false) {
     },
     newId: () => "new-habit",
     loadEmojis: async () => [],
-    loadSchedules: async () => []
+    loadSchedules
   });
   const send = (id, type, event = {}) =>
     handlers.get(id + ":" + type)({ preventDefault() {}, ...event });
   return {
     byId,
     store,
+    editor,
     send,
+    hold: () => {
+      holdWrites = true;
+    },
+    release: () => {
+      holdWrites = false;
+      releaseWrite();
+    },
     clickButton: async (text) => {
       const el = created.findLast((node) => node.tagName === "BUTTON" && node.textContent === text);
       assert.ok(el, text);
@@ -210,7 +233,17 @@ async function harness(existing = false) {
     failWrites: () => {
       failWrites = true;
     },
-    count: () => createCountEditor({ dom, store, now: () => today, commit }),
+    count: () =>
+      createCountEditor({
+        dom,
+        store,
+        now: () => today,
+        commit,
+        confirm: (message) => {
+          prompts.push(message);
+          return answer;
+        }
+      }),
     replace: async (transform) => {
       raw = JSON.stringify(transform(JSON.parse(raw)));
       store.invalidate();
@@ -497,4 +530,175 @@ test("the editor requires a positive minimum only for weekly quantity distinct-d
   await h.send("habit-form", "submit");
   assert.equal(h.writes(), 1);
   assert.equal(h.data().habits[0].limits[0].value, 0);
+});
+
+test("daily quantity dismissal protects dirty raw input on close, cancel and Escape", async () => {
+  for (const [id, type] of [
+    ["close-count", "click"],
+    ["cancel-count", "click"],
+    ["count-editor", "cancel"]
+  ]) {
+    const h = await harness(true);
+    const count = h.count();
+    count.open(h.store.snapshot().state.habits[0], today, "quantity-opener");
+    h.byId("count-amount").value = "17";
+    await h.send(id, type);
+    assert.equal(h.byId("count-editor").open, true);
+    assert.equal(h.byId("count-amount").value, "17");
+    assert.equal(h.prompts.length, 1);
+    h.answer(true);
+    await h.send(id, type);
+    assert.equal(h.byId("count-editor").open, false);
+    assert.equal(count.captureDraft(), null);
+    assert.equal(h.writes(), 0);
+  }
+});
+
+test("habit inputs and nested actions remain locked until a pending save settles", async () => {
+  const h = await harness();
+  await h.open();
+  h.byId("name").value = "Captured name";
+  h.hold();
+  const saving = h.send("habit-form", "submit");
+  await settle();
+  for (const id of [
+    "name",
+    "task-series",
+    "from",
+    "goal",
+    "choose-emoji",
+    "close-editor",
+    "save-habit"
+  ])
+    assert.equal(h.byId(id).disabled, true, id);
+  h.release();
+  await saving;
+  assert.equal(h.byId("editor").open, false);
+  assert.equal(h.editor.captureDraft(), null);
+  assert.equal(h.data().habits[0].name, "Captured name");
+});
+
+test("rolling period drafts survive weekly mode exploration", async () => {
+  const h = await harness();
+  await h.open();
+  h.byId("period-days").value = "7";
+  h.byId("week-goal").value = "quantity";
+  h.byId("week-goal").listeners.get("change")();
+  assert.equal(h.byId("period-days").value, "1");
+  h.byId("week-goal").value = "daily";
+  h.byId("week-goal").listeners.get("change")();
+  assert.equal(h.byId("period-days").value, "7");
+});
+
+test("a backdated new start updates pause bounds immediately and restored habit drafts retain pauses", async () => {
+  const h = await harness();
+  await h.open();
+  h.byId("name").value = "Backdated draft";
+  h.byId("from").value = "2026-11-01";
+  await h.send("from", "input");
+  assert.equal(h.byId("pause-from").min, "2026-11-01");
+  h.byId("pause-from").value = "2026-11-05";
+  h.byId("pause-to").value = "2026-11-06";
+  await h.clickButton("Add pause or exception");
+  const saved = JSON.parse(JSON.stringify(h.editor.captureDraft()));
+  const next = await harness();
+  assert.equal(await next.editor.restoreDraft(saved), true);
+  assert.equal(next.byId("name").value, "Backdated draft");
+  await next.send("habit-form", "submit");
+  assert.deepEqual(next.data().habits[0].pauses, [{ from: "2026-11-05", to: "2026-11-06" }]);
+});
+
+test("a restored quantity draft cannot overwrite a subsequently changed day", async () => {
+  const h = await harness(true),
+    count = h.count();
+  count.open(h.store.snapshot().state.habits[0], today);
+  h.byId("count-amount").value = "17";
+  const saved = JSON.parse(JSON.stringify(count.captureDraft()));
+  const next = await harness(true);
+  await next.replace((state) => D.setCount(state, "reading", today, 9, today));
+  const restored = next.count();
+  assert.equal(restored.restoreDraft(saved), true);
+  await next.send("count-form", "submit");
+  assert.equal(next.data().habits[0].counts[today], 9);
+  assert.equal(next.byId("count-amount").value, "17");
+  assert.equal(next.byId("count-editor").open, true);
+});
+
+test("a pending new-habit draft cannot duplicate a creation acknowledged after navigation", async () => {
+  const h = await harness();
+  await h.open();
+  h.byId("name").value = "One new habit";
+  h.hold();
+  const saving = h.send("habit-form", "submit");
+  await settle();
+  const saved = JSON.parse(JSON.stringify(h.editor.captureDraft()));
+  assert.equal(saved.context.creatingId, "new-habit");
+  h.release();
+  await saving;
+  assert.equal(await h.editor.restoreDraft(saved), false);
+  assert.equal(h.data().habits.length, 1);
+  assert.equal(h.writes(), 1);
+});
+
+test("an absent quantity baseline stays absent through a JSON draft round trip", async () => {
+  const h = await harness(true);
+  await h.replace((state) => {
+    delete state.habits[0].counts[today];
+    return state;
+  });
+  const count = h.count();
+  count.open(h.store.snapshot().state.habits[0], today);
+  h.byId("count-amount").value = "4";
+  const saved = JSON.parse(JSON.stringify(count.captureDraft()));
+  assert.equal(Object.hasOwn(saved.context, "amount"), false);
+  assert.equal(count.restoreDraft(saved), true);
+  await h.send("count-form", "submit");
+  assert.equal(h.data().habits[0].counts[today], 4);
+});
+
+test("malformed editor draft entries fail before opening a form", async () => {
+  const h = await harness(true),
+    count = h.count();
+  assert.equal(
+    count.restoreDraft({ kind: "count", context: { id: "reading" }, fields: [null] }),
+    false
+  );
+  assert.equal(h.byId("count-editor").open, false);
+  assert.equal(
+    await h.editor.restoreDraft({ kind: "habit", context: { id: null }, fields: [] }),
+    false
+  );
+  assert.equal(h.byId("editor").open, false);
+});
+
+test("async task listing never exposes an editable default form while resuming a draft", async () => {
+  const original = await harness();
+  await original.open();
+  original.byId("name").value = "My complete draft";
+  original.byId("task-series").value = "task-1";
+  const saved = JSON.parse(JSON.stringify(original.editor.captureDraft()));
+  let releaseSchedules;
+  const target = await harness(
+    false,
+    () =>
+      new Promise((resolve) => {
+        releaseSchedules = resolve;
+      })
+  );
+  const restoring = target.editor.restoreDraft(saved);
+  await settle();
+  assert.equal(target.byId("name").value, "My complete draft");
+  assert.equal(target.byId("name").disabled, true);
+  target.editor.refresh();
+  assert.equal(target.byId("save-habit").disabled, true);
+  assert.equal(target.byId("task-series").disabled, true);
+  await target.send("habit-form", "submit");
+  await target.send("close-editor", "click");
+  assert.equal(target.byId("editor").open, true);
+  assert.equal(target.writes(), 0);
+  assert.equal(target.editor.captureDraft().context.creatingId, saved.context.creatingId);
+  releaseSchedules([{ repeatId: "task-1", title: "My series", cycle: "daily", every: 1 }]);
+  assert.equal(await restoring, true);
+  assert.equal(target.byId("task-series").value, "task-1");
+  assert.equal(target.byId("name").disabled, false);
 });

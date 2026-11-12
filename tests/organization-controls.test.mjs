@@ -198,3 +198,32 @@ test("failed inline rename persistence retains confirmed data and the draft thro
   assert.equal(h.data().groups[0].name, "Unsaved name");
   assert.equal(h.writes(), 1);
 });
+
+test("unrelated persistence refresh retains the exact group input and its selection", async () => {
+  const h = await harness();
+  h.type("routine", "Edited group draft");
+  const field = h.field("routine");
+  field.selectionStart = 1;
+  field.selectionEnd = 6;
+  field.scrollLeft = 12;
+  await h.external((state) => D.changeCount(state, "reading", today, 1, today));
+  assert.equal(h.field("routine"), field);
+  assert.equal(field.selectionStart, 1);
+  assert.equal(field.selectionEnd, 6);
+  assert.equal(field.scrollLeft, 12);
+  assert.equal(field.value, "Edited group draft");
+});
+
+test("group composition keeps its connected draft through a delivered update", async () => {
+  const h = await harness();
+  const field = h.field("routine");
+  field.handlers.compositionstart();
+  field.value = "Composing group";
+  await h.external((state) => D.changeCount(state, "reading", today, 1, today));
+  assert.equal(h.field("routine"), field);
+  assert.equal(field.disabled, false);
+  assert.equal(field.value, "Composing group");
+  field.handlers.compositionend();
+  await h.rename("routine");
+  assert.equal(h.data().groups[0].name, "Composing group");
+});

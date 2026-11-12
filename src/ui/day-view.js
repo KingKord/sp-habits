@@ -47,11 +47,88 @@ export function createDayView({
     filter = "active",
     arranging = false,
     managingGroups = false,
-    expanded = null;
+    expanded = null,
+    expanding = null;
   const reordering = createHabitReordering({ dom, move: reorder, flash });
 
+  const feedback = new Map();
+  const view = byId("cards").ownerDocument.defaultView;
+  const feedbackNow = () => view.performance?.now?.() ?? Date.now();
+  let feedbackTimer = null,
+    feedbackGeneration = 0,
+    disposed = false;
+  function cancelFeedbackTimer() {
+    if (feedbackTimer === null) return;
+    if (view.clearTimeout) view.clearTimeout(feedbackTimer);
+    else clearTimeout(feedbackTimer);
+    feedbackTimer = null;
+  }
+  function removeFeedback(row) {
+    row?.classList.remove("is-confirmed");
+    row?.querySelector?.(".habit-feedback")?.remove?.();
+  }
+  function clearFeedback(id) {
+    if (id === undefined) {
+      feedbackGeneration++;
+      feedback.clear();
+      for (const row of byId("cards").children) removeFeedback(row);
+    } else {
+      feedback.delete(id);
+      removeFeedback([...byId("cards").children].find((row) => row.dataset?.habitId === id));
+    }
+    scheduleFeedbackExpiry();
+  }
+  function scheduleFeedbackExpiry() {
+    cancelFeedbackTimer();
+    if (disposed || !feedback.size) return;
+    const delay = Math.max(
+      0,
+      Math.min(...[...feedback.values()].map((item) => item.until)) - feedbackNow()
+    );
+    const expire = () => {
+      feedbackTimer = null;
+      if (disposed) return;
+      for (const [id, item] of feedback) if (item.until <= feedbackNow()) feedback.delete(id);
+      scheduleFeedbackExpiry();
+      render();
+    };
+    feedbackTimer = view.setTimeout ? view.setTimeout(expire, delay) : setTimeout(expire, delay);
+  }
+  function decorateFeedback(row, id) {
+    const item = feedback.get(id);
+    if (!item || item.date !== selected || item.until <= feedbackNow()) return;
+    row.classList.add("is-confirmed");
+    if (row.querySelector?.(".habit-feedback")) return;
+    const message = node("small", t("Saved"), "habit-feedback");
+    message.setAttribute("role", "status");
+    row.querySelector?.(".habit-info")?.append(message);
+  }
+  function confirmed(id, date, generation) {
+    if (
+      disposed ||
+      generation !== feedbackGeneration ||
+      date !== selected ||
+      byId("day-view").hidden
+    )
+      return;
+    feedback.set(id, { date, until: feedbackNow() + 2000 });
+    scheduleFeedbackExpiry();
+    const row = [...byId("cards").children].find((entry) => entry.dataset?.habitId === id);
+    if (row) decorateFeedback(row, id);
+  }
+  async function commitRow(id, transform, metadata) {
+    const date = selected,
+      generation = feedbackGeneration;
+    clearFeedback(id);
+    const ok = await commit(transform, metadata);
+    if (ok) confirmed(id, date, generation);
+    return ok;
+  }
   async function reorder(id, targetId, placement, groupId, focusKey) {
-    const currentFilter = filter;
+    const currentFilter = filter,
+      date = selected,
+      generation = feedbackGeneration;
+    clearFeedback(id);
     const ok = await commit((latest) => {
       const peers = orderedHabits(latest).filter(
         (habit) => D.habitMatchesFilter(habit, currentFilter) && (habit.groupId ?? "") === groupId
@@ -68,7 +145,10 @@ export function createDayView({
         placement
       );
     });
-    if (ok) flash(t("Habit order saved."));
+    if (ok) {
+      flash(t("Habit order saved."));
+      confirmed(id, date, generation);
+    }
     restoreFocus(focusKey);
   }
   function weekHeadings(className = "week") {
@@ -92,6 +172,7 @@ export function createDayView({
   function go(date) {
     const state = store.snapshot().state;
     if (!state || !D.validDate(date) || date > now(state)) return;
+    if (selected !== date) clearFeedback();
     selected = date;
     flash("");
     render();
@@ -183,6 +264,7 @@ export function createDayView({
       card.dataset.habitId = habit.id;
       card.dataset.groupId = habit.groupId ?? "";
       card.classList.toggle("is-reordering", arranging);
+      card.classList.toggle("is-expanding", expanding === habit.id && expanded === habit.id);
       const top = node("div", undefined, "habit-summary"),
         title = node("div", undefined, "habit-info");
       const edit = button(
@@ -194,8 +276,20 @@ export function createDayView({
       edit.title = t("Settings · ") + habitName(habit);
       edit.disabled = locked || s.pending > 0;
       edit.dataset.focusKey = habit.id + "-edit";
-      const heading = node("h2");
+      const heading = node("h2", undefined, "habit-title-heading");
       heading.append(edit);
+      if (noteForDate(habit, selected)) {
+        const indicator = button(
+          "✎",
+          () => openNoteEditor(habit, selected),
+          t("Read daily note: ") + habit.name,
+          "quiet habit-note-indicator"
+        );
+        indicator.title = t("Daily note");
+        indicator.dataset.focusKey = habit.id + "-note-indicator";
+        indicator.disabled = locked || s.pending > 0 || !result.editable;
+        heading.append(indicator);
+      }
       title.append(heading, node("p", resultLabel(result), "sr-only"));
       const extras = node("div", undefined, "habit-extra-actions");
       if (habit.endDate === null) {
@@ -306,7 +400,7 @@ export function createDayView({
           date: selected,
           result,
           disabled: locked || s.pending > 0 || !result.editable || result.readOnly,
-          commit,
+          commit: (transform) => commitRow(habit.id, transform),
           now,
           focusPrefix: habit.id,
           compact: true
@@ -338,9 +432,13 @@ export function createDayView({
             text,
             () => {
               const date = selected;
-              void commit((state) => D.changeCount(state, habit.id, date, delta, now(state)), {
-                increment: { id: habit.id, date, delta }
-              });
+              void commitRow(
+                habit.id,
+                (state) => D.changeCount(state, habit.id, date, delta, now(state)),
+                {
+                  increment: { id: habit.id, date, delta }
+                }
+              );
             },
             (delta === 1 ? t("Add ") : t("Subtract ")) + increment + " " + unit + ": " + habit.name,
             "step " + suffix
@@ -432,6 +530,7 @@ export function createDayView({
         expanded === habit.id ? "⌃" : "⌄",
         () => {
           expanded = expanded === habit.id ? null : habit.id;
+          expanding = expanded;
           render();
           restoreFocus(habit.id + "-expand");
         },
@@ -454,9 +553,11 @@ export function createDayView({
       recent.append(weekHeadings("week habit-week-headings"), week, progress);
       history.append(expandedStreak, recent, extras);
       card.append(top, history);
+      decorateFeedback(card, habit.id);
       content.append(card);
     }
     byId("cards").replaceChildren(content);
+    expanding = null;
     restoreFocus(focusKey);
   }
   on("arrange", "click", () => {
@@ -477,15 +578,20 @@ export function createDayView({
   on("today", "click", () => go(now()));
   for (const key of filters)
     on(key, "click", () => {
+      clearFeedback();
       filter = key;
       render();
     });
 
   function prepare(today) {
-    if (!selected || (lastToday && selected === lastToday && lastToday !== today)) selected = today;
+    if (!selected || (lastToday && selected === lastToday && lastToday !== today)) {
+      clearFeedback();
+      selected = today;
+    }
     lastToday = today;
   }
   function reset() {
+    clearFeedback();
     selected = "";
     filter = "active";
     expanded = null;
@@ -494,7 +600,15 @@ export function createDayView({
     reordering.cancel();
   }
   return {
-    cancelReordering: reordering.cancel,
+    cancelReordering: () => {
+      reordering.cancel();
+      clearFeedback();
+    },
+    dispose: () => {
+      disposed = true;
+      clearFeedback();
+      reordering.cancel();
+    },
     render: renderDay,
     prepare,
     reset,

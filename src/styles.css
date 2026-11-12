@@ -8,6 +8,8 @@
   --hl-muted: var(--text-color-muted, #747474);
   --hl-line: var(--divider-color, #dedede);
   --hl-accent: var(--c-primary, #4878b8);
+  --hl-primary-bg: #35659e;
+  --hl-primary-text: #fff;
   --hl-tint: var(--select-hover-bg, color-mix(in srgb, var(--hl-accent) 12%, transparent));
   --hl-good: var(--color-success, #35744a);
   --hl-good-bg: color-mix(in srgb, var(--hl-good) 12%, transparent);
@@ -36,6 +38,8 @@
   --hl-muted: #a0a0a0;
   --hl-line: #414141;
   --hl-accent: #90b4e5;
+  --hl-primary-bg: #90b4e5;
+  --hl-primary-text: #182637;
   --hl-tint: #293444;
   --hl-good: #8abb98;
   --hl-good-bg: #28372d;
@@ -74,6 +78,8 @@
     --hl-muted: var(--text-color-muted, #a0a0a0);
     --hl-line: var(--divider-color, #414141);
     --hl-accent: var(--c-primary, #90b4e5);
+    --hl-primary-bg: #90b4e5;
+    --hl-primary-text: #182637;
     --hl-tint: var(--select-hover-bg, color-mix(in srgb, var(--hl-accent) 12%, transparent));
     --hl-good: var(--color-success, #8abb98);
     --hl-bad: var(--color-danger, var(--c-warn, #d78d8d));
@@ -91,13 +97,29 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
-summary:focus-visible {
+summary:focus-visible,
+.detail-table-scroll:focus-visible {
   outline: 2px solid var(--hl-accent);
   outline-offset: 2px;
 }
 button.quiet {
   border-color: transparent;
   background: transparent;
+}
+/* Keep primary labels readable with both the light and dark host UI Kit palettes. */
+button.btn-primary,
+button.btn-primary:hover,
+button.btn-primary:active {
+  color: var(--hl-primary-text);
+  background: var(--hl-primary-bg);
+  border-color: var(--hl-primary-bg);
+  filter: none;
+}
+button.btn-primary:hover {
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+button.btn-primary:active {
+  box-shadow: inset 0 0 0 2px currentColor;
 }
 button.danger {
   color: var(--hl-bad);
@@ -1304,12 +1326,6 @@ form textarea {
     min-width: 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  * {
-    scroll-behavior: auto !important;
-  }
-}
-
 /* Read-only task results retain their contrast and status colours. */
 .calendar-mark.task-derived:disabled,
 .count.task-derived:disabled {
@@ -1517,6 +1533,16 @@ form textarea {
   border-bottom: 1px solid var(--hl-line);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+.detail-scroll-hint {
+  display: none;
+}
+.detail-table th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--hl-card);
+  box-shadow: 1px 0 var(--hl-line);
 }
 .detail-table tbody th {
   font-weight: 500;
@@ -1729,6 +1755,10 @@ form textarea {
   .habit-summary .count {
     min-height: 44px;
   }
+  .habit-summary .habit-title {
+    min-height: 44px;
+    padding-block: 8px;
+  }
   .habit-summary {
     grid-template-columns: minmax(120px, 1fr) auto 44px;
   }
@@ -1781,5 +1811,139 @@ form textarea {
 @media (pointer: coarse) and (max-width: 600px) {
   .habit-row.is-reordering .habit-summary {
     grid-template-columns: 44px minmax(0, 1fr) 44px 44px;
+  }
+}
+
+/* Saved context is visible without opening a row's history. */
+.habit-note-indicator {
+  flex: 0 0 auto;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 4px;
+  border-color: transparent;
+  color: var(--hl-accent);
+  background: transparent;
+  font-size: 16px;
+}
+.calendar-note-indicator {
+  color: var(--hl-accent);
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+.habit-feedback {
+  color: var(--hl-muted);
+  font-size: 11px;
+}
+.calendar-return {
+  margin-bottom: 12px;
+}
+.draft-recovery {
+  border-left: 3px solid var(--hl-accent);
+  padding: 10px;
+  margin-top: 12px;
+  background: var(--hl-tint);
+  overflow-wrap: anywhere;
+}
+.draft-recovery p {
+  margin-bottom: 8px;
+}
+
+/* Motion follows deliberate expansion and confirmed writes only. */
+.habit-expand {
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease;
+}
+.habit-expand[aria-expanded="true"] {
+  background: var(--hl-tint);
+}
+.habit-row.is-expanding .habit-history {
+  animation: habit-history-enter 160ms ease-out;
+}
+.habit-row.is-confirmed .habit-summary {
+  animation: habit-change-confirmed 500ms ease-out;
+}
+@keyframes habit-history-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes habit-change-confirmed {
+  from {
+    background: var(--hl-tint);
+    box-shadow: inset 3px 0 var(--hl-accent);
+  }
+  to {
+    background: transparent;
+    box-shadow: inset 0 0 transparent;
+  }
+}
+@media (max-width: 700px) {
+  .detail-scroll-hint {
+    display: block;
+    margin-block: 8px;
+  }
+}
+@media (pointer: coarse), (max-width: 700px) {
+  .habit-note-indicator {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .habit-row.is-confirmed .habit-summary {
+    background: var(--hl-tint);
+    box-shadow: inset 3px 0 var(--hl-accent);
+  }
+}
+
+.saved-drafts h2 {
+  margin-bottom: 12px;
+}
+.saved-drafts textarea {
+  display: block;
+  width: 100%;
+  min-height: 140px;
+  max-height: 35dvh;
+  margin-block: 12px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  resize: vertical;
+}
+.saved-drafts .dialog-bottom button,
+.draft-recovery button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.draft-storage-warning {
+  color: var(--hl-text);
+  background: var(--hl-warning-bg);
+  border-left: 3px solid var(--hl-warning);
+  padding: 12px;
+  margin-bottom: 16px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .saved-drafts textarea {
+    font-size: 16px;
+  }
+}
+@media (max-width: 480px) {
+  .saved-drafts .dialog-bottom button {
+    flex: 1 1 100%;
+    margin-left: 0;
   }
 }

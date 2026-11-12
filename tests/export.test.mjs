@@ -1,3 +1,4 @@
+import { installExportBridge } from "../src/host/export-host.js";
 import russian from "../src/i18n/ru.json" with { type: "json" };
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -231,4 +232,110 @@ test("system emoji bridge falls back on web and Linux without exporting or touch
     assert.equal(h.response.ok, false);
     assert.equal(h.saved, undefined);
   }
+});
+
+function deferredBridge() {
+  let listener,
+    release,
+    completed = 0;
+  const received = [];
+  const source = { postMessage: (message) => received.push(message) };
+  const frame = { contentWindow: source, contentDocument: { title: "Habits" }, isConnected: true };
+  let frames = [frame];
+  const window = {
+    location: { origin: "https://app.test" },
+    addEventListener: (_event, handler) => {
+      listener = handler;
+    },
+    removeEventListener() {}
+  };
+  const stop = installExportBridge(
+    {},
+    window,
+    { querySelectorAll: () => frames },
+    {
+      request: async () => {
+        await new Promise((resolve) => {
+          release = resolve;
+        });
+        completed++;
+        return { raw: "confirmed authorized write" };
+      }
+    }
+  );
+  const event = {
+    origin: window.location.origin,
+    source,
+    data: { type: "HABITS_EXPORT_REQUEST", requestId: "late", asset: "tasks", action: "write" }
+  };
+  return {
+    source,
+    frame,
+    event,
+    received,
+    stop,
+    dispatch: () => listener(event),
+    release: () => release(),
+    completed: () => completed,
+    replace: (next) => {
+      frames = [next];
+    }
+  };
+}
+
+test("a delayed authorized write completes without replying to a detached or replacement view", async () => {
+  const h = deferredBridge();
+  const pending = h.dispatch();
+  const replacementReplies = [];
+  const replacement = {
+    contentWindow: { postMessage: (message) => replacementReplies.push(message) },
+    contentDocument: { title: "Habits" },
+    isConnected: true
+  };
+  h.event.source = null;
+  h.frame.isConnected = false;
+  h.frame.contentWindow = null;
+  h.replace(replacement);
+  h.release();
+  await assert.doesNotReject(pending);
+  assert.equal(h.completed(), 1);
+  assert.deepEqual(h.received, []);
+  assert.deepEqual(replacementReplies, []);
+});
+
+test("bridge disposal suppresses a late response without cancelling the authorized request", async () => {
+  const h = deferredBridge();
+  const pending = h.dispatch();
+  h.stop();
+  h.event.source = null;
+  h.release();
+  await assert.doesNotReject(pending);
+  assert.equal(h.completed(), 1);
+  assert.deepEqual(h.received, []);
+  await h.dispatch();
+  assert.equal(h.completed(), 1);
+});
+
+test("a navigated frame document never receives an older document's delayed response", async () => {
+  const h = deferredBridge();
+  const pending = h.dispatch();
+  h.frame.contentDocument = { title: "Habits" };
+  h.release();
+  await assert.doesNotReject(pending);
+  assert.equal(h.completed(), 1);
+  assert.deepEqual(h.received, []);
+});
+
+test("postMessage failure is contained and never triggers a second error reply", async () => {
+  const h = deferredBridge();
+  let deliveries = 0;
+  h.source.postMessage = () => {
+    deliveries++;
+    throw Error("The view closed during delivery");
+  };
+  const pending = h.dispatch();
+  h.release();
+  await assert.doesNotReject(pending);
+  assert.equal(deliveries, 1);
+  assert.equal(h.completed(), 1);
 });

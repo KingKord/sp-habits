@@ -14,6 +14,8 @@ import { createCalendarView } from "./ui/calendar-view.js";
 import { createStatisticsView } from "./ui/statistics-view.js";
 import { mountBackupControls } from "./ui/backup-controls.js";
 import { closeOnBackdrop } from "./ui/dialog.js";
+import { createThemePreference } from "./ui/theme-preference.js";
+import { mountDraftRecovery } from "./ui/draft-recovery.js";
 
 // Composition root: features receive only their dependencies and own their UI state.
 export function createApplication({ window, api = window.PluginAPI, instant = () => new Date() }) {
@@ -23,6 +25,7 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
   const { byId, on } = dom;
   const exportClient = createExportClient(window);
   let expectedRaw = null;
+  let draftRecovery = null;
   const taskRequest = (payload) => exportClient.request(false, "tasks", payload);
   const storageAPI = {
     loadSyncedData: async () => {
@@ -80,8 +83,8 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
   });
   const details = createHabitDetails({ dom, store, now });
   const note = createNoteEditor({ dom, store, now, commit, confirm });
-  const count = createCountEditor({ dom, store, now, commit, openNoteEditor: note.open });
-  const plan = createPlanEditor({ dom, store, now, commit });
+  const count = createCountEditor({ dom, store, now, commit, confirm, openNoteEditor: note.open });
+  const plan = createPlanEditor({ dom, store, now, commit, confirm });
   const day = createDayView({
     dom,
     store,
@@ -96,7 +99,7 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
     openNoteEditor: note.open,
     openDetails: details.open
   });
-  scope.add(day.cancelReordering);
+  scope.add(day.dispose);
   const calendar = createCalendarView({
     dom,
     store,
@@ -108,7 +111,18 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
     openCountEditor: count.open,
     openPlan: plan.open
   });
+  scope.add(calendar.dispose);
   const statistics = createStatisticsView({ dom, store, now, render });
+  draftRecovery = mountDraftRecovery({
+    window,
+    dom,
+    scope,
+    editors: { habit: editor, count, note, plan },
+    ready: () => {
+      const snapshot = store.snapshot();
+      return !!snapshot.state && !snapshot.blocked && !snapshot.busyRead && !snapshot.pending;
+    }
+  });
   mountBackupControls({
     dom,
     store,
@@ -142,6 +156,7 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
     if (scope.disposed) return;
     const snapshot = store.snapshot();
     details.render();
+    for (const controller of [editor, count, note, plan]) controller.refresh();
     byId("error").hidden = !snapshot.error;
     byId("error-text").textContent = snapshot.error;
     byId("raw").hidden = typeof snapshot.raw !== "string";
@@ -165,16 +180,18 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
       byId(view.button).setAttribute("aria-pressed", String(active));
       if (active) view.render(snapshot.state, today);
     }
+    draftRecovery?.offer();
   }
 
   on("settings", "click", () => byId("info").showModal());
   on("close-info", "click", () => byId("info").close());
   closeOnBackdrop(dom, "info", () => byId("info").close());
-  on("theme", "change", (event) => {
-    const value = event.target.value;
-    if (value === "auto") delete document.documentElement.dataset.theme;
-    else document.documentElement.dataset.theme = value;
-  });
+  const theme = createThemePreference(window, () =>
+    flash(t("Theme applied for this view. Preference storage is unavailable."))
+  );
+  byId("theme").value = theme.value();
+  on("theme", "change", (event) => theme.set(event.target.value));
+  scope.add(theme.dispose);
   const refresh = () => {
     if (store.snapshot().state && now() !== day.lastToday()) render();
   };
@@ -188,7 +205,7 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
   }, 15000);
   scope.add(() => window.clearInterval(timer));
   scope.on(window, "beforeunload", (event) => {
-    if (store.snapshot().pending) {
+    if (store.snapshot().pending || draftRecovery.hasDrafts()) {
       event.preventDefault();
       event.returnValue = "";
     }
@@ -197,6 +214,9 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
   scope.add(() => {
     for (const dialog of document.querySelectorAll("dialog[open]")) dialog.close();
   });
+
+  // Capture before teardown closes dialogs or removes their event handlers.
+  scope.add(draftRecovery.persist);
 
   return {
     store,

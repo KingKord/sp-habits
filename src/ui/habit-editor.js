@@ -3,6 +3,13 @@ import * as D from "../domain.js";
 import { dateText } from "./format.js";
 import { createEmojiPicker } from "./emoji-picker.js";
 import { closeOnBackdrop, dismissKeyboardOnReturn } from "./dialog.js";
+import {
+  validFieldDraft,
+  captureFields,
+  restoreFields,
+  createFormLock,
+  createEditorRecovery
+} from "./form-session.js";
 import { unitChoice, selectedUnit } from "./units.js";
 import { settingsVersion, assertSettingsVersion, EditConflictError } from "../edit-session.js";
 import { createScheduleFields, linkedScheduleDescription } from "./schedule-fields.js";
@@ -29,11 +36,24 @@ export function createHabitEditor({
     originalRepeatId = "",
     loadGeneration = 0,
     openedVersion = null,
-    initialForm = "";
+    initialForm = "",
+    restoring = false,
+    creatingId = null,
+    weeklyActive = false,
+    rollingPeriod = "1";
   const { byId, on, activeElement } = dom;
   const manualSchedule = createScheduleFields(dom);
   const pauses = createPauseFields(dom);
   const weeklyGoal = createWeeklyFields(dom, updateGoalFields);
+  const lock = createFormLock(byId("habit-form"));
+  const recovery = createEditorRecovery({
+    dom,
+    store,
+    formId: "habit-form",
+    saveIds: ["save-habit", "archive-habit", "delete-habit"],
+    errorId: "editor-error",
+    busy: () => saving || restoring
+  });
   const checkIn = () => byId("unit-choice").value === "check-in";
   const formValues = () =>
     JSON.stringify([
@@ -53,8 +73,13 @@ export function createHabitEditor({
     for (const id of ["goal", "limit", "period-days", "unit-choice", "step"])
       byId(id).disabled = linked || (checkIn() && ["limit", "period-days", "step"].includes(id));
     if (weekly) {
+      if (!weeklyActive) rollingPeriod = byId("period-days").value;
+      weeklyActive = true;
       byId("period-days").value = 1;
       byId("period-days").disabled = true;
+    } else if (weeklyActive) {
+      weeklyActive = false;
+      byId("period-days").value = rollingPeriod;
     }
     byId("task-series-hint").textContent = linked
       ? t(
@@ -81,7 +106,17 @@ export function createHabitEditor({
       const schedules = await loadSchedules();
       if (generation !== loadGeneration || !dom.isActive()) return;
       for (const schedule of schedules) {
-        if (schedule.repeatId === selected) continue;
+        const existing = [...select.options].find((option) => option.value === schedule.repeatId);
+        if (existing) {
+          existing.textContent =
+            schedule.title +
+            " · " +
+            linkedScheduleDescription(schedule) +
+            (schedule.time ? " · " + schedule.time : "") +
+            (schedule.paused ? t(" · paused") : "");
+          existing.disabled = schedule.paused;
+          continue;
+        }
         const option = dom.node(
           "option",
           schedule.title +
@@ -94,7 +129,7 @@ export function createHabitEditor({
         option.disabled = schedule.paused;
         select.append(option);
       }
-      select.disabled = !!habit?.endDate || checkIn();
+      select.disabled = saving || restoring || !!habit?.endDate || checkIn();
     } catch (error) {
       if (generation === loadGeneration && dom.isActive())
         byId("task-series-hint").textContent = t("Unable to load task series: ") + error.message;
@@ -223,8 +258,12 @@ export function createHabitEditor({
   }
   function openEditor(habit = null) {
     const s = store.snapshot();
-    if (saving || s.blocked || s.pending || s.busyRead || !s.state) return;
+    if (saving || restoring || s.blocked || s.pending || s.busyRead || !s.state) return;
     editing = habit ? habit.id : null;
+    creatingId = habit ? null : newId();
+    weeklyActive = false;
+    rollingPeriod = String(habit ? D.periodDaysForDate(habit, habit.endDate || now()) : 1);
+    byId("period-days").value = rollingPeriod;
     openedVersion = habit ? settingsVersion(s.state, habit.id) : null;
     lastFocus = activeElement();
     lastFocusKey = lastFocus?.dataset.focusKey;
@@ -281,14 +320,16 @@ export function createHabitEditor({
           "Zero is a valid limit. Days without recorded events count as within the limit. Include events that have already happened today."
         );
     updateGoalFields();
-    void populateSchedules(habit, originalRepeatId);
+    const schedules = populateSchedules(habit, originalRepeatId);
     byId("editor-error").textContent = "";
     initialForm = formValues();
+    recovery.refresh();
     byId("editor").showModal();
     byId("name").focus();
+    return schedules;
   }
   function closeEditor(confirmed = false) {
-    if (saving) return;
+    if (saving || restoring) return;
     if (
       !confirmed &&
       formValues() !== initialForm &&
@@ -297,6 +338,7 @@ export function createHabitEditor({
       return;
     loadGeneration++;
     byId("editor").close();
+    initialForm = "";
     if (lastFocus && lastFocus.isConnected) lastFocus.focus();
     else if (lastFocusKey) dom.restoreFocus(lastFocusKey);
     else byId("add").focus();
@@ -323,7 +365,17 @@ export function createHabitEditor({
     }
     updateTaskFields();
   });
-  on("from", "input", updateEditorHint);
+  function updatePauseBounds() {
+    const habit = store.snapshot().state.habits.find((entry) => entry.id === editing);
+    const proposed = byId("from").value;
+    if (D.validDate(proposed))
+      pauses.bounds(
+        habit && habit.startDate < proposed ? habit.startDate : proposed,
+        habit?.endDate || "9999-12-31"
+      );
+    updateEditorHint();
+  }
+  on("from", "input", updatePauseBounds);
   on("goal", "change", () => {
     if (byId("goal").value === "at-least" && Number(byId("limit").value) === 0)
       byId("limit").value = 1;
@@ -350,7 +402,7 @@ export function createHabitEditor({
   });
   on("habit-form", "submit", async (event) => {
     event.preventDefault();
-    if (saving || store.snapshot().pending || store.snapshot().blocked) return;
+    if (saving || restoring || store.snapshot().pending || store.snapshot().blocked) return;
     if (!manualSchedule.checkValidity()) return;
     if (!byId("habit-form").reportValidity()) return;
     const name = byId("name").value.trim(),
@@ -414,12 +466,15 @@ export function createHabitEditor({
       return;
     }
     const isEditing = editing !== null;
-    const id = editing || newId();
+    const id = editing || creatingId;
+    if (!isEditing && store.snapshot().state.habits.some((habit) => habit.id === id)) {
+      byId("editor-error").textContent = t(
+        "This habit may already have been saved. Review the latest list before creating another habit."
+      );
+      return;
+    }
     saving = true;
-    byId("save-habit").disabled = true;
-    byId("close-editor").disabled = true;
-    byId("archive-habit").disabled = true;
-    byId("delete-habit").disabled = true;
+    lock(true);
     const repeatId = byId("task-series").value;
     const ok = await commit(
       (state) => {
@@ -432,14 +487,25 @@ export function createHabitEditor({
     );
     saving = false;
     if (!dom.isActive()) return;
-    byId("save-habit").disabled = false;
-    byId("close-editor").disabled = false;
-    byId("archive-habit").disabled = false;
-    byId("delete-habit").disabled = false;
+    lock(false);
+    recovery.refresh();
     if (ok) closeEditor(true);
     else byId("editor-error").textContent = store.snapshot().error;
   });
+  async function commitAction(transform) {
+    if (saving || restoring || store.snapshot().pending || store.snapshot().blocked) return;
+    saving = true;
+    lock(true);
+    const ok = await commit(transform);
+    saving = false;
+    if (!dom.isActive()) return;
+    lock(false);
+    recovery.refresh();
+    if (ok) closeEditor(true);
+    else byId("editor-error").textContent = store.snapshot().error;
+  }
   on("archive-habit", "click", async () => {
+    if (saving || restoring || store.snapshot().pending || store.snapshot().blocked) return;
     const state = store.snapshot().state,
       habit = state.habits.find((h) => h.id === editing);
     if (!habit) {
@@ -455,17 +521,13 @@ export function createHabitEditor({
     )
       return;
     const id = editing;
-    if (
-      (await commit((state) => {
-        assertSettingsVersion(state, id, openedVersion);
-        return D.archiveHabit(state, id, now(state));
-      })) &&
-      dom.isActive()
-    )
-      closeEditor(true);
-    else if (dom.isActive()) byId("editor-error").textContent = store.snapshot().error;
+    await commitAction((state) => {
+      assertSettingsVersion(state, id, openedVersion);
+      return D.archiveHabit(state, id, now(state));
+    });
   });
   on("delete-habit", "click", async () => {
+    if (saving || restoring || store.snapshot().pending || store.snapshot().blocked) return;
     const state = store.snapshot().state,
       habit = state.habits.find((h) => h.id === editing);
     if (!habit) {
@@ -483,15 +545,104 @@ export function createHabitEditor({
     )
       return;
     const id = editing;
-    if (
-      (await commit((state) => {
-        assertSettingsVersion(state, id, openedVersion);
-        return D.deleteHabit(state, id);
-      })) &&
-      dom.isActive()
-    )
-      closeEditor(true);
-    else if (dom.isActive()) byId("editor-error").textContent = store.snapshot().error;
+    await commitAction((state) => {
+      assertSettingsVersion(state, id, openedVersion);
+      return D.deleteHabit(state, id);
+    });
   });
-  return { open: openEditor };
+  function captureDraft() {
+    if (!byId("editor").open || !initialForm || formValues() === initialForm) return null;
+    return {
+      kind: "habit",
+      context: {
+        id: editing,
+        creatingId,
+        openedVersion,
+        originalUnit,
+        originalRepeatId,
+        initialForm,
+        rollingPeriod,
+        weeklyActive,
+        lastFocusKey
+      },
+      fields: captureFields(byId("habit-form")),
+      pauses: pauses.snapshot(),
+      weekly: weeklyGoal.snapshot(),
+      scrollTop: byId("editor").scrollTop
+    };
+  }
+  async function restoreDraft(saved) {
+    const state = store.snapshot().state;
+    if (saved?.kind !== "habit" || !saved.context || !state || !validFieldDraft(saved.fields))
+      return false;
+    const context = saved.context;
+    if (
+      (context.id !== null && typeof context.id !== "string") ||
+      (context.id === null
+        ? typeof context.creatingId !== "string" || !context.creatingId
+        : typeof context.openedVersion !== "string") ||
+      typeof context.initialForm !== "string" ||
+      !context.initialForm ||
+      typeof context.rollingPeriod !== "string" ||
+      typeof context.weeklyActive !== "boolean" ||
+      typeof context.originalRepeatId !== "string" ||
+      (context.originalUnit !== null && typeof context.originalUnit !== "string") ||
+      !Array.isArray(saved.pauses) ||
+      saved.pauses.length > 1000 ||
+      saved.pauses.some(
+        (pause) =>
+          !pause ||
+          !D.validDate(pause.from) ||
+          (pause.to !== null && (!D.validDate(pause.to) || pause.to < pause.from))
+      )
+    )
+      return false;
+    if (context.id === null && state.habits.some((habit) => habit.id === context.creatingId))
+      return false;
+    const habit =
+      saved.context.id === null
+        ? null
+        : state.habits.find((entry) => entry.id === saved.context.id);
+    if (saved.context.id !== null && !habit) return false;
+    const ready = openEditor(habit);
+    if (!byId("editor").open) return false;
+    const taskChoice = saved.fields.find((field) => field.id === "task-series")?.value;
+    if (
+      taskChoice &&
+      ![...byId("task-series").options].some((option) => option.value === taskChoice)
+    ) {
+      const option = dom.node("option", t("Loading…"));
+      option.value = taskChoice;
+      byId("task-series").append(option);
+    }
+    restoreFields(byId("habit-form"), saved.fields);
+    pauses.restore(saved.pauses);
+    weeklyGoal.restore(saved.weekly);
+    updateUnitChoice();
+    updateGoalFields();
+    updateZoneFields();
+    restoreFields(byId("habit-form"), saved.fields);
+    ({
+      creatingId,
+      openedVersion,
+      originalUnit,
+      originalRepeatId,
+      initialForm,
+      rollingPeriod,
+      weeklyActive,
+      lastFocusKey
+    } = saved.context);
+    setEmoji(byId("emoji").value);
+    updatePauseBounds();
+    byId("editor").scrollTop = saved.scrollTop || 0;
+    restoring = true;
+    lock(true);
+    await ready;
+    restoring = false;
+    if (!dom.isActive()) return false;
+    lock(false);
+    recovery.refresh();
+    return true;
+  }
+  return { open: openEditor, captureDraft, restoreDraft, refresh: recovery.refresh };
 }

@@ -3,6 +3,8 @@ import { t } from "../i18n/index.js";
 export function createWeeklyFields(dom, changed) {
   const { node, byId } = dom,
     root = byId("weekly-goal-fields");
+  let unavailableDraft = null,
+    quantityDraft = false;
   const select = node("select"),
     target = node("input"),
     label = node("label", t("Goal period"));
@@ -28,16 +30,43 @@ export function createWeeklyFields(dom, changed) {
     "hint"
   );
   root.append(label, amount, note);
-  select.addEventListener("change", changed);
+  select.addEventListener("change", () => {
+    quantityDraft = false;
+    changed();
+  });
   return {
+    snapshot() {
+      return { unavailableDraft, quantityDraft };
+    },
+    restore(saved) {
+      unavailableDraft = ["daily", "quantity", "days"].includes(saved?.unavailableDraft)
+        ? saved.unavailableDraft
+        : null;
+      quantityDraft = saved?.quantityDraft === true;
+    },
     open(habit, date) {
       const goal = habit?.limits.findLast((rule) => rule.from <= date)?.weekGoal;
+      unavailableDraft = null;
+      quantityDraft = false;
+      select.disabled = false;
       select.value = goal?.type ?? "daily";
       target.value = goal?.target ?? 3;
     },
     update(linked, binary, positive) {
-      if (linked || !positive) select.value = "daily";
-      if (binary && select.value === "quantity") select.value = "days";
+      if (linked || !positive) {
+        if (unavailableDraft === null) unavailableDraft = select.value;
+        select.value = "daily";
+      } else if (unavailableDraft !== null) {
+        select.value = unavailableDraft;
+        unavailableDraft = null;
+      }
+      if (!linked && positive && binary && select.value === "quantity") {
+        quantityDraft = true;
+        select.value = "days";
+      } else if (!linked && positive && !binary && quantityDraft) {
+        select.value = "quantity";
+        quantityDraft = false;
+      }
       select.options[1].disabled = binary;
       select.disabled = linked || !positive;
       root.hidden = linked || !positive;

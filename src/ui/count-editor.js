@@ -4,12 +4,36 @@ import * as D from "../domain.js";
 import { dateText, usageText, habitName } from "./format.js";
 import { completionControls } from "./completion-controls.js";
 import { closeOnBackdrop } from "./dialog.js";
+import {
+  validFieldDraft,
+  captureFields,
+  restoreFields,
+  createFormLock,
+  createEditorRecovery
+} from "./form-session.js";
 import { settingsVersion, assertSettingsVersion, EditConflictError } from "../edit-session.js";
 
-export function createCountEditor({ dom, store, now, commit, openNoteEditor }) {
+export function createCountEditor({
+  dom,
+  store,
+  now,
+  commit,
+  openNoteEditor,
+  confirm = () => false
+}) {
   const { byId, on, restoreFocus } = dom;
   let countEditing = null,
-    countSaving = false;
+    countSaving = false,
+    initialInput = "";
+  const lock = createFormLock(byId("count-form"));
+  const recovery = createEditorRecovery({
+    dom,
+    store,
+    formId: "count-form",
+    saveIds: ["save-count"],
+    errorId: "count-error",
+    busy: () => countSaving
+  });
   function openCountEditor(habit, date, focusKey) {
     const s = store.snapshot();
     if (s.blocked || s.pending || s.busyRead || !s.state) return;
@@ -43,14 +67,16 @@ export function createCountEditor({ dom, store, now, commit, openNoteEditor }) {
           commit: async (transform) => {
             if (countSaving) return false;
             countSaving = true;
-            byId("close-count").disabled = byId("cancel-count").disabled = true;
+            lock(true);
             const ok = await commit(transform);
             countSaving = false;
-            if (dom.isActive())
-              byId("close-count").disabled = byId("cancel-count").disabled = false;
+            if (dom.isActive()) {
+              lock(false);
+              recovery.refresh();
+            }
             return ok;
           },
-          onSaved: closeCountEditor,
+          onSaved: () => closeCountEditor(true),
           onError: () => {
             byId("count-error").textContent = store.snapshot().error;
           }
@@ -73,8 +99,10 @@ export function createCountEditor({ dom, store, now, commit, openNoteEditor }) {
         " · " +
         usageText(result, D.unitOf(habit));
     byId("count-amount").value = result.count;
+    initialInput = byId("count-amount").value;
     byId("count-amount-label").textContent = t("Quantity (") + unitText(D.unitOf(habit)) + ")";
     byId("count-error").textContent = "";
+    recovery.refresh();
     byId("count-editor").showModal();
     if (completion) controls.querySelector("button").focus();
     else {
@@ -82,21 +110,27 @@ export function createCountEditor({ dom, store, now, commit, openNoteEditor }) {
       byId("count-amount").select();
     }
   }
-  function closeCountEditor() {
+  function closeCountEditor(confirmed = false) {
     if (countSaving) return;
+    if (
+      !confirmed &&
+      captureDraft() &&
+      !confirm(t("Discard unsaved quantity changes? Choose Cancel to keep editing."))
+    )
+      return;
     const focusKey = countEditing?.focusKey;
     byId("count-editor").close();
     countEditing = null;
     restoreFocus(focusKey);
   }
-  on("close-count", "click", closeCountEditor);
+  on("close-count", "click", () => closeCountEditor());
   on("count-note", "click", () => {
     if (!countEditing || countSaving) return;
     const habit = store.snapshot().state?.habits.find((entry) => entry.id === countEditing.id);
     if (habit) openNoteEditor(habit, countEditing.date);
   });
   closeOnBackdrop(dom, "count-editor", closeCountEditor);
-  on("cancel-count", "click", closeCountEditor);
+  on("cancel-count", "click", () => closeCountEditor());
   on("count-editor", "cancel", (event) => {
     event.preventDefault();
     closeCountEditor();
@@ -116,8 +150,7 @@ export function createCountEditor({ dom, store, now, commit, openNoteEditor }) {
       return;
     }
     countSaving = true;
-    for (const key of ["save-count", "close-count", "cancel-count", "count-amount"])
-      byId(key).disabled = true;
+    lock(true);
     const ok = await commit((state) => {
       assertSettingsVersion(state, id, version);
       if (state.habits.find((habit) => habit.id === id).counts[date] !== amount)
@@ -126,10 +159,47 @@ export function createCountEditor({ dom, store, now, commit, openNoteEditor }) {
     });
     countSaving = false;
     if (!dom.isActive()) return;
-    for (const key of ["save-count", "close-count", "cancel-count", "count-amount"])
-      byId(key).disabled = false;
-    if (ok) closeCountEditor();
+    lock(false);
+    recovery.refresh();
+    if (ok) closeCountEditor(true);
     else byId("count-error").textContent = store.snapshot().error;
   });
-  return { open: openCountEditor };
+  function captureDraft() {
+    if (
+      !countEditing ||
+      !byId("count-editor").open ||
+      byId("save-count").hidden ||
+      byId("count-amount").value === initialInput
+    )
+      return null;
+    return {
+      kind: "count",
+      context: { ...countEditing },
+      initialInput,
+      fields: captureFields(byId("count-form")),
+      scrollTop: byId("count-editor").scrollTop
+    };
+  }
+  function restoreDraft(saved) {
+    const state = store.snapshot().state;
+    if (saved?.kind !== "count" || !saved.context || !state || !validFieldDraft(saved.fields))
+      return false;
+    if (
+      typeof saved.context.id !== "string" ||
+      typeof saved.context.version !== "string" ||
+      typeof saved.initialInput !== "string" ||
+      (saved.context.amount !== undefined && !D.wholeNumber(saved.context.amount))
+    )
+      return false;
+    const habit = state.habits.find((entry) => entry.id === saved.context.id);
+    if (!habit || !D.validDate(saved.context.date)) return false;
+    openCountEditor(habit, saved.context.date, saved.context.focusKey);
+    if (!byId("count-editor").open || !countEditing) return false;
+    countEditing = { ...saved.context };
+    initialInput = saved.initialInput;
+    restoreFields(byId("count-form"), saved.fields);
+    byId("count-editor").scrollTop = saved.scrollTop || 0;
+    return true;
+  }
+  return { open: openCountEditor, captureDraft, restoreDraft, refresh: recovery.refresh };
 }
