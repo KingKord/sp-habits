@@ -177,5 +177,5 @@ Sync depends on Super Productivity settings. Concurrent multi-device edits are u
 
 The timezone is captured from the system when the first state is saved and is then retained. Days run 00:00–24:00; a custom host start-of-day setting is not supported. Closed applications need no scheduled task: results are derived when opened.
 
-Other current limitations: no fractional counts, exact-hour frequency windows, progressive increases for positive goals, general manual pauses, restore-from-archive or permanent deletion.
+Other current limitations: no fractional counts, exact-hour frequency windows, progressive increases for positive goals, general manual pauses or restore-from-archive.
 
