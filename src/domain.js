@@ -5,6 +5,14 @@ import { MAX_STORAGE_CHARACTERS, MAX_BACKUP_BYTES } from "./data-limits.js";
 import { validateNotes, updatedNotes } from "./notes.js";
 import { validateManualSchedules, manualAssessedDays, putManualSchedule } from "./scheduling.js";
 import { validatePauses, pausedOn } from "./scheduling.js";
+import {
+  validWeeklyRule,
+  weeklyEvaluator,
+  weeklyPeriods,
+  weeklyStreak,
+  hasWeeklyGoals,
+  weekStart
+} from "./weekly-goals.js";
 export { manualScheduleForDate } from "./scheduling.js";
 export const MAX_VALUE = 1000000000;
 const VISIBILITY_ERROR = "Invalid habit visibility.";
@@ -205,7 +213,7 @@ export function validateState(state) {
       t("Time goals cannot be linked to recurring tasks.")
     );
     let previous = "";
-    for (const limit of habit.limits) {
+    for (const [limitIndex, limit] of habit.limits.entries()) {
       assert(
         object(limit) &&
           validDate(limit.from) &&
@@ -217,6 +225,7 @@ export function validateState(state) {
             limit.deadline === null ||
             (limit.tracking === "check-in" && validClockMinutes(limit.deadline))) &&
           (limit.tracking !== "check-in" || (limit.value === 1 && (limit.periodDays ?? 1) === 1)) &&
+          validWeeklyRule(limit) &&
           (limit.periodDays === undefined || validPeriod(limit.periodDays)) &&
           (timeGoal
             ? limit.goal === "before-time" &&
@@ -232,6 +241,19 @@ export function validateState(state) {
         t("Limit dates are not in order.")
       );
       previous = limit.from;
+      if (limit.weekGoal)
+        assert(
+          !(habit.taskSchedules ?? []).some(
+            (entry, index, history) =>
+              entry.repeatId &&
+              entry.from <=
+                (habit.limits[limitIndex + 1]?.from
+                  ? addDays(habit.limits[limitIndex + 1].from, -1)
+                  : (habit.endDate ?? "9999-12-31")) &&
+              (!history[index + 1] || history[index + 1].from > limit.from)
+          ),
+          t("Weekly goals cannot be linked to recurring tasks.")
+        );
     }
     assert(
       habit.limits[0].from === habit.startDate,
@@ -369,6 +391,10 @@ export function dayResult(habit, date, today) {
   const scheduled = assessedDays(habit, date, date) > 0;
   const paused = pausedOn(habit, date);
   const recorded = Object.hasOwn(counts, date);
+  const rule = ruleForDate(habit, date);
+  const weekly = rule?.weekGoal
+    ? weeklyEvaluator(habit, counts, assessedDays)(rule, weekStart(date), today)
+    : null;
   const values = {
     count,
     limit,
@@ -378,6 +404,7 @@ export function dayResult(habit, date, today) {
     periodFrom,
     scheduled,
     ...(paused ? { paused: true } : {}),
+    ...(weekly ? { weekly } : {}),
     ...(isCheckIn(habit)
       ? { recorded, tracking: "check-in", deadline: deadlineForDate(habit, date) }
       : {})
@@ -392,12 +419,19 @@ export function dayResult(habit, date, today) {
       editable: true,
       readOnly: !!scheduleForDate(habit, date)?.repeatId
     };
-  const within =
-    (!isCheckIn(habit) || recorded) &&
-    withinGoal(goal, periodCount, limit, ruleForDate(habit, date)?.tracking);
+  const within = weekly
+    ? weekly.met
+    : (!isCheckIn(habit) || recorded) && withinGoal(goal, periodCount, limit, rule?.tracking);
   return {
     ...values,
-    kind: date === today ? (within ? "today-good" : "today-bad") : within ? "success" : "failure",
+    kind:
+      date === today || (weekly && !weekly.complete)
+        ? within
+          ? "today-good"
+          : "today-bad"
+        : within
+          ? "success"
+          : "failure",
     editable: true,
     readOnly: !!scheduleForDate(habit, date)?.repeatId
   };
@@ -414,6 +448,7 @@ function periodSpans(habit, from, to, visit) {
   for (let index = 0; index < habit.limits.length; index++) {
     const rule = habit.limits[index],
       days = rule.periodDays ?? 1;
+    if (rule.weekGoal) continue;
     const lo = Math.max(first, dayIndex(rule.from));
     const hi = Math.min(
       last,
@@ -460,11 +495,16 @@ function failedDayCount(habit, from, to) {
 // Sweep constant rolling totals so sparse, multi-year histories do not need a daily scan.
 function streakMetrics(habit, date, today) {
   assert(validDate(date) && validDate(today), t("Invalid date."));
+  if (ruleForDate(habit, date)?.weekGoal)
+    return weeklyStreak(habit, date, today, countsOf(habit), assessedDays);
   const end = indexDate(
     Math.min(dayIndex(date), dayIndex(today) - 1, dayIndex(habit.endDate ?? date))
   );
   const result = { days: 0, idealDays: 0, kind: "empty", bestDays: 0, previousBest: 0 };
-  periodSpans(habit, habit.startDate, end, (rule, total, start, finish) => {
+  const lastWeekly = habit.limits.findLastIndex((rule) => rule.from <= date && rule.weekGoal);
+  const streakStart =
+    lastWeekly >= 0 ? (habit.limits[lastWeekly + 1]?.from ?? date) : habit.startDate;
+  periodSpans(habit, streakStart, end, (rule, total, start, finish) => {
     const days = assessedDays(habit, start, finish);
     if (!days) return;
     if (!withinGoal(rule.goal, total, rule.value, rule.tracking)) {
@@ -555,6 +595,7 @@ export function createHabit(state, input, today, id) {
         from: input.startDate,
         value: input.limit,
         ...(input.goal === undefined ? {} : { goal: input.goal }),
+        ...(input.weekGoal ? { weekGoal: input.weekGoal } : {}),
         ...(input.tracking === "check-in"
           ? { tracking: "check-in", deadline: input.deadline ?? null }
           : {}),
@@ -701,6 +742,7 @@ export function editHabit(state, id, input, today) {
   const deadline = input.deadline === undefined ? existingRule.deadline : input.deadline;
   const periodDays = input.periodDays ?? existingRule.periodDays ?? 1;
   const goal = input.goal ?? existingRule.goal ?? "at-most";
+  const weekGoal = input.weekGoal === undefined ? existingRule.weekGoal : input.weekGoal;
   assert(
     (goal === "before-time") === (habit.limits[0].goal === "before-time"),
     t("Create a separate habit to switch between quantities and time.")
@@ -711,7 +753,8 @@ export function editHabit(state, id, input, today) {
     limitForDate(habit, input.from) !== input.limit ||
     periodDaysForDate(habit, input.from) !== periodDays ||
     goalForDate(habit, input.from) !== goal ||
-    deadline !== existingRule.deadline
+    deadline !== existingRule.deadline ||
+    JSON.stringify(weekGoal ?? null) !== JSON.stringify(existingRule.weekGoal ?? null)
   ) {
     habit.limits = habit.limits.filter((l) => l.from !== input.from);
     habit.limits.push({
@@ -719,6 +762,7 @@ export function editHabit(state, id, input, today) {
       value: input.limit,
       ...(goal === "at-most" ? {} : { goal }),
       ...(tracking === "check-in" ? { tracking, deadline: deadline ?? null } : {}),
+      ...(weekGoal ? { weekGoal } : {}),
       ...(periodDays === 1 ? {} : { periodDays })
     });
     habit.limits.sort((a, b) => a.from.localeCompare(b.from));
@@ -836,10 +880,39 @@ export function statistics(state, from, to, today, filter = "all", includeHidden
       const start = habit.startDate > from ? habit.startDate : from;
       const end = habit.endDate && habit.endDate < to ? habit.endDate : to;
       const inRange = end >= start;
-      const trackedDays = inRange ? assessedDays(habit, start, end) : 0;
+      const weekly = hasWeeklyGoals(habit);
+      const periods =
+        weekly && inRange
+          ? weeklyPeriods(
+              habit,
+              start,
+              end,
+              today,
+              weeklyEvaluator(habit, countsOf(habit), assessedDays)
+            )
+          : [];
+      const completedWeeks = periods.filter((period) => period.complete);
+      const unknownWeeks = completedWeeks.filter((period) => period.unknown).length;
+      const failedWeeks = completedWeeks.filter((period) => !period.met && !period.unknown).length;
+      const dailyTracked = !inRange
+        ? 0
+        : !weekly
+          ? assessedDays(habit, start, end)
+          : habit.limits.reduce((sum, rule, index) => {
+              if (rule.weekGoal) return sum;
+              const lo = rule.from > start ? rule.from : start;
+              const next = habit.limits[index + 1]?.from;
+              const hi = next && next <= end ? addDays(next, -1) : end;
+              return sum + assessedDays(habit, lo, hi);
+            }, 0);
+      const trackedDays = dailyTracked + periods.length;
       const includesToday =
-        trackedDays > 0 && end === today && assessedDays(habit, today, today) > 0;
-      const completedDays = trackedDays - (includesToday ? 1 : 0);
+        dailyTracked > 0 &&
+        end === today &&
+        !ruleForDate(habit, today)?.weekGoal &&
+        assessedDays(habit, today, today) > 0;
+      const dailyCompleted = dailyTracked - (includesToday ? 1 : 0);
+      const completedDays = dailyCompleted + completedWeeks.length;
       let events = inRange ? 0 : null,
         exceededDays = 0;
       if (inRange)
@@ -853,11 +926,16 @@ export function statistics(state, from, to, today, filter = "all", includeHidden
       const marks = manual
         ? Object.entries(habit.counts).filter(
             ([date]) =>
-              date >= start && date <= end && date < today && assessedDays(habit, date, date) > 0
+              date >= start &&
+              date <= end &&
+              date < today &&
+              assessedDays(habit, date, date) > 0 &&
+              !ruleForDate(habit, date)?.weekGoal
           )
         : [];
-      const unmarkedDays = manual ? completedDays - marks.length : 0;
+      const unmarkedDays = (manual ? dailyCompleted - marks.length : 0) + unknownWeeks;
       if (manual) exceededDays = marks.filter(([, value]) => value === 0).length;
+      exceededDays += failedWeeks;
       const successDays = completedDays - exceededDays - unmarkedDays;
       const current = includesToday ? dayResult(habit, today, today) : null;
       return {
@@ -867,6 +945,19 @@ export function statistics(state, from, to, today, filter = "all", includeHidden
         unit: unitOf(habit),
         ...(goalForDate(habit, habit.startDate) === "before-time" ? { goal: "before-time" } : {}),
         ...(manual ? { tracking: "check-in", unmarkedDays } : {}),
+        ...(weekly
+          ? {
+              assessmentUnit:
+                dailyTracked && periods.length ? "mixed" : periods.length ? "weeks" : "days",
+              weekly: {
+                completed: completedWeeks.length,
+                partial: periods.filter((period) => !period.complete).length,
+                successful: completedWeeks.filter((period) => period.met).length,
+                unknown: unknownWeeks,
+                progress: periods.at(-1) ?? null
+              }
+            }
+          : {}),
         archived: habit.endDate !== null,
         from: trackedDays ? start : null,
         to: trackedDays ? end : null,
@@ -876,8 +967,12 @@ export function statistics(state, from, to, today, filter = "all", includeHidden
         exceededDays,
         successDays,
         successRate:
-          completedDays - unmarkedDays ? successDays / (completedDays - unmarkedDays) : null,
-        average: trackedDays ? events / trackedDays : null,
+          dailyTracked && periods.length
+            ? null
+            : completedDays - unmarkedDays
+              ? successDays / (completedDays - unmarkedDays)
+              : null,
+        average: weekly ? null : trackedDays ? events / trackedDays : null,
         today: current
           ? {
               count: current.count,
@@ -903,6 +998,10 @@ export function statistics(state, from, to, today, filter = "all", includeHidden
     { trackedDays: 0, completedDays: 0, events: 0, exceededDays: 0, successDays: 0 }
   );
   const amounts = new Map();
+  const units = new Set(
+    rows.filter((row) => row.completedDays).map((row) => row.assessmentUnit ?? "days")
+  );
+  const mixedUnits = units.size > 1 || units.has("mixed");
   for (const row of rows)
     if (row.events !== null) amounts.set(row.unit, (amounts.get(row.unit) ?? 0) + row.events);
   return {
@@ -911,9 +1010,15 @@ export function statistics(state, from, to, today, filter = "all", includeHidden
     rows,
     total: {
       ...total,
+      ...(mixedUnits
+        ? { assessmentUnit: "mixed" }
+        : units.has("weeks")
+          ? { assessmentUnit: "weeks" }
+          : {}),
       events: amounts.size === 1 ? total.events : null,
       amounts: [...amounts].map(([unit, value]) => ({ unit, value })),
       successRate:
+        !mixedUnits &&
         total.completedDays - rows.reduce((sum, row) => sum + (row.unmarkedDays ?? 0), 0)
           ? total.successDays /
             (total.completedDays - rows.reduce((sum, row) => sum + (row.unmarkedDays ?? 0), 0))
@@ -957,6 +1062,15 @@ export function calendarResult(habit, date, today) {
               ? "warning"
               : "neutral";
   }
+  if (result.weekly && result.editable && result.kind !== "rest")
+    zone =
+      result.weekly.partial || result.weekly.unknown
+        ? "neutral"
+        : result.weekly.met
+          ? "ideal"
+          : result.weekly.complete
+            ? "red"
+            : "neutral";
   return { ...result, zone, idealMax, yellowMax };
 }
 export function monthCalendar(habit, month, today) {
@@ -1192,6 +1306,7 @@ export function setTaskSchedule(state, id, schedule, today) {
       goalForDate(habit, today) === "at-least" &&
         limitForDate(habit, today) === 1 &&
         periodDaysForDate(habit, today) === 1 &&
+        !ruleForDate(habit, today)?.weekGoal &&
         canonicalUnit(unitOf(habit)) === "times",
       t("Linking requires a positive habit with a minimum of 1 time per day.")
     );

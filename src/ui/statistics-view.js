@@ -6,7 +6,12 @@ import { dateText, number, amount, percent, habitName } from "./format.js";
 export function assessmentCoverage(row, unmarkedDays = row.unmarkedDays ?? 0) {
   const assessedDays = row.completedDays - unmarkedDays;
   return {
-    successful: assessedDays ? number(row.successDays) + " / " + number(assessedDays) : "—",
+    successful:
+      row.assessmentUnit === "mixed"
+        ? "—"
+        : assessedDays
+          ? number(row.successDays) + " / " + number(assessedDays)
+          : "—",
     coverage: number(assessedDays) + " / " + number(row.completedDays),
     unmarkedDays
   };
@@ -72,7 +77,7 @@ export function createStatisticsView({ dom, store, now, render }) {
       data.rows.reduce((sum, row) => sum + (row.unmarkedDays ?? 0), 0)
     );
     byId("stats-coverage").textContent =
-      t("Assessed habit-days: ") +
+      (data.rows.some((row) => row.weekly) ? t("Assessed periods: ") : t("Assessed habit-days: ")) +
       coverage.coverage +
       " · " +
       t("Unmarked check-in days: ") +
@@ -81,6 +86,12 @@ export function createStatisticsView({ dom, store, now, render }) {
       t(
         "Unmarked check-ins are excluded from the rate. Quantity days use recorded totals, with missing totals counted as zero. Today is excluded."
       );
+    if (data.rows.some((row) => row.weekly))
+      byId("stats-coverage").textContent +=
+        " " +
+        t(
+          "Weekly rates use complete calendar weeks only. Partial weeks show progress. Daily and weekly rates are not combined."
+        );
     const metrics = fragment();
     for (const [label, value, hint] of [
       [
@@ -92,7 +103,11 @@ export function createStatisticsView({ dom, store, now, render }) {
           : "—",
         t("By unit, including today")
       ],
-      [t("Successful days"), coverage.successful, t("Completed days for each habit")],
+      [
+        data.rows.some((row) => row.weekly) ? t("Successful periods") : t("Successful days"),
+        coverage.successful,
+        t("Completed days for each habit")
+      ],
       [
         t("Completion"),
         percent(data.total.successRate),
@@ -115,7 +130,29 @@ export function createStatisticsView({ dom, store, now, render }) {
       name.append(node("span", habitName(row)));
       if (row.archived) name.append(node("small", t("Archived")));
       const rowCoverage = assessmentCoverage(row);
-      if (row.tracking === "check-in")
+      if (row.weekly)
+        name.append(
+          node(
+            "small",
+            (row.assessmentUnit === "mixed"
+              ? t("Mixed daily and weekly history")
+              : t("Calendar weeks")) +
+              " · " +
+              t("Partial weeks: ") +
+              row.weekly.partial
+          )
+        );
+      if (row.weekly?.progress)
+        name.append(
+          node(
+            "small",
+            t("Weekly progress: ") +
+              row.weekly.progress.progress +
+              " / " +
+              row.weekly.progress.target
+          )
+        );
+      if (row.tracking === "check-in" && !row.weekly)
         name.append(
           node(
             "small",

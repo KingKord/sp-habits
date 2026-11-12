@@ -7,6 +7,7 @@ import { unitChoice, selectedUnit } from "./units.js";
 import { settingsVersion, assertSettingsVersion, EditConflictError } from "../edit-session.js";
 import { createScheduleFields } from "./schedule-fields.js";
 import { createPauseFields } from "./pause-fields.js";
+import { createWeeklyFields } from "./weekly-fields.js";
 
 export function createHabitEditor({
   dom,
@@ -32,6 +33,7 @@ export function createHabitEditor({
   const { byId, on, activeElement } = dom;
   const manualSchedule = createScheduleFields(dom);
   const pauses = createPauseFields(dom);
+  const weeklyGoal = createWeeklyFields(dom, updateGoalFields);
   const checkIn = () => byId("unit-choice").value === "check-in";
   const formValues = () =>
     JSON.stringify([
@@ -45,10 +47,15 @@ export function createHabitEditor({
   dismissKeyboardOnReturn(dom, "habit-form");
   function updateTaskFields() {
     const linked = !!byId("task-series").value;
+    const weekly = weeklyGoal.update(linked, checkIn(), byId("goal").value === "at-least");
     manualSchedule.update(linked);
     pauses.update(linked);
     for (const id of ["goal", "limit", "period-days", "unit-choice", "step"])
       byId(id).disabled = linked || (checkIn() && ["limit", "period-days", "step"].includes(id));
+    if (weekly) {
+      byId("period-days").value = 1;
+      byId("period-days").disabled = true;
+    }
     byId("task-series-hint").textContent = linked
       ? t(
           "The task defines the schedule. Completing it adds 1 completion; rest days do not lower your rate. Linking starts today."
@@ -188,6 +195,16 @@ export function createHabitEditor({
     const habit = store.snapshot().state.habits.find((entry) => entry.id === editing);
     for (const option of byId("unit-choice").options)
       option.disabled = !!habit && (option.value === "check-in") !== D.isCheckIn(habit);
+    const week = weeklyGoal.value();
+    if (week) {
+      for (const id of ["period-label", "period-hint", "zone-settings"]) byId(id).hidden = true;
+      byId("zones-ideal").disabled = true;
+      byId("zones-ideal").required = false;
+      if (week.type === "quantity") {
+        byId("limit-field").hidden = true;
+        byId("limit").disabled = true;
+      } else if (!binary) byId("limit-label").textContent = t("Daily minimum");
+    }
     updateEditorHint();
   }
   function updateZoneFields() {
@@ -215,6 +232,7 @@ export function createHabitEditor({
       from = habit ? habit.endDate || today : today;
     manualSchedule.open(habit, from);
     pauses.open(habit, from, today);
+    weeklyGoal.open(habit, from);
     byId("editor-title").textContent = habit ? t("Habit settings") : t("New habit");
     byId("name").value = habit ? habit.name : "";
     setEmoji(habit?.emoji ?? "");
@@ -349,6 +367,7 @@ export function createHabitEditor({
       startDate: from,
       manualSchedule: manualSchedule.value(),
       pauses: pauses.value(),
+      weekGoal: weeklyGoal.value(),
       initialCount: checkIn() ? 0 : Number(byId("initial").value),
       unit: checkIn()
         ? "times"

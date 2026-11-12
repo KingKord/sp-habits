@@ -1,6 +1,7 @@
 import { t } from "../i18n/index.js";
 import { unitText } from "./units.js";
 import { scheduleDescription } from "./schedule-fields.js";
+import { weeklyRuleDescription } from "../weekly-goals.js";
 import * as D from "../domain.js";
 import {
   dateText,
@@ -62,7 +63,7 @@ export function createCalendarView({
       " · " +
       dateText(day.date, { year: "numeric" }) +
       ": " +
-      (day.tracking === "check-in"
+      (day.weekly || day.tracking === "check-in"
         ? resultLabel(day)
         : day.goal === "at-least" && day.editable && day.kind !== "rest"
           ? day.zone === "red"
@@ -177,6 +178,16 @@ export function createCalendarView({
     actions.append(plan);
     if (!D.scheduleForDate(habit, today)?.repeatId && habit.manualSchedules?.length)
       description.append(node("small", scheduleDescription(habit, habit.endDate || today)));
+    if (reference.weekly)
+      description.append(
+        node(
+          "small",
+          weeklyRuleDescription(
+            D.ruleForDate(habit, habit.endDate || today),
+            unitText(D.unitOf(habit))
+          )
+        )
+      );
     row.append(description, actions);
     return row;
   }

@@ -56,6 +56,18 @@ export function goalText(goal) {
 }
 
 export function usageText(result, unit) {
+  if (result.weekly)
+    return (
+      result.weekly.progress +
+      " / " +
+      result.weekly.target +
+      " " +
+      (result.weekly.type === "days" ? t("successful days") : unitText(unit)) +
+      " · " +
+      result.weekly.from +
+      " — " +
+      result.weekly.to
+    );
   if (result.tracking === "check-in") return countText(result) + " · " + checkInRule(result);
   if (result.kind === "rest") return t("Daily total: ") + result.count + " " + unitText(unit);
   return (
@@ -85,6 +97,16 @@ export function countText(result) {
 
 export function resultLabel(result) {
   if (result.paused && result.kind !== "inactive") return t("Paused");
+  if (result.weekly && result.editable && result.kind !== "rest")
+    return result.weekly.partial
+      ? t("Partial week · progress only")
+      : !result.weekly.complete
+        ? t("Week in progress")
+        : result.weekly.unknown
+          ? t("Week has unmarked days")
+          : result.weekly.met
+            ? t("Weekly goal met")
+            : t("Weekly goal not met");
   if (result.tracking === "check-in" && result.editable)
     return countText(result) + (result.kind.startsWith("today") ? t(" · day in progress") : "");
   if (result.kind === "rest") return t("Rest day");
@@ -101,6 +123,7 @@ export function resultLabel(result) {
   return t(labels[result.kind]);
 }
 export function resultClass(result) {
+  if (result.weekly && (result.weekly.partial || result.weekly.unknown)) return "inactive";
   if (result.tracking === "check-in" && !result.recorded) return "inactive";
   if (result.zone === "warning") return "warning";
   return ["success", "today-good"].includes(result.kind)
@@ -116,6 +139,14 @@ export const amount = (value, unit) =>
 export const percent = (value) => (value === null ? "—" : formatters().percent.format(value));
 
 export function streakLabels(streak) {
+  if (streak.unit === "weeks")
+    return {
+      days:
+        streak.kind === "empty"
+          ? t("No completed weeks")
+          : number(streak.days) + t(" weeks in a row"),
+      ideal: t("Successful weeks in streak: ") + number(streak.idealDays)
+    };
   const suffix = plural("day in a row", "days in a row", streak.days);
   return {
     days:

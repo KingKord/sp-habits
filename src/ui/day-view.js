@@ -5,6 +5,7 @@ import { getLocale } from "../i18n/index.js";
 import { unitText } from "./units.js";
 import { completionControls } from "./completion-controls.js";
 import { scheduleDescription } from "./schedule-fields.js";
+import { weeklyRuleDescription } from "../weekly-goals.js";
 import { progressPanel, recordText } from "./progress-view.js";
 import { noteForDate } from "../notes.js";
 import * as D from "../domain.js";
@@ -226,6 +227,8 @@ export function createDayView({
       title.append(description);
       const schedule = D.scheduleForDate(habit, selected);
       description.hidden = !!schedule?.repeatId;
+      if (result.weekly)
+        description.textContent = weeklyRuleDescription(D.ruleForDate(habit, selected), unit);
       if (!schedule?.repeatId && habit.manualSchedules?.length)
         description.textContent += " · " + scheduleDescription(habit, selected);
       if (schedule?.repeatId)
@@ -392,11 +395,11 @@ export function createDayView({
       }
       top.append(counter, note);
       const history = node("div", undefined, "habit-history");
-      history.append(
-        weekHeadings("week habit-week-headings"),
-        week,
-        progressPanel(dom, habit, streak)
-      );
+      const progress =
+        streak.unit === "weeks"
+          ? node("p", usageText(result, unit), "hint")
+          : progressPanel(dom, habit, streak);
+      history.append(weekHeadings("week habit-week-headings"), week, progress);
       card.append(top, history);
       content.append(card);
     }
