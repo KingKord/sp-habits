@@ -46,7 +46,7 @@ Day, Calendar and Statistics share one content inset: the existing 12 px through
 
 Above 700 px, the habit details and history use two columns with one shared date header. At 700 px and below, each habit becomes a vertical card: its week, date labels, goal and achievements appear under its details. Long names and rules wrap. Counter buttons are 44×44 px. History markers preserve a square aspect ratio: 32 px on wide layouts, up to 44 px on narrow layouts and about 41 px at a plugin width of 320 px.
 
-**Calendar** uses the full available width. At 900 px and below, the month becomes a compact date grid with up to four status dots and a count of remaining habits. Select a date to see full habit names and amounts below the month. Future dates can be inspected but their amounts cannot be edited. An empty filter keeps the grid and shows an explanation. On month changes, the selected Day date is preferred if it belongs to that month, then today, then the first of the month.
+**Calendar** uses the full available width. At 900 px and below, the month becomes a compact date grid with up to four status symbols and a count of remaining habits. Select a date to see full habit names and amounts below the month. Future dates can be inspected but their amounts cannot be edited. An empty filter keeps the grid and shows an explanation. On month changes, the selected Day date is preferred if it belongs to that month, then today, then the first of the month.
 
 Use **Arrange** in Day to reveal keyboard-accessible **Move up / Move down** controls. A move swaps adjacent habits within one group in the selected Active, Hidden or Archived list; habits outside that filter retain their positions. The saved order survives hiding, archiving and backups. New habits appear after existing habits in Ungrouped, and old backups retain their original array order without being rewritten on read.
 
@@ -88,7 +88,7 @@ For a 300 ml allowance and a +100 step, three presses reach 300 and remain accep
 
 Statistics keep different units separate. Standard aliases are combined for display, but amounts in millilitres and items are never added into one total.
 
-## Daily check-ins and optional time conditions
+## Calendar-week goals
 
 Positive habits can choose a **Goal period** of a rolling/daily rule, **Calendar-week quantity**, or **Successful days per calendar week**. Calendar weeks explicitly use a saved Monday boundary. Quantity mode totals recorded amounts in that week. Successful-day mode counts each scheduled date at most once, using the daily minimum or a successful check-in; three increments on one date cannot earn three days. Weekly check-ins support successful-day mode.
 
@@ -96,11 +96,15 @@ For quantity goals that count successful days, the daily minimum must be at leas
 
 Weekly progress is provisional until the week ends. Partial first/last weeks, weeks containing rule/schedule changes or pauses, and weeks cut by the selected statistics range show progress but do not count toward rates or streaks. A closed check-in week below its target with unmarked scheduled days remains unknown. Weekly streaks count weeks, and daily/weekly assessment units are not combined into one percentage. Existing seven-day rolling rules retain their original meaning. Changes to weekly mode or its target use the selected effective date and preserve earlier rules.
 
+## Manual schedules
+
 Manual habits can use **Due days → Daily**, **Selected weekdays**, or **Every N days** with a saved schedule anchor. Changes use the selected rule effective date; earlier schedules remain in history. Days before an interval anchor are rest days. Rest days neither earn nor break streaks and are excluded from completion denominators. You can correct or record a rest-day amount/mark: it is preserved in totals but is not assessed. A linked task owns its schedule instead of these manual fields.
+
+## Daily check-ins and optional time conditions
 
 Choose **Done / missed** in **Tracking**. Good habits use **Mark done** and **Missed**; bad habits use **No slip** and **Slipped**. The buttons describe whether the goal was met. A slip is not rewarded as a completion. Repeating the selected action clears it back to **Not marked**, and selecting the other outcome replaces it. Past days can be corrected from the history or calendar; future days cannot be marked.
 
-A check-in has no quantity, step, rolling period or yellow zone. Without a mark, the day stays neutral and unknown, earns no success, and interrupts the confirmed streak. Explicit success is green and failure is red. Today is provisional. Check-in totals count successful marks; their completion percentages exclude unmarked completed days, which are shown separately. The successful-day fraction retains all scheduled completed days as its denominator, making missing confirmations visible.
+A check-in has no quantity, step, rolling period or yellow zone. Without a mark, the day stays neutral and unknown, earns no success, and interrupts the confirmed streak. Explicit success is green and failure is red. Today is provisional. Check-in totals count successful marks; their completion percentages exclude unmarked completed days, which are shown separately. The successful fraction uses the same assessed-day denominator as the percentage; marked-day coverage separately shows all scheduled completed days.
 
 Optionally enable **Add a time condition** and set **No later than**, such as 08:00. This is the condition you assess, not a reminder or a clock-based check. No actual wake-up/completion time is requested or inferred: you can confirm the result later in the day. Times use 24-hour local wall-clock values from 00:00 through 23:59, and the stated boundary is inclusive.
 
@@ -110,7 +114,7 @@ Create a separate habit to change between quantity tracking and check-ins, so ex
 
 ## Day assessment and historical rules
 
-For quantity habits, a completed tracked day is successful when its period count is at or below a maximum, or at or above a minimum. Equality is successful. Missing daily amounts count as zero after tracking begins: zero satisfies a zero maximum, but fails a positive minimum. A zero minimum is allowed and is met without entries.
+For quantity habits, a completed tracked day is successful when its period count is at or below a maximum, or at or above a minimum. Equality is successful. Missing daily amounts count as zero after tracking begins: zero satisfies a zero maximum, but fails a positive minimum. A zero minimum remains valid for daily and rolling quantity goals. Distinct-successful-day weekly quantity goals require a minimum of at least one.
 
 Today is provisional and does not contribute to the final success percentage. Dates before tracking, after the archive boundary, or in the future do not get fabricated successes. A successful status describes the saved totals; it is not evidence of real-world activity.
 
@@ -171,9 +175,11 @@ A reduction plan can lower the amount while preserving its period, or reduce fre
 
 For amount reduction, choose the first future date, a 1–366-day interval, a decrease and a target below the original amount. Reducing 300 by 100 every seven days to zero produces 200 → 100 → 0. Plans allow at most 120 changes and replace future rules from the selected date, preserving past rules, today's amount and stored totals. Dates activate the rules; no background timer is required. **Cancel future plan** removes only pending planned changes, leaving completed stages and separate manual rules. Archiving removes future rules.
 
-## Daily totals and old journals
+## Pauses and exceptions
 
 **Pauses and exceptions** in a manual habit's settings accepts inclusive date ranges; equal dates make a single-day exception. **Until resumed** creates an open-ended pause, and **Resume today** ends it yesterday. Add/remove/resume actions are drafts until the habit is saved. Overlapping ranges are merged. Paused dates show ⏸, remain distinct from unknown or rest days, and neither earn nor break streaks. Existing quantities and marks remain in backups and totals, including their contribution to rolling windows. Linked-task pauses belong to the host and cannot overlap a local manual pause. Archiving closes pauses on the final tracked day.
+
+## Daily totals and old journals
 
 Storage records a total per date; new events do not create a time/comment journal. Quick controls and the amount editor only change that total.
 
@@ -185,7 +191,7 @@ Choose **7 days**, **30 days**, **This week**, **Current month**, **Year**, **Cu
 
 Custom dates are inclusive and cannot extend into the future. Date fields and **Show** are displayed only for a custom period; the range is not duplicated in a caption. Filters select all, active or archived habits; all history is included by default.
 
-Each habit shows its total in its own unit, successful completed days out of tracked completed days, and a success percentage with a small progress bar. Failed days and average daily amount are in the row hint. Quantity totals and averages include today when in range, but the final percentage does not. Start/archive boundaries and historical rules are respected.
+Each habit shows its total in its own unit, successful outcomes out of assessed outcomes, and a matching percentage with a small progress bar. Daily check-ins show marked-day coverage separately; unknown weeks and partial weeks are explicitly labelled. Failed days and average daily amount are in the row hint. Quantity totals and averages include today when in range, but the final percentage does not. Start/archive boundaries and historical rules are respected.
 
 The overall percentage weights habit-days, rather than averaging habit percentages: two habits on one date contribute two assessments. No completed tracking days yields “—”, not a fabricated zero or 100%. Statistics are read-only and operate on rule segments and recorded intervals instead of visiting every date. Rolling assessments can need records before the requested range; amount totals include only dates inside it.
 
@@ -197,17 +203,17 @@ The read-only table separates daily quantities/check-ins, the outcome assessed u
 
 ## Storage and limitations
 
-Data is stored through the plugin's own synced API storage. Built-in habits are not modified, and task links use the official read APIs. Optional episode reviews create tasks through PluginAPI.addTask. There are no runtime HTTP/CDN requests, separate accounts, Node execution or server hosting.
+Data is stored through the plugin's own synced API storage. Built-in habits are not modified, and task links use the official read APIs. Optional episode reviews create tasks through PluginAPI.addTask using the host's Inbox project ID. There are no runtime HTTP/CDN requests, separate accounts, Node execution or server hosting.
 
-Schema version 1 remains readable without a read-time migration. `goal` is optional and defaults to `at-most`; `at-least` represents a minimum. Rules with `tracking: "check-in"` use explicit outcome marks (1 for success, 0 for failure, no entry for unknown), independently of the habit direction. Their optional `deadline` is a wall-clock minute condition, separate from the mark. Emoji, zones, unit, step and legacy fields are optional. Do not downgrade to a version that does not understand positive goals, frequency or task links; older code can interpret a minimum as a maximum or ignore automatic counts.
+Schema version 1 remains readable without a read-time migration. `goal` is optional and defaults to `at-most`; `at-least` represents a minimum. Rules with `tracking: "check-in"` use explicit outcome marks (1 for success, 0 for failure, no entry for unknown), independently of the habit direction. Their optional `deadline` is a wall-clock minute condition, separate from the mark. Emoji, zones, unit, step and legacy fields are optional. Do not downgrade new schedules, pauses or calendar-week goals to pre-0.20.0 builds: older code can ignore this metadata and assess the history incorrectly. The same applies to positive goals, frequency and task links in older formats.
 
 Writes are serialized, including rapid clicks. Wait for **Ready** before closing. A failed write stops the queue; **Reload data** restores confirmed storage. Invalid JSON is surfaced rather than replaced with an empty history. Import validates the structure and replaces the entire plugin history after confirmation.
 
 Normal JSON exports use compact formatting so adding indentation cannot make a backup exceed its import limit. Import accepts files up to 12,000,000 UTF-8 bytes, including older indented exports, provided their compact JSON fits the existing storage capacity of 4,000,000 UTF-16 code units. This byte allowance preserves the full capacity for Unicode names, units and legacy notes. Formatting is not stored; history, unknown fields and user-entered text are preserved. Oversized imports and edits are rejected before writing. **Download original data** exports the original stored string unchanged for recovery.
 
-Sync depends on Super Productivity settings. Concurrent multi-device edits are unsupported because one JSON value cannot merge parallel changes. Delivery to a second client has not been verified.
+Sync depends on Super Productivity settings. Serial delivery was verified between two isolated clients using local WebDAV, including updates to the same open iframe. Metadata required a second quiescent upload/download in one case; instant or single-cycle delivery is not guaranteed. Concurrent multi-device edits remain unsupported because one JSON value cannot merge parallel changes. Other providers, automatic-sync timing, encryption and reconnect recovery were not verified.
 
 The timezone is captured from the system when the first state is saved and is then retained. Days run 00:00–24:00; a custom host start-of-day setting is not supported. Closed applications need no scheduled task: results are derived when opened.
 
-Other current limitations: no fractional counts, exact-hour frequency windows, progressive increases for positive goals, general manual pauses or restore-from-archive.
+Other current limitations: no fractional counts, exact-hour frequency windows, progressive increases for positive goals, restore-from-archive.
 

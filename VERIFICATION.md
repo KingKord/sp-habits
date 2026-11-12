@@ -1,5 +1,66 @@
 # Verification log
 
+## 0.20.0 — 2026-11-12
+
+### Build and regression checks
+
+- Final integrated npm run check passed: lint, formatting, 286 tests, version/changelog validation, JavaScript syntax and ZIP integrity.
+- The iframe contains 26,177 bytes, leaving 76,223 bytes below the unchanged strict 102,400-byte limit. The full application is delivered through the verified offline bridge; the host bundle is separately bounded at 10 MiB. No runtime network dependency was added.
+- Regressions cover optional group/order/note metadata, old backups and legacy journals, save failures and stale drafts, dated manual schedules, pauses, calendar-week goals, distinct successful days, partial weeks, mixed assessment units, real renderer/editor handlers and host recurrence parity.
+- Independent review found and fixed schedule/pause conflict signatures, pause-only dirty drafts, stale group renames, linked-to-weekly editor carry-over, daily check-in marks being confused with weekly outcomes, omitted time conditions and unknown-week labels.
+- Weekly recurrence fixtures match the tagged 19.3.1 and 20.0.0 host algorithms, including anchored seven-day blocks, DST, leap days, year boundaries, exceptions, completion and undo.
+
+### Isolated host matrix
+
+| Scenario | 19.3.1WB | 20.0.0WB |
+| --- | --- | --- |
+| Install and initialize offline loader | Passed | Passed |
+| Save/reopen and update existing plugin without losing synthetic history | Passed | Passed |
+| Manual weekdays, daily notes and groups | Passed | Passed |
+| Calendar-week check-in creation | Passed | Passed, including explicit missed/done marks in a met week |
+| Fixed WEEKLY task link completion and undo | Passed through actual task UI, 0 to 1 to 0 | Tagged-source oracle and automated integration; not rerun through 20.0.0 task UI |
+| Export/import | Synthetic update history retained; serial sync fixture used separate profiles | Exact JSON round trip with eight habits, group/order, notes, pauses and weekly rules |
+| Narrow layouts | Details at 320 px, loader and forms exercised | 36 layout combinations: EN/RU, light/dark, 320/390/1440 px, Day/Calendar/Statistics |
+| Physical iOS/Android, native Safari and Electron | Unverified | Unverified |
+
+The minimum-host environment used the embedded web assets from the official v19.3.1 Android APK, served on localhost in Chromium; its UI reported 19.3.1WB, revision 1014df989d55497d6ec18b038de09aa25b6cd2bb. This is an application API test, not a physical Android test or certification of the official PWA package. Extracted assets emitted missing-service-worker 404/NG05604 startup messages. The current-host checks used app.super-productivity.com, 20.0.0WB revision 4db0e11236bc784d3184a9e252930b4bd53df823.
+
+The everyday desktop app, personal accounts and personal synchronization settings were not opened or changed. Browser installations and generated tasks used synthetic data.
+
+### User-flow review
+
+- Preserved the existing six-habit fixture when updating the test host to 0.20.0. A later explicit disable/re-enable retained all eight habits, group metadata and notes.
+- In 19.3.1, created a Monday/Wednesday/Friday habit and observed Thursday as a rest day; saved a plain-text Unicode note on that rest day, created/renamed a group and assigned membership without changing the note/history.
+- In 20.0.0, moved a habit using keyboard Space on Move down. Only its visible neighbor changed position; group membership and unrelated history remained intact.
+- Saved a note from the nested daily-total editor. The pending amount stayed in the parent editor, cancelling that parent left the quantity unchanged, and the note persisted.
+- A pause added with unchanged default date inputs triggered discard protection. Cancelling dismissal kept the draft; saving displayed the pause symbol while preserving earlier amounts.
+- A weekly check-in with an 08:00 condition and three successful days retained the separate Monday Missed mark. The strip showed a failure followed by three successes, with 3 / 3 weekly progress and the clock condition still visible.
+- Detail history paged through a 73-day range, showed a validation message for reversed dates, recovered to a one-day range after correction, and caused no history writes.
+- The 36 view/theme/language/width combinations had no horizontal iframe overflow or view-only storage changes. A Russian dark editor fit 320 px; detail tables scroll inside the dialog. Screenshots were visually inspected for clipped controls, wrapping and readability.
+- The host-compatibility review found the old episode-review task used a nonexistent Inbox project ID. After correcting it to INBOX_PROJECT, pressing + created exactly one real review task in Inbox with a confirmed success message.
+- A real-host compact export/import round trip preserved the exact JSON, including all eight habits and new metadata.
+
+### Actual two-client serial WebDAV delivery
+
+Two independent, clean Chromium 156.0.8078.80 profiles ran 19.3.1WB on separate localhost origins. Both installed the same pinned 0.20.0 review snapshot: ZIP SHA-256 c3c0441661b16c753bd57bb5aeed75f8c1d96df1b64ffa128f97714c03c49cfd, 164,559 bytes. This pin predates later presentation fixes and is explicitly not the final published 0.20.0 asset.
+
+The official host WebDAV provider used an anonymous loopback-only fixture server with strong ETags and If-Match. The host-required login fields contained unused synthetic placeholders; no personal credentials or account were involved. All fixture mutations and synchronization used normal UI controls; PluginAPI was used only to read confirmed results.
+
+1. A uploaded two habits with older quantity history, a Done check-in, unknown earlier days and a note.
+2. B's initial clean-host conflict was resolved with Keep remote and its confirmation.
+3. An A quantity change reached B inside the exact same iframe/contentDocument without reopening. A name/rule change needed a second quiescent upload/download cycle.
+4. B then changed the quantity, check-in to Missed, and note. All three reached the same open A iframe.
+5. Final parsed plugin JSON matched between clients; IDs, units, rules, older history and unknowns survived. A full B host reload retained the same JSON.
+6. Both dedicated browser sessions and owned WebDAV/secondary static servers were stopped after recording evidence.
+
+Local evidence is under ignored output/sync-verification-20261112, including verification.json, an English report, screenshots and method/path/status-only transport logs. It is not part of the repository or release.
+
+### Reproduction and limits
+
+Use separate browser profiles without personal sync. Obtain the official 19.3.1 APK from its GitHub release, extract only assets/public, serve that directory locally, and confirm the displayed host version. Install the built plugin through Settings/Plugins. Use the table and synthetic examples above for save/reopen, task completion/undo, backups and layouts. For serial sync, use two distinct origins/profiles with a disposable local WebDAV endpoint; upload from one, download into the other, and compare both confirmed JSON and visible state while preserving iframe identity.
+
+These checks establish serial local WebDAV delivery, not concurrent-editing safety, distributed locking, instant or single-cycle metadata delivery, automatic-sync latency, other providers, encryption or reconnect recovery. Physical mobile devices, native Safari and Electron were unavailable for this iteration and remain explicitly unverified.
+
 ## 0.19.1 — 2026-11-12
 
 ### Integrated checks

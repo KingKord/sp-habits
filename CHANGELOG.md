@@ -5,8 +5,12 @@
 - Arrange habits with accessible persisted ordering and optional named groups (#13, #14).
 - Add independent daily notes without changing quantities, outcomes or archived journals (#15).
 - Schedule manual habits on selected weekdays or anchored intervals, with dated pause intervals and exceptions (#17, #19).
+- Add positive calendar-week quantity and distinct-successful-day goals, preserving daily marks and treating partial weeks as progress only (#18).
+- Support fixed weekly host task links with verified anchored recurrence semantics (#20).
+- Add read-only habit details with paginated history, dated rules and custom ranges (#16).
 - Load bundled application code through the existing verified offline resource bridge, keeping the iframe below the host size limit.
 - Preserve stale-edit conflict checks and unsaved pause/group drafts across background changes.
+- Verify the supported host API matrix and real serial WebDAV delivery into open views; correct episode review creation to use the host Inbox project (#21).
 
 ## 0.19.1
 

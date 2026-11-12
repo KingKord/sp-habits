@@ -12,11 +12,13 @@ Current release: **0.20.0** · Requires **Super Productivity 19.3.1+** · [Downl
 
 ## What you can do
 
-- **Build or limit a habit.** Set a minimum or maximum, per day or over a rolling period of up to 366 days.
+- **Build or limit a habit.** Use daily or rolling goals/limits, or positive calendar-week goals for quantities or distinct successful days.
 - **Choose how to track.** Select Done/Missed or a standard/custom quantity unit from one Tracking field. Add an optional time condition to a daily check-in.
-- **See your progress.** Browse daily history, a monthly calendar, statistics, streaks and personal bests.
+- **See your progress.** Browse daily history, a monthly calendar, statistics, streaks, personal bests and a focused habit detail view.
 - **Adjust over time.** Change a goal from a chosen date or plan gradual reductions while keeping past rules.
-- **Link recurring tasks.** Count completions from supported fixed daily schedules in Super Productivity.
+- **Choose due days and breaks.** Use selected weekdays or anchored intervals, plus dated pauses and exceptions.
+- **Organize your routine.** Arrange habits with keyboard controls, add named groups and record optional daily notes.
+- **Link recurring tasks.** Count completions from supported fixed daily and weekly schedules in Super Productivity.
 - **Keep your history.** Hide or archive a habit, correct past entries, and export or import JSON backups.
 
 English and Russian, light and dark themes, and layouts for narrow and wide screens are included. Habits needs no separate account or server and makes no runtime network requests.
@@ -57,10 +59,10 @@ Export before importing: an import replaces the complete plugin history after co
 
 The project is actively evolving. Keep these limits in mind:
 
-- Linked tasks currently support active, fixed `DAILY` schedules every 1–366 days. Weekly, monthly, yearly and after-completion schedules are unsupported.
+- Linked tasks support active, fixed `DAILY` and `WEEKLY` schedules with intervals of 1–366. Monthly, yearly and after-completion schedules remain unsupported.
 - Counts are whole numbers. Days run from midnight to midnight in the saved timezone.
-- Concurrent editing on multiple devices is unsupported; delivery to a second client has not been verified.
-- Physical mobile devices and Safari have not been checked. macOS installation and isolated Chromium layouts have been verified.
+- Concurrent editing on multiple devices is unsupported. Serial delivery was verified with local WebDAV; metadata sometimes needed a second completed sync cycle.
+- Physical mobile devices and Safari remain unverified. Chromium checks include host 20.0.0 and official 19.3.1 embedded web assets served locally; see the verification log for exact limits.
 
 Read the [full rules and limitations](docs/user-guide.md) before relying on a particular workflow.
 
