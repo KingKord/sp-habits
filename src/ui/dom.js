@@ -37,10 +37,11 @@ export function createDOM(document, scope) {
     const element = [...document.querySelectorAll("[data-focus-key]")].find(
       (item) => item.dataset.focusKey === pendingFocusKey
     );
-    element?.focus();
+    element?.focus({ preventScroll: true });
     // A refresh can temporarily disable the opener. Retry after the next render,
     // unless a new pointer or keyboard action has superseded this request.
-    if (!element || document.activeElement === element) pendingFocusKey = null;
+    if (!element || (!element.disabled && document.activeElement === element))
+      pendingFocusKey = null;
   }
 
   return {

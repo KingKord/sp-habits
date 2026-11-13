@@ -4,7 +4,7 @@ Track habits, build routines and keep unwanted habits within limits — inside [
 
 Set a goal such as reading for 20 minutes a day, limit coffee to two cups, or aim for three workouts over seven days. Record your progress and see your history in one place.
 
-Current release: **0.23.0** · Requires **Super Productivity 19.3.1+** · [Download](https://github.com/KingKord/sp-habits/releases/latest) · [User guide](docs/user-guide.md)
+Current release: **0.23.1** · Requires **Super Productivity 19.3.1+** · [Download](https://github.com/KingKord/sp-habits/releases/latest) · [User guide](docs/user-guide.md)
 
 ![Habits in dark mode, showing example goals, daily counters and a week of progress](docs/images/habits-day.png)
 

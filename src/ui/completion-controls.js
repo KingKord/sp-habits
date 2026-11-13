@@ -47,7 +47,8 @@ export function completionControls(
         });
         saving = false;
         if (!dom.isActive()) return;
-        for (const control of buttons) control.disabled = disabled;
+        // Compact Day controls are locked by the current store snapshot.
+        if (!compact) for (const control of buttons) control.disabled = disabled;
         if (ok) onSaved?.();
         else onError?.();
       },

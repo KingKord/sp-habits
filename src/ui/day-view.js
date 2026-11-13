@@ -39,7 +39,7 @@ export function createDayView({
   openNoteEditor,
   openDetails
 }) {
-  const { byId, node, button, fragment, on, activeElement, restoreFocus } = dom;
+  const { byId, node, button, on, activeElement, restoreFocus } = dom;
   const organization = createOrganizationControls({ dom, commit, render, confirm, newId });
   const filters = ["active", "hidden", "archived"];
   let selected = "",
@@ -52,6 +52,8 @@ export function createDayView({
   const reordering = createHabitReordering({ dom, move: reorder, flash });
 
   const feedback = new Map();
+  const rows = new Map();
+  const groupHeadings = new Map();
   const view = byId("cards").ownerDocument.defaultView;
   const feedbackNow = () => view.performance?.now?.() ?? Date.now();
   let feedbackTimer = null,
@@ -96,7 +98,10 @@ export function createDayView({
   }
   function decorateFeedback(row, id) {
     const item = feedback.get(id);
-    if (!item || item.date !== selected || item.until <= feedbackNow()) return;
+    if (!item || item.date !== selected || item.until <= feedbackNow()) {
+      removeFeedback(row);
+      return;
+    }
     row.classList.add("is-confirmed");
     if (row.querySelector?.(".habit-feedback")) return;
     const message = node("small", t("Saved"), "habit-feedback");
@@ -189,6 +194,7 @@ export function createDayView({
     for (const key of filters) byId(key).setAttribute("aria-pressed", String(filter === key));
     if (!s.state) {
       byId("cards").replaceChildren();
+      rows.clear();
       byId("summary").textContent = s.error ? t("Unable to load") : t("Loading…");
       for (const id of ["date", "prev", "next", "today"]) byId(id).disabled = true;
       return;
@@ -219,7 +225,14 @@ export function createDayView({
         : t("Successful: ") + good + t(" of ") + tracked.length;
     const focusKey = activeElement()?.dataset.focusKey;
     organization.management(state, locked || s.pending > 0, managingGroups);
-    const content = fragment();
+    const content = [];
+    const rowLocked = arranging && (locked || s.pending > 0);
+    function appendRow(record) {
+      for (const [control, disabled] of record.controls)
+        control.disabled = disabled || locked || s.pending > 0;
+      decorateFeedback(record.card, record.card.dataset.habitId);
+      content.push(record.card);
+    }
     if (!visible.length) {
       const el = node("div", undefined, "empty");
       el.append(
@@ -244,19 +257,37 @@ export function createDayView({
                 : t("Select Add habit to create a habit.")
         )
       );
-      content.append(el);
+      content.push(el);
     }
     let lastGroup = null;
     for (const habit of visible) {
       if (state.groups?.length && lastGroup !== (habit.groupId ?? "")) {
-        content.append(
-          node(
-            "h2",
-            state.groups.find((group) => group.id === habit.groupId)?.name ?? t("Ungrouped"),
-            "habit-group-title"
-          )
-        );
+        const groupId = habit.groupId ?? "";
+        let heading = groupHeadings.get(groupId);
+        if (!heading) {
+          heading = node("h2", undefined, "habit-group-title");
+          groupHeadings.set(groupId, heading);
+        }
+        const name = state.groups.find((group) => group.id === groupId)?.name ?? t("Ungrouped");
+        if (heading.textContent !== name) heading.textContent = name;
+        content.push(heading);
         lastGroup = habit.groupId ?? "";
+      }
+      const signature = JSON.stringify([
+        habit,
+        selected,
+        today,
+        getLocale(),
+        state.groups,
+        arranging,
+        expanded === habit.id,
+        expanding === habit.id,
+        arranging ? [rowLocked, visible.map((entry) => entry.id)] : null
+      ]);
+      const previous = rows.get(habit.id);
+      if (previous?.signature === signature) {
+        appendRow(previous);
+        continue;
       }
       const result = D.calendarResult(habit, selected, today);
       const unit = unitText(D.unitOf(habit)),
@@ -275,7 +306,7 @@ export function createDayView({
         "habit-title"
       );
       edit.title = t("Settings · ") + habitName(habit);
-      edit.disabled = locked || s.pending > 0;
+      edit.disabled = rowLocked;
       edit.dataset.focusKey = habit.id + "-edit";
       const heading = node("h2", undefined, "habit-title-heading");
       heading.append(edit);
@@ -288,7 +319,7 @@ export function createDayView({
         );
         indicator.title = t("Daily note");
         indicator.dataset.focusKey = habit.id + "-note-indicator";
-        indicator.disabled = locked || s.pending > 0 || !result.editable;
+        indicator.disabled = rowLocked || !result.editable;
         heading.append(indicator);
       }
       title.append(heading, node("p", resultLabel(result), "sr-only"));
@@ -400,7 +431,7 @@ export function createDayView({
           habit,
           date: selected,
           result,
-          disabled: locked || s.pending > 0 || !result.editable || result.readOnly,
+          disabled: rowLocked || !result.editable || result.readOnly,
           commit: (transform) => commitRow(habit.id, transform),
           now,
           focusPrefix: habit.id,
@@ -422,7 +453,7 @@ export function createDayView({
           ": " +
           (result.count + " " + unit) +
           t(". Click to edit.");
-        count.disabled = locked || s.pending > 0 || !result.editable || result.readOnly;
+        count.disabled = rowLocked || !result.editable || result.readOnly;
         count.dataset.focusKey = habit.id + "-count";
         counter.append(count);
         for (const [delta, text, suffix] of [
@@ -446,8 +477,7 @@ export function createDayView({
           );
           step.title = (delta === 1 ? "+" : "−") + increment + " " + unit;
           step.disabled =
-            locked ||
-            s.pending > 0 ||
+            rowLocked ||
             !result.editable ||
             result.readOnly ||
             (delta === -1 && result.count === 0) ||
@@ -462,7 +492,7 @@ export function createDayView({
         t("Daily note: ") + habit.name,
         "quiet habit-note"
       );
-      note.disabled = locked || s.pending > 0 || !result.editable;
+      note.disabled = rowLocked || !result.editable;
       note.dataset.focusKey = habit.id + "-note";
       if (noteForDate(habit, selected)) note.title = noteForDate(habit, selected);
       const week = node("div", undefined, "week");
@@ -514,7 +544,7 @@ export function createDayView({
         if (r.readOnly) day.classList.add("task-derived");
         day.append(node("strong", mark));
         day.title = date + " · " + resultLabel(r) + (r.editable ? " · " + usageText(r, unit) : "");
-        day.disabled = locked || s.pending > 0 || !r.editable || r.readOnly;
+        day.disabled = rowLocked || !r.editable || r.readOnly;
         day.dataset.focusKey = habit.id + "-" + date;
         week.append(day);
       }
@@ -524,7 +554,7 @@ export function createDayView({
         t("Habit details: ") + habit.name,
         "quiet habit-details-action"
       );
-      details.disabled = locked || s.pending > 0;
+      details.disabled = rowLocked;
       details.dataset.focusKey = habit.id + "-details";
       extras.prepend(note, details);
       const toggle = button(
@@ -554,10 +584,29 @@ export function createDayView({
       recent.append(weekHeadings("week habit-week-headings"), week, progress);
       history.append(expandedStreak, recent, extras);
       card.append(top, history);
-      decorateFeedback(card, habit.id);
-      content.append(card);
+      const record = {
+        signature,
+        card,
+        controls: [...card.querySelectorAll("button, select")].map((control) => [
+          control,
+          control.disabled
+        ])
+      };
+      rows.set(habit.id, record);
+      appendRow(record);
     }
-    byId("cards").replaceChildren(content);
+    const root = byId("cards");
+    // Keep unchanged rows attached through writes and identical host refreshes.
+    for (const [index, row] of content.entries()) {
+      const current = root.children[index];
+      if (current === row) continue;
+      if (current?.dataset.habitId && current.dataset.habitId === row.dataset.habitId)
+        root.replaceChild(row, current);
+      else root.insertBefore(row, current ?? null);
+    }
+    while (root.children.length > content.length) root.removeChild(root.lastElementChild);
+    const visibleIds = new Set(visible.map((habit) => habit.id));
+    for (const id of rows.keys()) if (!visibleIds.has(id)) rows.delete(id);
     expanding = null;
     restoreFocus(focusKey);
   }
@@ -608,6 +657,7 @@ export function createDayView({
     dispose: () => {
       disposed = true;
       clearFeedback();
+      rows.clear();
       reordering.cancel();
     },
     render: renderDay,

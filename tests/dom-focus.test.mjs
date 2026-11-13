@@ -14,7 +14,8 @@ function harness() {
     return {
       dataset: { focusKey: key },
       disabled,
-      focus() {
+      focus(options) {
+        assert.deepEqual(options, { preventScroll: true });
         if (!this.disabled) document.activeElement = this;
       }
     };
@@ -53,4 +54,18 @@ test("user input, removal of the opener and disposal cancel a delayed focus requ
     assert.equal(document.activeElement, null, action);
     scope.dispose();
   }
+});
+
+test("a disabled opener that remains active temporarily still retains its focus request", () => {
+  const { document, dom, button, scope } = harness();
+  const opener = button("reading-plus", true);
+  document.activeElement = opener;
+  document.elements = [opener];
+  dom.restoreFocus("reading-plus");
+  document.activeElement = null;
+  const replacement = button("reading-plus");
+  document.elements = [replacement];
+  dom.restoreFocus();
+  assert.equal(document.activeElement, replacement);
+  scope.dispose();
 });

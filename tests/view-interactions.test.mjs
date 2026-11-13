@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as D from "../src/domain.js";
+import { createStore } from "../src/store.js";
 import { createStatisticsView } from "../src/ui/statistics-view.js";
 import { createEmojiPicker } from "../src/ui/emoji-picker.js";
 import { createDayView } from "../src/ui/day-view.js";
@@ -56,6 +57,20 @@ function harness() {
           }
         }
       },
+      insertBefore(item, before) {
+        item.remove();
+        const index = before ? this.children.indexOf(before) : this.children.length;
+        this.children.splice(index, 0, item);
+        item.parentElement = this;
+      },
+      removeChild(item) {
+        item.remove();
+        item.parentElement = null;
+      },
+      replaceChild(item, previous) {
+        this.insertBefore(item, previous);
+        this.removeChild(previous);
+      },
       remove() {
         if (this.parentElement)
           this.parentElement.children.splice(this.parentElement.children.indexOf(this), 1);
@@ -106,7 +121,10 @@ function harness() {
         return this.children
           .flatMap((child) => [child, ...child.querySelectorAll("*")])
           .filter(
-            (child) => selector === "*" || child.className.split(" ").includes(selector.slice(1))
+            (child) =>
+              selector === "*" ||
+              selector.split(", ").includes(child.tag) ||
+              child.className.split(" ").includes(selector.slice(1))
           );
       },
       getBoundingClientRect() {
@@ -161,6 +179,7 @@ function harness() {
       el.setAttribute("aria-label", label);
       return el;
     },
+    isActive: () => true,
     on: (id, type, callback) => handlers.set(id + ":" + type, callback)
   };
   node("section").append(byId("calendar-day-title"), byId("calendar-day-habits"));
@@ -612,4 +631,167 @@ test("wide Calendar date selection reveals its controlled details and returns fo
   assert.equal(panel.classList.contains("is-revealed"), true);
   assert.equal(D.encodeState(state), original);
   calendar.dispose();
+});
+
+test("Day retains unchanged rows and controls through pending writes, refreshes and feedback expiry", async () => {
+  const h = harness();
+  let state = D.emptyState("UTC");
+  for (const id of ["reading", "coffee"])
+    state = D.createHabit(
+      state,
+      { name: id, limit: 10, initialCount: 0, startDate: today },
+      today,
+      id
+    );
+  state.groups = [{ id: "routine", name: "Routine" }];
+  state.habits[0].groupId = "routine";
+  let pending = 0,
+    busyRead = false,
+    blocked = false;
+  const snapshot = () => ({ state, pending, busyRead, blocked });
+  const refresh = () => day.render(snapshot(), today);
+  let finish;
+  const day = createDayView({
+    dom: h.dom,
+    store: { snapshot },
+    now: () => today,
+    render: refresh,
+    commit: (transform) => {
+      pending++;
+      refresh();
+      return new Promise((resolve) => {
+        finish = (ok) => {
+          if (ok) state = transform(state);
+          else blocked = true;
+          pending--;
+          refresh();
+          resolve(ok);
+        };
+      });
+    },
+    flash() {},
+    openEditor() {},
+    openCountEditor() {},
+    openNoteEditor() {},
+    openDetails() {},
+    confirm: () => true,
+    newId: () => "new"
+  });
+  day.prepare(today);
+  refresh();
+  const rows = () => h.byId("cards").children.filter((el) => el.dataset.habitId);
+  const [reading, coffee] = rows();
+  const heading = h.byId("cards").children[0];
+  const plus = reading.querySelector(".plus");
+  plus.focus();
+  plus.click();
+  assert.deepEqual(rows(), [reading, coffee]);
+  assert.equal(h.byId("cards").children[0], heading);
+  assert.equal(reading.querySelector(".plus"), plus);
+  assert.equal(plus.disabled, true);
+  finish(true);
+  for (let i = 0; i < 5; i++) await Promise.resolve();
+  const changed = rows()[0];
+  assert.notEqual(changed, reading);
+  assert.equal(rows()[1], coffee);
+  assert.equal(changed.querySelector(".plus").disabled, false);
+  assert.equal(changed.querySelector(".minus").disabled, false);
+  assert.equal(state.habits[0].counts[today], 1);
+  assert.equal(h.active().dataset.focusKey, "reading-plus");
+  busyRead = true;
+  refresh();
+  assert.equal(rows()[0], changed);
+  assert.equal(changed.querySelector(".plus").disabled, true);
+  state = D.parseState(D.encodeState(state));
+  busyRead = false;
+  refresh();
+  assert.equal(rows()[0], changed);
+  assert.equal(changed.querySelector(".plus").disabled, false);
+  h.advance(2000);
+  assert.equal(rows()[0], changed);
+  assert.equal(rows()[1], coffee);
+  assert.equal(changed.querySelector(".habit-feedback"), null);
+  changed.querySelector(".plus").click();
+  finish(false);
+  for (let i = 0; i < 5; i++) await Promise.resolve();
+  assert.equal(rows()[0], changed);
+  assert.equal(changed.querySelector(".plus").disabled, true);
+  assert.equal(coffee.querySelector(".plus").disabled, true);
+  assert.equal(state.habits[0].counts[today], 1);
+  blocked = false;
+  refresh();
+  assert.equal(changed.querySelector(".plus").disabled, false);
+  assert.equal(coffee.querySelector(".minus").disabled, true);
+  day.dispose();
+});
+
+test("retained compact check-in controls stay locked after a failed save and recover after reload", async () => {
+  const h = harness();
+  const initial = D.createHabit(
+    D.emptyState("UTC"),
+    {
+      name: "Walk",
+      tracking: "check-in",
+      goal: "at-least",
+      limit: 1,
+      initialCount: 0,
+      startDate: today
+    },
+    today,
+    "walk"
+  );
+  let rejectWrite;
+  const store = createStore(
+    {
+      loadSyncedData: async () => D.encodeState(initial),
+      persistDataSynced: () =>
+        new Promise((_resolve, reject) => {
+          rejectWrite = reject;
+        })
+    },
+    () => day.render(store.snapshot(), today)
+  );
+  const day = createDayView({
+    dom: h.dom,
+    store,
+    now: () => today,
+    render: () => day.render(store.snapshot(), today),
+    commit: async (transform) => {
+      try {
+        await store.mutate(transform);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    flash() {},
+    openEditor() {},
+    openCountEditor() {},
+    openNoteEditor() {},
+    openDetails() {},
+    confirm: () => true,
+    newId: () => "new"
+  });
+  day.prepare(today);
+  await store.reload();
+  const row = h.byId("cards").children[0];
+  const done = row.querySelector(".done");
+  const saving = done.click();
+  for (let i = 0; i < 10 && !rejectWrite; i++) await Promise.resolve();
+  assert.equal(h.byId("cards").children[0], row);
+  assert.equal(done.disabled, true);
+  rejectWrite(new Error("Synthetic write failure"));
+  await saving;
+  assert.equal(store.snapshot().blocked, true);
+  assert.equal(h.byId("cards").children[0], row);
+  assert.equal(done.disabled, true);
+  assert.equal(row.querySelector(".missed").disabled, true);
+  assert.equal(row.querySelector(".habit-feedback"), null);
+  assert.deepEqual(store.snapshot().state, initial);
+  await store.reload();
+  assert.equal(h.byId("cards").children[0], row);
+  assert.equal(done.disabled, false);
+  assert.equal(row.querySelector(".missed").disabled, false);
+  day.dispose();
+  store.dispose();
 });

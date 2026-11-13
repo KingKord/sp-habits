@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.23.1
+
+- Keep unchanged Day rows attached while saving and refreshing, updating only habits whose displayed data changed.
+- Preserve scroll position when restoring action focus, reserve toolbar status space, and show saved feedback without changing row height.
+- Keep compact check-in controls locked after a failed write until confirmed data is reloaded.
+
 ## 0.23.0
 
 - Combine navigation and Add habit into one compact toolbar, keeping the page heading accessible without duplicating the host title (#44).

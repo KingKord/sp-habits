@@ -1,5 +1,26 @@
 # Verification log
 
+## 0.23.1 — 2026-11-13
+
+### Checks and scope
+
+- Full `npm run check` passed: ESLint, Prettier, 346 tests, version/changelog validation, bundled JavaScript syntax and ZIP integrity. The package, lockfile, manifest, interface and current README entry are 0.23.1.
+- Regressions cover retained row/control/group-heading identity during pending writes and identical parsed-data refreshes, per-control availability after unlocking, feedback expiry without rebuilding rows, failed compact check-in persistence/reload, and delayed focus restoration without scrolling.
+- Iframe: 26,794 / 102,400 bytes; headroom: 75,606 bytes. ZIP SHA-256: `2a0c46bf4232bf4eaa8a98aef0879b839ed562c4734790732dd70e89d019ad83`.
+
+### Isolated browser review
+
+- Used the packaged host bridge, loader/application and host UI Kit with 36 synthetic habits in a separate Chromium session. No personal desktop data or synchronization settings were opened or changed.
+- Measured English/Russian, light/dark and 320/390/1440 px layouts, asserting the applied theme. Recorded animation frames through delayed save, acknowledgement, identical host invalidation and feedback expiry. Maximum button x/y, scroll position, row height and toolbar height changes were 0 px in all twelve combinations.
+- All 36 rows remained attached while saving; only the changed habit was replaced after acknowledgement, retaining the other 35 rows. Focus returned to the plus action. Quantity increment/decrement restored the exact starting JSON, including explicit starting zero, notes and legacy history.
+- Exercised check-in/undo and expanded quantity/undo with exact history restoration. Expanded history remained open after saving. A synthetic failed check-in write left storage unchanged and controls locked; Reload data recovered them. Creating a habit retained all 36 existing row nodes and added exactly one new row.
+- Reviewed representative narrow light/dark screenshots. Evidence and disposable harness scripts are under ignored `output/playwright/stability-0231/`. The preview uses a unique bundle URL and uncached seed data because deterministic build timestamps can otherwise retain an older HTTP-cached bundle.
+
+### Limits
+
+- This patch was verified in the isolated packaged browser harness; a fresh official-host installation, native Electron/Safari, physical touch devices and cross-device synchronization were not rerun. Existing host and synchronization evidence below is unchanged.
+
+
 ## 0.23.0 — 2026-11-12
 
 ### Checks and scope

@@ -255,8 +255,14 @@ test("the rendered Day history uses explicit marks and keeps the weekly check-in
       className,
       dataset: {},
       style: {},
+      querySelectorAll(selector) {
+        const children = this.children.flatMap((child) => [child, ...child.querySelectorAll("*")]);
+        return children.filter(
+          (child) => selector === "*" || selector.split(", ").includes(child.tag)
+        );
+      },
       getAttribute: () => null,
-      classList: { toggle() {} },
+      classList: { toggle() {}, remove() {} },
       prepend(...items) {
         this.children.unshift(...items);
       }
@@ -277,6 +283,7 @@ test("the rendered Day history uses explicit marks and keeps the weekly check-in
   });
   h.byId("cards").ownerDocument = { defaultView: {} };
   h.byId("cards").querySelectorAll = () => [];
+  h.byId("cards").insertBefore = (element) => h.byId("cards").append(element);
   const snapshot = { state, pending: 0, blocked: false, busyRead: false };
   const day = createDayView({
     dom: h.dom,

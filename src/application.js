@@ -180,7 +180,7 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
           ? t("Saving paused")
           : t("Ready");
     byId("save-status").classList.toggle(
-      "sr-only",
+      "is-idle",
       !snapshot.busyRead && !snapshot.pending && !snapshot.blocked
     );
     const locked = snapshot.blocked || snapshot.busyRead || !snapshot.state;
