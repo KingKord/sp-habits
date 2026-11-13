@@ -46,7 +46,7 @@ export function createOrganizationControls({ dom, commit, render, confirm, newId
     const row = node("form", undefined, "group-controls");
     const field = input("", "group-name-" + id, "", (value) => {
       names.set(id, { value, expected: names.get(id)?.expected ?? record.group.name });
-      cancel.hidden = false;
+      cancel.hidden = status.hidden = false;
     });
     field.addEventListener("compositionstart", () => {
       record.composing = true;
@@ -54,14 +54,22 @@ export function createOrganizationControls({ dom, commit, render, confirm, newId
         value: field.value,
         expected: names.get(id)?.expected ?? record.group.name
       });
-      cancel.hidden = false;
+      cancel.hidden = status.hidden = false;
     });
     field.addEventListener("compositionend", () => {
       record.composing = false;
       names.set(id, { value: field.value, expected: names.get(id)?.expected ?? record.group.name });
       render();
     });
-    const save = button(t("Rename"), () => {});
+    const status = node(
+      "small",
+      t("Unsaved name. Press Enter or select Save name."),
+      "group-name-status"
+    );
+    status.id = "group-name-status-" + id;
+    status.setAttribute("role", "status");
+    field.setAttribute("aria-describedby", status.id);
+    const save = button(t("Save name"), () => {});
     save.type = "submit";
     const cancel = button(t("Cancel rename"), () => {
       names.delete(id);
@@ -96,7 +104,7 @@ export function createOrganizationControls({ dom, commit, render, confirm, newId
         render();
       }
     });
-    row.append(field, save, cancel, missing, ...moves, remove);
+    row.append(field, save, cancel, missing, ...moves, remove, status);
     row.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (
@@ -124,7 +132,7 @@ export function createOrganizationControls({ dom, commit, render, confirm, newId
       if (ok) names.delete(id);
       render();
     });
-    return Object.assign(record, { row, field, save, cancel, missing, moves, remove });
+    return Object.assign(record, { row, field, save, cancel, missing, moves, remove, status });
   }
   const create = node("form", undefined, "group-controls");
   const newLabel = node("label", t("New group"));
@@ -177,7 +185,7 @@ export function createOrganizationControls({ dom, commit, render, confirm, newId
         record = groupRow(group.id);
         rows.set(group.id, record);
       }
-      const { row, field, save, cancel, missing, moves, remove } = record;
+      const { row, field, save, cancel, missing, moves, remove, status } = record;
       record.group = group;
       record.disabled = disabled;
       record.removed = !currentIds.has(group.id);
@@ -187,7 +195,7 @@ export function createOrganizationControls({ dom, commit, render, confirm, newId
       // Background reads disable mutations, not the editor holding the user's draft.
       field.disabled = record.saving;
       save.disabled = cancel.disabled = disabled || record.saving;
-      cancel.hidden = !names.has(group.id);
+      cancel.hidden = status.hidden = !names.has(group.id);
       missing.hidden = !record.removed;
       for (const [i, offset] of [-1, 1].entries()) {
         moves[i].disabled = disabled || record.removed || !(state.groups ?? [])[index + offset];

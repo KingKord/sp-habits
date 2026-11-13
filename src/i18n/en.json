@@ -631,5 +631,8 @@
   "Displayed month: ": "Displayed month: ",
   "Choose a month from January 1900 through December 9999.": "Choose a month from January 1900 through December 9999.",
   "Include hidden": "Include hidden",
-  "Show hidden habits alongside active habits.": "Show hidden habits alongside active habits."
+  "Show hidden habits alongside active habits.": "Show hidden habits alongside active habits.",
+  "Save name": "Save name",
+  "Unsaved name. Press Enter or select Save name.": "Unsaved name. Press Enter or select Save name.",
+  "Turn on Hidden to show your hidden habits.": "Turn on Hidden to show your hidden habits."
 }

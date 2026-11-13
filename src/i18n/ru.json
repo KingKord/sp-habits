@@ -636,5 +636,8 @@
   "Displayed month: ": "Показан месяц: ",
   "Choose a month from January 1900 through December 9999.": "Выберите месяц с января 1900 года по декабрь 9999 года.",
   "Include hidden": "Показывать скрытые",
-  "Show hidden habits alongside active habits.": "Показывать скрытые привычки вместе с обычными."
+  "Show hidden habits alongside active habits.": "Показывать скрытые привычки вместе с обычными.",
+  "Save name": "Сохранить имя",
+  "Unsaved name. Press Enter or select Save name.": "Имя не сохранено. Нажмите Enter или «Сохранить имя».",
+  "Turn on Hidden to show your hidden habits.": "Включите «Скрытые», чтобы показать скрытые привычки."
 }

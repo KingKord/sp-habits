@@ -1574,6 +1574,10 @@ form textarea {
   gap: 8px;
   margin: 8px 0;
 }
+.group-name-status {
+  flex: 1 0 100%;
+  color: var(--hl-warning);
+}
 .group-controls input {
   min-width: 0;
   max-width: 100%;

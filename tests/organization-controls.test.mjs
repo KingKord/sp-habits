@@ -227,3 +227,29 @@ test("group composition keeps its connected draft through a delivered update", a
   await h.rename("routine");
   assert.equal(h.data().groups[0].name, "Composing group");
 });
+
+test("emoji group edits stay explicitly unsaved until confirmation and preserve spaces and sequences", async () => {
+  const h = await harness();
+  const status = () =>
+    h.row("routine").children.find((el) => el.id === "group-name-status-routine");
+  assert.equal(status().hidden, true);
+  assert.ok(h.row("routine").children.some((el) => el.text === "Save name"));
+  for (const name of ["Meals🍽️", "Meals 🍽️", "Family 👩‍👩‍👧‍👦"]) {
+    const original = h.data().groups[0].name;
+    h.type("routine", name);
+    assert.equal(status().hidden, false);
+    assert.match(status().text, /Unsaved name.*Enter.*Save name/);
+    assert.equal(h.data().groups[0].name, original);
+    await h.rename("routine");
+    assert.equal(status().hidden, true);
+    assert.equal(h.data().groups[0].name, name);
+    await h.store.reload();
+    assert.equal(h.field("routine").value, name);
+    assert.equal(D.parseBackup(D.encodeState(h.data())).groups[0].name, name);
+  }
+  h.type("routine", "Cancelled 🧑🏽‍💻");
+  assert.equal(status().hidden, false);
+  h.cancel("routine");
+  assert.equal(status().hidden, true);
+  assert.equal(h.field("routine").value, "Family 👩‍👩‍👧‍👦");
+});

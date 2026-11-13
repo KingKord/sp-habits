@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.24.1
+
+- Use Hidden itself as the Day show/hide switch, alongside Reorder and Manage groups, and remove the extra Include hidden control.
+- Clarify unsaved group-name edits with Save name and an explicit unsaved hint; preserve emoji with or without spaces when saving.
+
 ## 0.24.0
 
 - Add an Include hidden switch to Day: view active habits alone, active and hidden habits together, or use Hidden for hidden habits only. Archives remain separate.

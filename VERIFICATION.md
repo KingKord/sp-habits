@@ -1,5 +1,27 @@
 # Verification log
 
+## 0.24.1 — 2026-11-13
+
+### Checks and scope
+
+- Full `npm run check` passed: ESLint, Prettier, 348 tests, version/changelog validation, bundled JavaScript syntax and ZIP integrity. Package, lockfile, manifest, interface and current README entry are 0.24.1.
+- Day regressions now exercise Hidden itself as an independent include/exclude switch while Active stays selected, separate archives, displayed summaries, unchanged history and mixed-peer reordering. The extra Include hidden control is removed.
+- Group-name regressions distinguish draft text from confirmed names, expose unsaved status, and preserve adjacent/spaced emoji, variation selectors and joined family sequences through save/reload/backup. Cancel restores the confirmed name; existing conflict, composition and failed-save regressions remain passing.
+- Iframe: 26,933 / 102,400 bytes; headroom: 75,467 bytes. ZIP SHA-256: `e4b9f2789aa2fe2238f301178db06abbfa04ce3f84cf6f194c2ecec6497ea5c5`.
+
+### Isolated browser review
+
+- Checked eight English/Russian, light/dark and 320/1440 px combinations with synthetic grouped habits through the packaged bridge and host UI Kit. Asserted the actual applied theme and absence of the obsolete extra control.
+- Hidden on showed all seven current habits, including the six ordinary habits; Hidden off showed six. Active remained selected, Archived remained separate, and filter actions preserved exact JSON.
+- Editing a group to `Meals🍽️` showed the unsaved hint while confirmed storage and headings retained the previous name. Enter saved the exact name and cleared the hint. Saving `Meals 🍽️` with Save name updated the heading and membership option; a complete preview reload retained its emoji and spaces.
+- Group renames preserved every habit field and history. No horizontal overflow appeared. Reviewed narrow unsaved-state and wide saved-state screenshots; evidence is under ignored `output/playwright/hidden-0241/`.
+
+### Limits
+
+- Group names still require explicit Save name or Enter; typing alone does not save, and inline group drafts are not promised to survive closing the view. The hint makes this distinction visible. Hidden remains a view-local switch.
+- Physical touch devices, native Safari and cross-device synchronization were not rerun. Existing compatibility evidence remains below.
+
+
 ## 0.24.0 — 2026-11-13
 
 ### Checks and scope

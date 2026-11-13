@@ -462,7 +462,7 @@ test("Day explains zero assessable goals for empty, rest, inactive and empty-fil
     { state: D.emptyState("UTC"), date: today, filter: "active", empty: true },
     { state: rest, date: today, filter: "active" },
     { state: daily, date: "2026-10-31", filter: "active" },
-    { state: daily, date: today, filter: "hidden" }
+    { state: D.setHabitHidden(daily, "reading", true), date: today, filter: "active" }
   ]) {
     const h = harness();
     const state = scenario.state,
@@ -836,10 +836,10 @@ test("Day combines ordinary and hidden habits without changing visibility, and r
   refresh();
   const original = D.encodeState(state);
   assert.deepEqual(ids(), ["ordinary", "second"]);
-  assert.equal(h.byId("day-hidden").getAttribute("aria-pressed"), "false");
+  assert.equal(h.byId("hidden").getAttribute("aria-pressed"), "false");
   assert.match(h.byId("summary").textContent, /0 of 2/);
   const ordinaryRow = h.byId("cards").children[0];
-  h.send("day-hidden", "click");
+  h.send("hidden", "click");
   assert.deepEqual(ids(), ["ordinary", "hidden", "second"]);
   assert.equal(h.byId("cards").children[0], ordinaryRow);
   assert.equal(
@@ -847,17 +847,16 @@ test("Day combines ordinary and hidden habits without changing visibility, and r
     "Hidden"
   );
   assert.match(h.byId("summary").textContent, /1 of 3/);
-  assert.equal(h.byId("day-hidden").getAttribute("aria-pressed"), "true");
+  assert.equal(h.byId("hidden").getAttribute("aria-pressed"), "true");
   refresh();
   day.select(today);
   assert.deepEqual(ids(), ["ordinary", "hidden", "second"]);
   h.send("hidden", "click");
-  assert.deepEqual(ids(), ["hidden"]);
-  assert.equal(h.byId("day-hidden").disabled, true);
-  h.send("day-hidden", "click");
+  assert.deepEqual(ids(), ["ordinary", "second"]);
+  h.send("hidden", "click");
   h.send("archived", "click");
   assert.deepEqual(ids(), ["archived"]);
-  assert.equal(h.byId("day-hidden").disabled, true);
+  assert.equal(h.byId("hidden").disabled, true);
   h.send("active", "click");
   assert.deepEqual(ids(), ["ordinary", "hidden", "second"]);
   assert.equal(D.encodeState(state), original);
@@ -869,15 +868,15 @@ test("Day combines ordinary and hidden habits without changing visibility, and r
   assert.equal(writes, 1);
   assert.deepEqual(ids(), ["hidden", "ordinary", "second"]);
   assert.deepEqual(state.habits, D.parseState(original).habits);
-  h.send("day-hidden", "click");
+  h.send("hidden", "click");
   assert.deepEqual(ids(), ["ordinary", "second"]);
   h.send("hidden", "click");
-  assert.deepEqual(ids(), ["hidden"]);
+  assert.deepEqual(ids(), ["hidden", "ordinary", "second"]);
   assert.equal(writes, 1);
   day.reset();
   day.prepare(today);
   refresh();
   assert.deepEqual(ids(), ["ordinary", "second"]);
-  assert.equal(h.byId("day-hidden").getAttribute("aria-pressed"), "false");
+  assert.equal(h.byId("hidden").getAttribute("aria-pressed"), "false");
   day.dispose();
 });

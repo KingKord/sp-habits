@@ -41,7 +41,7 @@ export function createDayView({
 }) {
   const { byId, node, button, on, activeElement, restoreFocus } = dom;
   const organization = createOrganizationControls({ dom, commit, render, confirm, newId });
-  const filters = ["active", "hidden", "archived"];
+  const filters = ["active", "archived"];
   let selected = "",
     lastToday = "",
     filter = "active",
@@ -196,8 +196,8 @@ export function createDayView({
     byId("manage-groups").disabled = locked || s.pending > 0;
     byId("manage-groups").setAttribute("aria-pressed", String(managingGroups));
     for (const key of filters) byId(key).setAttribute("aria-pressed", String(filter === key));
-    byId("day-hidden").setAttribute("aria-pressed", String(showHidden));
-    byId("day-hidden").disabled = !s.state || filter !== "active";
+    byId("hidden").setAttribute("aria-pressed", String(showHidden));
+    byId("hidden").disabled = !s.state || filter !== "active";
     if (!s.state) {
       byId("cards").replaceChildren();
       rows.clear();
@@ -241,26 +241,15 @@ export function createDayView({
     }
     if (!visible.length) {
       const el = node("div", undefined, "empty");
-      el.append(
-        node(
-          "h2",
-          filter === "archived"
-            ? t("Archive is empty")
-            : filter === "hidden"
-              ? t("No hidden habits")
-              : t("No active habits")
-        )
-      );
+      el.append(node("h2", filter === "archived" ? t("Archive is empty") : t("No active habits")));
       el.append(
         node(
           "p",
           filter === "archived"
             ? t("Completed tracking history is kept here.")
-            : filter === "hidden"
-              ? t("Hidden habits will appear here.")
-              : hiddenCount
-                ? t("Restore habits from the Hidden tab.")
-                : t("Select Add habit to create a habit.")
+            : hiddenCount
+              ? t("Turn on Hidden to show your hidden habits.")
+              : t("Select Add habit to create a habit.")
         )
       );
       content.push(el);
@@ -618,7 +607,7 @@ export function createDayView({
     expanding = null;
     restoreFocus(focusKey);
   }
-  on("day-hidden", "click", () => {
+  on("hidden", "click", () => {
     if (filter !== "active" || !store.snapshot().state) return;
     clearFeedback();
     showHidden = !showHidden;
