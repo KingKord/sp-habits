@@ -795,3 +795,89 @@ test("retained compact check-in controls stay locked after a failed save and rec
   day.dispose();
   store.dispose();
 });
+
+test("Day combines ordinary and hidden habits without changing visibility, and reorders the displayed peers", async () => {
+  const h = harness();
+  let state = D.emptyState("UTC");
+  for (const id of ["ordinary", "hidden", "second", "archived"])
+    state = D.createHabit(
+      state,
+      { name: id, goal: "at-least", limit: 1, initialCount: 0, startDate: today },
+      today,
+      id
+    );
+  state = D.setHabitHidden(state, "hidden", true);
+  state = D.setCount(state, "hidden", today, 1, today);
+  state = D.archiveHabit(state, "archived", today);
+  const snapshot = () => ({ state, pending: 0, blocked: false, busyRead: false });
+  let writes = 0;
+  const refresh = () => day.render(snapshot(), today);
+  const day = createDayView({
+    dom: h.dom,
+    store: { snapshot },
+    now: () => today,
+    render: refresh,
+    commit: async (transform) => {
+      state = transform(state);
+      writes++;
+      refresh();
+      return true;
+    },
+    flash() {},
+    openEditor() {},
+    openCountEditor() {},
+    openNoteEditor() {},
+    openDetails() {},
+    confirm: () => true,
+    newId: () => "new"
+  });
+  const ids = () => h.byId("cards").children.map((row) => row.dataset.habitId);
+  day.prepare(today);
+  refresh();
+  const original = D.encodeState(state);
+  assert.deepEqual(ids(), ["ordinary", "second"]);
+  assert.equal(h.byId("day-hidden").getAttribute("aria-pressed"), "false");
+  assert.match(h.byId("summary").textContent, /0 of 2/);
+  const ordinaryRow = h.byId("cards").children[0];
+  h.send("day-hidden", "click");
+  assert.deepEqual(ids(), ["ordinary", "hidden", "second"]);
+  assert.equal(h.byId("cards").children[0], ordinaryRow);
+  assert.equal(
+    h.byId("cards").children[1].querySelector(".habit-hidden-label").textContent,
+    "Hidden"
+  );
+  assert.match(h.byId("summary").textContent, /1 of 3/);
+  assert.equal(h.byId("day-hidden").getAttribute("aria-pressed"), "true");
+  refresh();
+  day.select(today);
+  assert.deepEqual(ids(), ["ordinary", "hidden", "second"]);
+  h.send("hidden", "click");
+  assert.deepEqual(ids(), ["hidden"]);
+  assert.equal(h.byId("day-hidden").disabled, true);
+  h.send("day-hidden", "click");
+  h.send("archived", "click");
+  assert.deepEqual(ids(), ["archived"]);
+  assert.equal(h.byId("day-hidden").disabled, true);
+  h.send("active", "click");
+  assert.deepEqual(ids(), ["ordinary", "hidden", "second"]);
+  assert.equal(D.encodeState(state), original);
+  assert.equal(writes, 0);
+  h.send("arrange", "click");
+  const hiddenRow = h.byId("cards").children[1];
+  hiddenRow.querySelector(".habit-drag-handle").onkeydown({ key: "ArrowUp", preventDefault() {} });
+  for (let i = 0; i < 5; i++) await Promise.resolve();
+  assert.equal(writes, 1);
+  assert.deepEqual(ids(), ["hidden", "ordinary", "second"]);
+  assert.deepEqual(state.habits, D.parseState(original).habits);
+  h.send("day-hidden", "click");
+  assert.deepEqual(ids(), ["ordinary", "second"]);
+  h.send("hidden", "click");
+  assert.deepEqual(ids(), ["hidden"]);
+  assert.equal(writes, 1);
+  day.reset();
+  day.prepare(today);
+  refresh();
+  assert.deepEqual(ids(), ["ordinary", "second"]);
+  assert.equal(h.byId("day-hidden").getAttribute("aria-pressed"), "false");
+  day.dispose();
+});

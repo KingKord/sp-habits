@@ -237,6 +237,7 @@ test("the rendered Day history uses explicit marks and keeps the weekly check-in
     "arrange-hint",
     "manage-groups",
     "active",
+    "day-hidden",
     "hidden",
     "archived",
     "date",

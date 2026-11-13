@@ -45,6 +45,7 @@ export function createDayView({
   let selected = "",
     lastToday = "",
     filter = "active",
+    showHidden = false,
     arranging = false,
     managingGroups = false,
     expanded = null,
@@ -131,12 +132,15 @@ export function createDayView({
   }
   async function reorder(id, targetId, placement, groupId, focusKey) {
     const currentFilter = filter,
+      currentShowHidden = showHidden,
       date = selected,
       generation = feedbackGeneration;
     clearFeedback(id);
     const ok = await commit((latest) => {
       const peers = orderedHabits(latest).filter(
-        (habit) => D.habitMatchesFilter(habit, currentFilter) && (habit.groupId ?? "") === groupId
+        (habit) =>
+          D.habitMatchesFilter(habit, currentFilter, currentShowHidden) &&
+          (habit.groupId ?? "") === groupId
       );
       if (![id, targetId].every((entry) => peers.some((habit) => habit.id === entry)))
         throw new EditConflictError(
@@ -192,6 +196,8 @@ export function createDayView({
     byId("manage-groups").disabled = locked || s.pending > 0;
     byId("manage-groups").setAttribute("aria-pressed", String(managingGroups));
     for (const key of filters) byId(key).setAttribute("aria-pressed", String(filter === key));
+    byId("day-hidden").setAttribute("aria-pressed", String(showHidden));
+    byId("day-hidden").disabled = !s.state || filter !== "active";
     if (!s.state) {
       byId("cards").replaceChildren();
       rows.clear();
@@ -210,7 +216,7 @@ export function createDayView({
       t("Time zone: ") + state.timeZone + t(" · Day: 00:00–24:00 · Stored in Super Productivity");
     const visible = groupedHabits(
       state,
-      orderedHabits(state).filter((h) => D.habitMatchesFilter(h, filter))
+      orderedHabits(state).filter((h) => D.habitMatchesFilter(h, filter, showHidden))
     );
     const hiddenCount = state.habits.filter((h) => D.habitMatchesFilter(h, "hidden")).length;
     byId("hidden").textContent = t("Hidden") + (hiddenCount ? " (" + hiddenCount + ")" : "");
@@ -310,6 +316,8 @@ export function createDayView({
       edit.dataset.focusKey = habit.id + "-edit";
       const heading = node("h2", undefined, "habit-title-heading");
       heading.append(edit);
+      if (habit.hidden && habit.endDate === null)
+        heading.append(node("small", t("Hidden"), "habit-hidden-label"));
       if (noteForDate(habit, selected)) {
         const indicator = button(
           "✎",
@@ -610,6 +618,12 @@ export function createDayView({
     expanding = null;
     restoreFocus(focusKey);
   }
+  on("day-hidden", "click", () => {
+    if (filter !== "active" || !store.snapshot().state) return;
+    clearFeedback();
+    showHidden = !showHidden;
+    render();
+  });
   on("arrange", "click", () => {
     arranging = !arranging;
     if (arranging) expanded = null;
@@ -644,6 +658,7 @@ export function createDayView({
     clearFeedback();
     selected = "";
     filter = "active";
+    showHidden = false;
     expanded = null;
     arranging = false;
     managingGroups = false;

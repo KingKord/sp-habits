@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.24.0
+
+- Add an Include hidden switch to Day: view active habits alone, active and hidden habits together, or use Hidden for hidden habits only. Archives remain separate.
+- Identify hidden habits in mixed lists and include them in the displayed day summary and same-group reordering without changing their visibility or history.
+
 ## 0.23.1
 
 - Keep unchanged Day rows attached while saving and refreshing, updating only habits whose displayed data changed.

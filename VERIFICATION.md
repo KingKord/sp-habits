@@ -1,5 +1,26 @@
 # Verification log
 
+## 0.24.0 — 2026-11-13
+
+### Checks and scope
+
+- Full `npm run check` passed: ESLint, Prettier, 347 tests, version/changelog validation, bundled JavaScript syntax and ZIP integrity. Package, lockfile, manifest, interface and current README entry are 0.24.0.
+- Renderer regressions cover ordinary-only, combined, hidden-only and archived lists; displayed summary counts; retained ordinary row identity; view-only data preservation; combined-list keyboard reordering; hidden flags/history preservation; and filter/reset behavior.
+- Iframe: 27,038 / 102,400 bytes; headroom: 75,362 bytes. ZIP SHA-256: `24d13ee90f69436ad84feaa1b251575c58812c47063b0af78f5f7313c93b9779`.
+
+### Isolated browser review
+
+- Exercised the packaged bridge, loader/application and host UI Kit with synthetic ordinary, hidden and archived habits. Checked eight English/Russian, light/dark and 320/1440 px combinations with the actual applied theme asserted.
+- Active initially showed six ordinary habits. Include hidden showed seven, with a Hidden label, matching day summary and no archived rows. Hidden showed only the hidden habit, while Archived showed only the archived habit. The include switch was unavailable outside Active. Returning to Active and navigating Calendar/Day retained the combined choice within the open view.
+- All filter/view operations preserved exact JSON and kept unchanged ordinary rows attached. No horizontal overflow appeared. Reviewed representative narrow and wide screenshots.
+- Incremented/decremented a hidden habit in the combined list and restored exact starting JSON. Keyboard-reordered that hidden habit among ordinary peers; only order metadata changed, preserving all habit fields and history.
+- Evidence is under ignored `output/playwright/hidden-0240/`. Tests use synthetic data only. The switch is local to the current Day instance and does not modify saved hidden flags or synchronize a visibility preference.
+
+### Limits
+
+- Browser checks used the isolated packaged harness. Physical touch devices, native Safari and cross-device synchronization were not rerun. Existing compatibility and synchronization evidence is preserved below.
+
+
 ## 0.23.1 — 2026-11-13
 
 ### Checks and scope

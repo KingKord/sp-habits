@@ -634,5 +634,7 @@
   "No goals to assess for this day.": "Нет целей для оценки за этот день.",
   "Select Add habit to create a habit.": "Нажмите «+ Привычка», чтобы создать привычку.",
   "Displayed month: ": "Показан месяц: ",
-  "Choose a month from January 1900 through December 9999.": "Выберите месяц с января 1900 года по декабрь 9999 года."
+  "Choose a month from January 1900 through December 9999.": "Выберите месяц с января 1900 года по декабрь 9999 года.",
+  "Include hidden": "Показывать скрытые",
+  "Show hidden habits alongside active habits.": "Показывать скрытые привычки вместе с обычными."
 }

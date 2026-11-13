@@ -629,5 +629,7 @@
   "No goals to assess for this day.": "No goals to assess for this day.",
   "Select Add habit to create a habit.": "Select Add habit to create a habit.",
   "Displayed month: ": "Displayed month: ",
-  "Choose a month from January 1900 through December 9999.": "Choose a month from January 1900 through December 9999."
+  "Choose a month from January 1900 through December 9999.": "Choose a month from January 1900 through December 9999.",
+  "Include hidden": "Include hidden",
+  "Show hidden habits alongside active habits.": "Show hidden habits alongside active habits."
 }

@@ -311,6 +311,12 @@ h2 {
   min-width: 0;
   line-height: 1.4;
 }
+.habit-hidden-label {
+  flex: 0 0 auto;
+  color: var(--hl-muted);
+  font-size: 10px;
+  font-weight: 400;
+}
 .habit-title {
   min-width: 0;
   display: block;
