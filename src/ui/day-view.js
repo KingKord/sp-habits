@@ -9,6 +9,7 @@ import { weeklyRuleDescription } from "../weekly-goals.js";
 import { progressPanel, recordText } from "./progress-view.js";
 import { EditConflictError } from "../edit-session.js";
 import { createHabitReordering } from "./habit-reordering.js";
+import { createGroupCollapse } from "./group-collapse.js";
 import { noteForDate } from "../notes.js";
 import * as D from "../domain.js";
 import {
@@ -56,6 +57,9 @@ export function createDayView({
   const rows = new Map();
   const groupHeadings = new Map();
   const view = byId("cards").ownerDocument.defaultView;
+  const collapse = createGroupCollapse(view, () =>
+    flash(t("Group display changed for this view. Preference storage is unavailable."))
+  );
   const feedbackNow = () => view.performance?.now?.() ?? Date.now();
   let feedbackTimer = null,
     feedbackGeneration = 0,
@@ -160,6 +164,44 @@ export function createDayView({
     }
     restoreFocus(focusKey);
   }
+  function groupHeading(id, name, count) {
+    let record = groupHeadings.get(id);
+    if (!record) {
+      const heading = node("h2", undefined, "habit-group-title");
+      const key = "group-toggle-" + id;
+      const toggle = button(
+        "",
+        () => {
+          collapse.toggle(id);
+          render();
+          restoreFocus(key);
+        },
+        undefined,
+        "habit-group-toggle"
+      );
+      toggle.dataset.focusKey = key;
+      toggle.dataset.groupId = id;
+      const icon = node("span", "", "habit-group-chevron");
+      const label = node("span", "", "habit-group-name");
+      const total = node("small", "", "habit-group-count");
+      icon.setAttribute("aria-hidden", "true");
+      total.setAttribute("aria-hidden", "true");
+      toggle.append(icon, label, total);
+      heading.append(toggle);
+      record = { heading, toggle, icon, label, total };
+      groupHeadings.set(id, record);
+    }
+    const collapsed = collapse.isCollapsed(id);
+    if (record.label.textContent !== name) record.label.textContent = name;
+    if (record.total.textContent !== String(count)) record.total.textContent = String(count);
+    record.icon.textContent = collapsed ? "▸" : "▾";
+    record.toggle.setAttribute("aria-expanded", String(!collapsed));
+    record.toggle.setAttribute(
+      "aria-label",
+      (collapsed ? t("Expand group: ") : t("Collapse group: ")) + name + " (" + count + ")"
+    );
+    return record.heading;
+  }
   function weekHeadings(className = "week") {
     const days = node("div", undefined, className);
     days.setAttribute("aria-hidden", "true");
@@ -218,6 +260,13 @@ export function createDayView({
       state,
       orderedHabits(state).filter((h) => D.habitMatchesFilter(h, filter, showHidden))
     );
+    const hasGroups = !!state.groups?.length;
+    collapse.retain([...(state.groups ?? []).map((group) => group.id), ""]);
+    const groupSizes = new Map();
+    for (const habit of visible) {
+      const id = habit.groupId ?? "";
+      groupSizes.set(id, (groupSizes.get(id) ?? 0) + 1);
+    }
     const hiddenCount = state.habits.filter((h) => D.habitMatchesFilter(h, "hidden")).length;
     byId("hidden").textContent = t("Hidden") + (hiddenCount ? " (" + hiddenCount + ")" : "");
     const tracked = visible
@@ -234,6 +283,7 @@ export function createDayView({
     const content = [];
     const rowLocked = arranging && (locked || s.pending > 0);
     function appendRow(record) {
+      record.card.hidden = hasGroups && collapse.isCollapsed(record.card.dataset.groupId);
       for (const [control, disabled] of record.controls)
         control.disabled = disabled || locked || s.pending > 0;
       decorateFeedback(record.card, record.card.dataset.habitId);
@@ -256,17 +306,11 @@ export function createDayView({
     }
     let lastGroup = null;
     for (const habit of visible) {
-      if (state.groups?.length && lastGroup !== (habit.groupId ?? "")) {
+      if (hasGroups && lastGroup !== (habit.groupId ?? "")) {
         const groupId = habit.groupId ?? "";
-        let heading = groupHeadings.get(groupId);
-        if (!heading) {
-          heading = node("h2", undefined, "habit-group-title");
-          groupHeadings.set(groupId, heading);
-        }
         const name = state.groups.find((group) => group.id === groupId)?.name ?? t("Ungrouped");
-        if (heading.textContent !== name) heading.textContent = name;
-        content.push(heading);
-        lastGroup = habit.groupId ?? "";
+        content.push(groupHeading(groupId, name, groupSizes.get(groupId)));
+        lastGroup = groupId;
       }
       const signature = JSON.stringify([
         habit,

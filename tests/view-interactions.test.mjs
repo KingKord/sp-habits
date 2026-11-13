@@ -880,3 +880,104 @@ test("Day combines ordinary and hidden habits without changing visibility, and r
   assert.equal(h.byId("hidden").getAttribute("aria-pressed"), "false");
   day.dispose();
 });
+
+test("Day group headings collapse independently, retain data and row identity, and survive reopening and rename", () => {
+  const h = harness();
+  const preferences = new Map();
+  h.byId("cards").ownerDocument.defaultView.localStorage = {
+    getItem: (key) => preferences.get(key) ?? null,
+    setItem: (key, value) => preferences.set(key, value)
+  };
+  let state = D.emptyState("UTC");
+  for (const id of ["a", "b", "hidden", "loose", "archived"])
+    state = D.createHabit(
+      state,
+      { name: id, limit: 10, initialCount: 0, startDate: today },
+      today,
+      id
+    );
+  state.groups = [
+    { id: "morning", name: "Morning" },
+    { id: "ungrouped", name: "Evening" }
+  ];
+  state.habits[0].groupId = state.habits[4].groupId = "morning";
+  state.habits[1].groupId = state.habits[2].groupId = "ungrouped";
+  state = D.setHabitHidden(state, "hidden", true);
+  state = D.archiveHabit(state, "archived", today);
+  const snapshot = () => ({ state, pending: 0, blocked: false, busyRead: false });
+  const refresh = () => day.render(snapshot(), today);
+  let day;
+  function mount() {
+    day = createDayView({
+      dom: h.dom,
+      store: { snapshot },
+      now: () => today,
+      render: refresh,
+      commit: () => assert.fail("Group display must not mutate habit data"),
+      flash() {},
+      openEditor() {},
+      openCountEditor() {},
+      openNoteEditor() {},
+      openDetails() {},
+      confirm: () => true,
+      newId: () => "new"
+    });
+    day.prepare(today);
+    refresh();
+  }
+  const headers = () => h.byId("cards").querySelectorAll(".habit-group-toggle");
+  const header = (id) => headers().find((button) => button.dataset.groupId === id);
+  const rows = () => h.byId("cards").children.filter((row) => row.dataset.habitId);
+  const shown = () =>
+    rows()
+      .filter((row) => !row.hidden)
+      .map((row) => row.dataset.habitId);
+  mount();
+  const original = D.encodeState(state);
+  const originalRows = rows();
+  const summary = h.byId("summary").textContent;
+  assert.deepEqual(shown(), ["a", "b", "loose"]);
+  assert.equal(header("morning").getAttribute("aria-expanded"), "true");
+  header("morning").focus();
+  header("morning").click();
+  assert.equal(header("morning").getAttribute("aria-expanded"), "false");
+  assert.equal(h.active(), header("morning"));
+  assert.deepEqual(shown(), ["b", "loose"]);
+  header("ungrouped").click();
+  assert.deepEqual(shown(), ["loose"]);
+  assert.notEqual(header("ungrouped").dataset.focusKey, header("").dataset.focusKey);
+  h.send("hidden", "click");
+  assert.deepEqual(shown(), ["loose"]);
+  assert.equal(header("ungrouped").querySelector(".habit-group-count").textContent, "2");
+  header("").click();
+  assert.deepEqual(shown(), []);
+  assert.equal(headers().length, 3);
+  h.send("hidden", "click");
+  assert.equal(h.byId("summary").textContent, summary);
+  assert.deepEqual(rows(), originalRows);
+  assert.equal(D.encodeState(state), original);
+  h.send("archived", "click");
+  assert.deepEqual(shown(), []);
+  assert.equal(header("morning").querySelector(".habit-group-count").textContent, "1");
+  h.send("active", "click");
+  state = D.parseState(D.encodeState(state));
+  state.groups[0].name = "Morning 🍽️";
+  refresh();
+  assert.equal(header("morning").querySelector(".habit-group-name").textContent, "Morning 🍽️");
+  assert.equal(header("morning").getAttribute("aria-expanded"), "false");
+  day.dispose();
+  mount();
+  assert.deepEqual(shown(), []);
+  header("morning").click();
+  assert.deepEqual(shown(), ["a"]);
+  header("ungrouped").click();
+  header("").click();
+  assert.deepEqual(shown(), ["a", "b", "loose"]);
+  header("").click();
+  state.groups = [];
+  for (const habit of state.habits) delete habit.groupId;
+  refresh();
+  assert.deepEqual(shown(), ["a", "b", "loose"]);
+  assert.equal(headers().length, 0);
+  day.dispose();
+});

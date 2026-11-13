@@ -639,5 +639,8 @@
   "Show hidden habits alongside active habits.": "Показывать скрытые привычки вместе с обычными.",
   "Save name": "Сохранить имя",
   "Unsaved name. Press Enter or select Save name.": "Имя не сохранено. Нажмите Enter или «Сохранить имя».",
-  "Turn on Hidden to show your hidden habits.": "Включите «Скрытые», чтобы показать скрытые привычки."
+  "Turn on Hidden to show your hidden habits.": "Включите «Скрытые», чтобы показать скрытые привычки.",
+  "Expand group: ": "Развернуть группу: ",
+  "Collapse group: ": "Свернуть группу: ",
+  "Group display changed for this view. Preference storage is unavailable.": "Отображение групп изменено для этого окна. Хранилище настроек недоступно."
 }

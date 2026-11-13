@@ -634,5 +634,8 @@
   "Show hidden habits alongside active habits.": "Show hidden habits alongside active habits.",
   "Save name": "Save name",
   "Unsaved name. Press Enter or select Save name.": "Unsaved name. Press Enter or select Save name.",
-  "Turn on Hidden to show your hidden habits.": "Turn on Hidden to show your hidden habits."
+  "Turn on Hidden to show your hidden habits.": "Turn on Hidden to show your hidden habits.",
+  "Expand group: ": "Expand group: ",
+  "Collapse group: ": "Collapse group: ",
+  "Group display changed for this view. Preference storage is unavailable.": "Group display changed for this view. Preference storage is unavailable."
 }

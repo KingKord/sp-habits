@@ -1594,6 +1594,38 @@ form textarea {
   min-width: 0;
   max-width: 180px;
 }
+.habit-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+.habit-group-chevron {
+  flex: 0 0 16px;
+  color: var(--hl-muted);
+}
+.habit-group-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.habit-group-count {
+  margin-inline-start: auto;
+  padding-inline: 8px;
+  color: var(--hl-muted);
+  font-size: 12px;
+}
+@media (pointer: coarse), (max-width: 700px) {
+  .habit-group-toggle {
+    min-height: 44px;
+  }
+}
 .habit-group-title {
   font-size: 16px;
   margin: 20px 0 4px;

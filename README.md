@@ -4,7 +4,7 @@ Track habits, build routines and keep unwanted habits within limits — inside [
 
 Set a goal such as reading for 20 minutes a day, limit coffee to two cups, or aim for three workouts over seven days. Record your progress and see your history in one place.
 
-Current release: **0.24.1** · Requires **Super Productivity 19.3.1+** · [Download](https://github.com/KingKord/sp-habits/releases/latest) · [User guide](docs/user-guide.md)
+Current release: **0.25.0** · Requires **Super Productivity 19.3.1+** · [Download](https://github.com/KingKord/sp-habits/releases/latest) · [User guide](docs/user-guide.md)
 
 ![Habits in dark mode, showing example goals, daily counters and a week of progress](docs/images/habits-day.png)
 
@@ -18,7 +18,7 @@ Current release: **0.24.1** · Requires **Super Productivity 19.3.1+** · [Downl
 - **Adjust over time.** Change a goal from a chosen date or plan gradual reductions while keeping past rules.
 - **Choose due days and breaks.** Use selected weekdays or anchored intervals, plus dated pauses and exceptions.
 - **Choose what Day shows.** Use Hidden to show or hide hidden habits alongside ordinary habits; archives stay separate.
-- **Organize your routine.** Drag habits by their handles or use keyboard controls, add named groups and record optional daily notes.
+- **Organize your routine.** Drag habits by their handles or use keyboard controls, add named groups, collapse several groups to focus on the one you need, and record optional daily notes.
 - **Link recurring tasks.** Count completions from supported fixed daily and weekly schedules in Super Productivity.
 - **Keep your history.** Hide or archive a habit, correct past entries, and export or import JSON backups.
 

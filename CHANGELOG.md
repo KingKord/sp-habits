@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.25.0
+
+- Collapse and expand Day groups by selecting their headings, with independent choices, visible habit counts and keyboard-accessible controls.
+- Remember collapsed groups locally across reopening and renaming without changing hidden flags, day summaries, history or synced backups.
+
 ## 0.24.1
 
 - Use Hidden itself as the Day show/hide switch, alongside Reorder and Manage groups, and remove the extra Include hidden control.

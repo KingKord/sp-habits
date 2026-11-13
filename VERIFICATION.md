@@ -1,5 +1,27 @@
 # Verification log
 
+## 0.25.0 — 2026-11-13
+
+### Checks and scope
+
+- Full `npm run check` passed: ESLint, Prettier, 352 tests, version/changelog validation, bundled JavaScript syntax and ZIP integrity. Package, lockfile, manifest, interface and current README entry are 0.25.0.
+- New regressions cover independently collapsed groups and Ungrouped, local persistence, malformed/oversized/unavailable preference storage, deleted group IDs, unique focus keys, unchanged row identity and history, displayed filter counts, unchanged day summaries, rename/reopen retention and removing the last group.
+- Iframe: 26,933 / 102,400 bytes; headroom: 75,467 bytes. ZIP SHA-256: `5e6c3e4dcf8daebd3fb3f4210f2fae0a873216d4c4d9a5f0990288d82a39ad8b`.
+
+### Isolated browser review
+
+- Exercised eight English/Russian, light/dark and 320/1440 px combinations with synthetic grouped habits, the packaged bridge and host UI Kit. The applied theme was asserted and representative collapsed/focused layouts were visually reviewed.
+- Collapsed two named groups independently, then Ungrouped. All headings, chevrons and filter-specific counts stayed available while habit rows left the layout and keyboard sequence. Focus remained on the group heading; Enter and Space activated its native button.
+- Hidden inclusion updated group counts without reopening collapsed groups. Day summaries remained unchanged by collapsing. View navigation and a full preview reload retained every collapsed choice through local preference storage.
+- Renaming a collapsed group with an emoji preserved its ID-based collapse choice across reload. Group display operations preserved exact synced JSON. A quantity increment/decrement in an expanded group restored exact JSON and did not shift its plus button or expand other groups. Habit histories remained unchanged by the separate synthetic rename.
+- Unchanged habit rows stayed attached during collapse/expand. No horizontal overflow appeared; group controls provided at least 32 px desktop height and the stylesheet uses 44 px on narrow/coarse-pointer layouts. Evidence is under ignored `output/playwright/groups-0250/`.
+
+### Limits
+
+- Collapse choices are local display preferences, separate from synced data/backups. If browser preference storage is unavailable, collapsing still works in the current view and reports that it cannot persist the choice. No cross-device preference synchronization is claimed.
+- Physical touch devices, native Safari and real cross-device synchronization were not rerun. Existing compatibility evidence is preserved below.
+
+
 ## 0.24.1 — 2026-11-13
 
 ### Checks and scope
