@@ -19,7 +19,7 @@ function versions(version = "1.2.3") {
     { version },
     { version, packages: { "": { version } } },
     { version },
-    `<p>Habits · ${version}</p>`,
+    `<p>Habit Ledger · ${version}</p>`,
     `Current release: **${version}**`
   ];
 }

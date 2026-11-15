@@ -18,7 +18,7 @@ Only the release job receives `contents: write` through GitHub's built-in token;
 
 The ZIP contains the manifest, interface, icon, host script, project `LICENSE` and `THIRD_PARTY_LICENSES.txt`. Its timestamps, permissions and timezone are fixed so repeated builds from the same source produce the same ZIP.
 
-The manifest ID stays `sp-habit-limits` for update compatibility, even though the product and archive are named Habits and `sp-habits.zip`. Changing this ID can separate an installation from its existing synced storage.
+The manifest ID stays `sp-habit-limits` for update compatibility, even though the product and archive are named Habit Ledger and `sp-habits.zip`. Changing this ID can separate an installation from its existing synced storage.
 
 ## Public repository operations
 

@@ -46,7 +46,7 @@ export function loadApplication(window, timeoutMs = 30000) {
       if (!disposed) {
         const message = window.document.createElement("p");
         message.textContent =
-          "Unable to load Habits. Reopen Habits to retry, or reinstall the plugin if the problem continues.";
+          "Unable to load Habit Ledger. Reopen Habit Ledger to retry, or reinstall the plugin if the problem continues.";
         window.document.body.replaceChildren(message);
         window.document.body.hidden = false;
       }

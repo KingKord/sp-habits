@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem with Habits.
+description: Report a reproducible problem with Habit Ledger.
 title: "Bug: "
 body:
   - type: markdown
@@ -10,8 +10,8 @@ body:
     id: versions
     attributes:
       label: Versions
-      description: Include Habits and Super Productivity versions.
-      placeholder: "Habits 0.18.1; Super Productivity 19.3.1"
+      description: Include Habit Ledger and Super Productivity versions.
+      placeholder: "Habit Ledger 0.26.0; Super Productivity 19.3.1"
     validations:
       required: true
   - type: input

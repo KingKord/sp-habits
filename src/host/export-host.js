@@ -1,89 +1,28 @@
 import { t } from "../i18n/index.js";
-import {
-  EXPORT_REQUEST,
-  EXPORT_RESPONSE,
-  SYSTEM_EMOJI_REQUEST,
-  SYSTEM_EMOJI_RESPONSE,
-  transportOrigin,
-  targetOrigin,
-  MAX_APPLICATION_CHARACTERS
-} from "./protocol.js";
+import { EXPORT_REQUEST, MAX_APPLICATION_CHARACTERS } from "./protocol.js";
 import { emojiData } from "../i18n/emoji-data.js";
 import messages from "../i18n/ru.json" with { type: "json" };
 
-// downloadFile exists on the host API. Only this plugin's own storage is read.
-export function installExportBridge(api, window, document, tasks, styles, applicationSource) {
+// The host authenticates and routes iframe messages through its public onMessage API.
+// It owns response delivery; plugin code never reads the host document or iframe tree.
+export function installExportBridge(api, tasks, styles, applicationSource, revision = () => 0) {
   let disposed = false;
-  const handleExport = async (event) => {
-    if (disposed) return;
-    const message = event.data;
-    const source = event.source;
-    if (
-      !source ||
-      typeof source.postMessage !== "function" ||
-      transportOrigin(event.origin) !== transportOrigin(window.location.origin) ||
-      ![EXPORT_REQUEST, SYSTEM_EMOJI_REQUEST].includes(message?.type) ||
-      typeof message.requestId !== "string" ||
-      message.requestId.length > 100
-    )
-      return;
-    const frame = [...document.querySelectorAll("iframe")].find(
-      (element) => element.contentWindow === source
-    );
-    let frameDocument;
+  api.onMessage(async (message) => {
+    if (disposed) return { ok: false, error: t("The plugin view is closed.") };
+    if (message?.type !== EXPORT_REQUEST) return { ok: false, error: "Unknown plugin request." };
     try {
-      frameDocument = frame?.contentDocument;
-      if (!frame || frameDocument?.title !== "Habits") return;
-    } catch {
-      return;
-    }
-    const responseType =
-      message.type === SYSTEM_EMOJI_REQUEST ? SYSTEM_EMOJI_RESPONSE : EXPORT_RESPONSE;
-    const requestId = message.requestId;
-    const origin = targetOrigin(event.origin);
-    const reply = (data) => {
-      if (disposed) return;
-      try {
-        if (
-          frame.isConnected === false ||
-          frame.contentWindow !== source ||
-          frame.contentDocument !== frameDocument ||
-          source.closed === true
-        )
-          return;
-        source.postMessage({ type: responseType, requestId, ...data }, origin);
-      } catch {
-        // An authorized operation can finish after its original view has closed.
-        // Never retry a delivery or redirect it to a replacement iframe.
-      }
-    };
-    try {
-      if (message.type === SYSTEM_EMOJI_REQUEST) {
-        const available =
-          typeof window.ea?.showEmojiPanel === "function" && !window.ea?.isLinux?.();
-        if (message.open === true) {
-          if (!available)
-            throw new Error(
-              t("The system picker is unavailable. Choose an emoji from the catalog.")
-            );
-          window.ea.showEmojiPanel();
-        }
-        reply({ ok: true, available });
-        return;
-      }
+      if (message.asset === "status") return { ok: true, revision: revision() };
       if (message.asset === "tasks") {
         if (!tasks) throw new Error(t("Task integration is unavailable. Update the plugin."));
-        reply({ ok: true, ...(await tasks.request(message)) });
-        return;
+        return { ok: true, ...(await tasks.request(message)) };
       }
       if (message.asset === "shortcuts") {
         const state = await api.getAppState?.();
         const configured = state?.globalConfig?.keyboard?.addNewTask;
-        reply({
+        return {
           ok: true,
           addNewTask: typeof configured === "string" && configured.length <= 100 ? configured : null
-        });
-        return;
+        };
       }
       if (message.asset === "application") {
         if (
@@ -91,17 +30,16 @@ export function installExportBridge(api, window, document, tasks, styles, applic
           !applicationSource.trim() ||
           applicationSource.length > MAX_APPLICATION_CHARACTERS
         )
-          throw new Error("The bundled Habits application is unavailable. Reinstall the plugin.");
-        reply({ ok: true, source: applicationSource });
-        return;
+          throw new Error(
+            "The bundled Habit Ledger application is unavailable. Reinstall the plugin."
+          );
+        return { ok: true, source: applicationSource };
       }
       if (message.asset === "translations") {
-        reply({ ok: true, messages, styles });
-        return;
+        return { ok: true, messages, styles };
       }
       if (message.asset === "emojis") {
-        reply({ ok: true, catalog: emojiData });
-        return;
+        return { ok: true, catalog: emojiData };
       }
       let raw = await api.loadSyncedData();
       if (raw === null)
@@ -120,14 +58,12 @@ export function installExportBridge(api, window, document, tasks, styles, applic
       }
       const filename = message.recovery ? "habits-recovery.json" : "habits-backup.json";
       await api.downloadFile(filename, output);
-      reply({ ok: true, filename });
+      return { ok: true, filename };
     } catch (error) {
-      reply({ ok: false, error: error.message || String(error) });
+      return { ok: false, error: error.message || String(error) };
     }
-  };
-  window.addEventListener("message", handleExport);
+  });
   return () => {
     disposed = true;
-    window.removeEventListener("message", handleExport);
   };
 }

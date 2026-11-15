@@ -110,7 +110,8 @@ export function reconcileTasks(state, tasks, configs, today) {
 export function createTaskIntegration(api, notify = () => {}, instant = () => new Date()) {
   let tail = Promise.resolve(),
     disposed = false,
-    error = "";
+    error = "",
+    archiveScope = null;
   const queue = (work) => {
     const result = tail.then(() => {
       if (disposed) throw new Error(t("The plugin view is closed."));
@@ -123,10 +124,30 @@ export function createTaskIntegration(api, notify = () => {}, instant = () => ne
     const raw = await api.loadSyncedData();
     return { raw, state: raw === null ? D.emptyState() : D.parseState(raw) };
   };
-  async function snapshot() {
-    const [app, archived] = await Promise.all([api.getAppState(), api.getArchivedTasks()]);
+  function archiveScopeFor(state, today) {
+    const links = state.habits
+      .filter((habit) => habit.endDate === null)
+      .map((habit) => [habit.id, D.scheduleForDate(habit, today)])
+      .filter(([, schedule]) => schedule?.repeatId)
+      .map(([id, schedule]) => [id, schedule.repeatId, schedule.from])
+      .sort(([left], [right]) => left.localeCompare(right));
+    return JSON.stringify([state.timeZone, today, links]);
+  }
+  async function snapshot(state, today, forceArchive = false) {
+    if (disposed) throw new Error(t("The plugin view is closed."));
+    const scope = archiveScopeFor(state, today);
+    const hasLinks = state.habits.some(
+      (habit) => habit.endDate === null && D.scheduleForDate(habit, today)?.repeatId
+    );
+    const readArchive = hasLinks && (forceArchive || scope !== archiveScope);
+    const [app, archived] = await Promise.all([
+      api.getAppState(),
+      readArchive ? api.getArchivedTasks() : []
+    ]);
     if (!app?.tasks || !app.taskRepeatCfgs || !Array.isArray(archived))
       throw new Error(t("Unable to read Super Productivity tasks."));
+    // Persisted provenance keeps completions when live tasks move into the archive.
+    // Replaying old archive objects on every edit could resurrect a live undo.
     const tasks = new Map(archived.filter(Boolean).map((task) => [task.id, task]));
     for (const task of Object.values(app.tasks)) if (task) tasks.set(task.id, task);
     return { tasks: [...tasks.values()], configs: app.taskRepeatCfgs };
@@ -145,10 +166,14 @@ export function createTaskIntegration(api, notify = () => {}, instant = () => ne
     queue(async () => {
       const { raw, state } = await read();
       const today = D.todayInZone(state.timeZone, instant());
-      if (!state.habits.some((h) => h.endDate === null && D.scheduleForDate(h, today)?.repeatId))
+      if (!state.habits.some((h) => h.endDate === null && D.scheduleForDate(h, today)?.repeatId)) {
+        archiveScope = null;
         return;
-      const { tasks, configs } = await snapshot();
-      await save(raw, reconcileTasks(state, tasks, configs, today));
+      }
+      const { tasks, configs } = await snapshot(state, today);
+      const next = reconcileTasks(state, tasks, configs, today);
+      await save(raw, next);
+      archiveScope = archiveScopeFor(next, today);
       const hadError = !!error;
       error = "";
       if (hadError) notify();
@@ -199,8 +224,10 @@ export function createTaskIntegration(api, notify = () => {}, instant = () => ne
           if (repeatId && (!schedule || schedule.paused))
             throw new Error(t("Choose an active fixed daily or weekly repeat."));
           const linked = D.setTaskSchedule(candidate, id, schedule, today);
-          const { tasks, configs } = await snapshot();
-          await save(raw, reconcileTasks(linked, tasks, configs, today));
+          const { tasks, configs } = await snapshot(linked, today, true);
+          const next = reconcileTasks(linked, tasks, configs, today);
+          await save(raw, next);
+          archiveScope = archiveScopeFor(next, today);
         } else {
           const today = D.todayInZone(candidate.timeZone, instant());
           for (const habit of candidate.habits) {

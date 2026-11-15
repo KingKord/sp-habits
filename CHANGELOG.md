@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.26.0
+
+- Rename the plugin to Habit Ledger to distinguish it from the built-in Habits feature, preserving the plugin ID, saved history and compatible backups (#58).
+- Replace private host preload and iframe inspection with the public PluginAPI message channel for offline resources, task requests and exports; retain the searchable bundled emoji catalog and ordinary emoji input (#56).
+- Read the complete task archive only for initial linked reconciliation, local-day or timezone changes, and link changes; ordinary task hooks and polls reconcile live tasks with saved completion provenance (#57).
+- Verify the existing Inbox project-ID correction and document the upstream catalog stabilization and reapplication requirements (#55, #59).
+
 ## 0.25.0
 
 - Collapse and expand Day groups by selecting their headings, with independent choices, visible habit counts and keyboard-accessible controls.

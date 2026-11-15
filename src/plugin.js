@@ -2,26 +2,15 @@ import styles from "./styles.css";
 import applicationSource from "habits:application";
 import { installExportBridge } from "./host/export-host.js";
 import { createTaskIntegration } from "./task-integration.js";
-import { targetOrigin } from "./host/protocol.js";
 
 let tasks = null,
   timer = null,
   started = false,
-  disposed = false;
+  disposed = false,
+  revision = 0;
 if (PluginAPI.registerHook && PluginAPI.getAppState) {
   const notify = () => {
-    if (disposed) return;
-    for (const frame of document.querySelectorAll("iframe")) {
-      try {
-        if (frame.contentDocument?.title === "Habits")
-          frame.contentWindow.postMessage(
-            { type: "HABITS_DATA_CHANGED" },
-            targetOrigin(window.location.origin)
-          );
-      } catch {
-        /* Other plugin frames are not recipients. */
-      }
-    }
+    if (!disposed) revision++;
   };
   tasks = createTaskIntegration(PluginAPI, notify);
   for (const hook of ["taskComplete", "taskUpdate", "anyTaskUpdate"])
@@ -37,7 +26,7 @@ if (PluginAPI.registerHook && PluginAPI.getAppState) {
     timer = window.setInterval(tasks.refresh, 30000);
   });
 }
-const dispose = installExportBridge(PluginAPI, window, document, tasks, styles, applicationSource);
+const dispose = installExportBridge(PluginAPI, tasks, styles, applicationSource, () => revision);
 PluginAPI.onUnload?.(() => {
   disposed = true;
   dispose();

@@ -15,7 +15,7 @@ The episode is saved before task creation. If creation is not confirmed, check I
 1. Download `sp-habits.zip` and its SHA-256 file from [GitHub Releases](https://github.com/KingKord/sp-habits/releases).
 2. Open **Settings → Plugins** in Super Productivity.
 3. Select **Choose Plugin File**, choose the complete ZIP without extracting it, and confirm installation.
-4. Enable **Habits** and open it from the sidebar.
+4. Enable **Habit Ledger** and open it from the sidebar.
 
 The internal plugin ID is `sp-habit-limits`. Uploading a compatible ZIP with the same ID updates the existing installation and retains access to its saved data. Export a JSON backup before updating.
 
@@ -64,15 +64,15 @@ Dialogs fit the available width and dynamic viewport height. Long forms scroll; 
 
 History expansion and confirmed row changes use short, restrained visual feedback. A save indicator appears only after storage confirms a change. Reduced-motion preferences disable animation and transitions while keeping static confirmation and textual feedback.
 
-When tab storage is available, unsaved editor drafts are kept temporarily in the current browser tab. After leaving Habits through host navigation and returning, choose **Resume saved drafts** to review them or **Discard saved drafts** to remove them. This recovery dialog waits for an explicit choice. If draft storage is unavailable, keep the view open or save before leaving; the warning explains this limit. Drafts are not confirmed habit history: they are not synchronized or included in JSON exports, and closing the browser tab can remove them. Restoring a draft preserves its original conflict checks, so it cannot silently overwrite newer confirmed data. If a habit or date is no longer editable, the recovery view keeps its text available for copying before **Discard unavailable drafts**, instead of pretending it was restored.
+When tab storage is available, unsaved editor drafts are kept temporarily in the current browser tab. After leaving Habit Ledger through host navigation and returning, choose **Resume saved drafts** to review them or **Discard saved drafts** to remove them. This recovery dialog waits for an explicit choice. If draft storage is unavailable, keep the view open or save before leaving; the warning explains this limit. Drafts are not confirmed habit history: they are not synchronized or included in JSON exports, and closing the browser tab can remove them. Restoring a draft preserves its original conflict checks, so it cannot silently overwrite newer confirmed data. If a habit or date is no longer editable, the recovery view keeps its text available for copying before **Discard unavailable drafts**, instead of pretending it was restored.
 
 The UI follows the host's [UI Kit and theme variables](https://github.com/super-productivity/super-productivity/blob/v19.3.1/docs/plugin-development.md#theme-variables--ui-kit). Ordinary controls are styled by Super Productivity; custom styles use the same colours, typography and corner radii.
 
 ## Creating habits with the keyboard
 
-Select **Add habit** in the shared navigation toolbar. With focus inside Habits, the app-wide **Add task** shortcut opens the new-habit form instead. It reads your configured binding from Super Productivity (normally **Shift+A**) and honors changes or a disabled binding. The button tooltip shows the current supported binding.
+Select **Add habit** in the shared navigation toolbar. With focus inside Habit Ledger, the app-wide **Add task** shortcut opens the new-habit form instead. It reads your configured binding from Super Productivity (normally **Shift+A**) and honors changes or a disabled binding. The button tooltip shows the current supported binding.
 
-Typing in a field, composing text, using an open dialog, loading data or waiting for a save never opens another form. The shortcut applies only to the focused Habits iframe: the host header's **+**, the system-wide desktop Add task shortcut and shortcuts used outside the plugin retain their normal task behavior. If the host cannot provide a supported binding, use the Add habit button.
+Typing in a field, composing text, using an open dialog, loading data or waiting for a save never opens another form. The shortcut applies only to the focused Habit Ledger iframe: the host header's **+**, the system-wide desktop Add task shortcut and shortcuts used outside the plugin retain their normal task behavior. If the host cannot provide a supported binding, use the Add habit button.
 
 ## Daily notes
 
@@ -152,7 +152,7 @@ English source messages and authored HTML do not depend on Russian strings. Russ
 
 The emoji picker contains 1,906 Unicode 16.0 emoji in nine categories with CLDR 46.1 English names and Russian translations. Search supports both languages without selecting a Russian-only normalization rule. Repeated skin-tone variants are omitted from the grid; custom composite emoji can be pasted into **Custom emoji**. The catalogue is bundled and needs no network access.
 
-On macOS and Windows desktop builds, **Open system emoji** uses the same `window.ea.showEmojiPanel()` bridge as the host's built-in habits, focusing the custom field first. Select **Use**, then save the habit. macOS also supports Control-Command-Space. The system button is hidden in browsers and on Linux. Windows support was checked in the Super Productivity/Electron source, not manually on Windows. No additional permissions or Node execution are required.
+Select an emoji from the bundled catalogue or paste one into **Custom emoji**, select **Use**, then save the habit. You can also use your operating system's emoji keyboard while the custom field is focused, such as Control-Command-Space on macOS. The plugin does not call a private desktop preload bridge to open that keyboard.
 
 **No emoji** clears the pending selection. Cancelling the picker leaves the form unchanged; cancelling the form leaves the stored habit unchanged. Emoji apply to the whole habit and its history, and are included in JSON backups.
 
@@ -169,7 +169,7 @@ Linking configures a positive habit with a minimum of one completion per day. Th
 - Changed, paused, deleted or unsupported schedules affect tracking from the day the plugin observes them. Earlier rules and saved completions remain. Paused or unavailable series produce rest days from that boundary.
 - Linked periods are edited through the task. Manual totals remain separately stored. Unlinking stops future automatic updates and preserves previous records; archiving the habit freezes its history.
 
-The background integration works while Super Productivity is open and the plugin is enabled, including with the Habits view closed. It reconciles on readiness, task/data hooks and every 30 seconds, reads live and archived tasks, and notifies an open view. Errors are visible and never replace history with empty data. Writes share one queue and compare the previous raw value; use **Reload data** after a conflict.
+The background integration works while Super Productivity is open and the plugin is enabled, including with the Habit Ledger view closed. It reconciles live tasks on readiness, task/data hooks and every 30 seconds, and updates an open view through a lightweight revision check every five seconds. It reads the complete archive at the first linked reconciliation after startup, when the saved local day or timezone changes, and when active links change. It retains observed completion provenance when a live task moves into the archive, without rereading or retaining the whole archive on each poll. Failed reconciliation or saves leave the archive refresh retryable and show an error. Changes made only to already archived tasks appear on the next archive refresh, such as day rollover, relinking or restart. Writes share one queue and compare the previous raw value; use **Reload data** after a conflict.
 
 After-completion, wait-for-completion, monthly and yearly schedules are unsupported. Integration counts completions rather than reading minutes. Weekly links respect the host's `deletedInstanceDates`; existing daily-link behavior continues to ignore those exceptions. The plugin and host schedule timezones must agree.
 

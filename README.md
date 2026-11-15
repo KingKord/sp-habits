@@ -1,12 +1,12 @@
-# Habits for Super Productivity
+# Habit Ledger for Super Productivity
 
 Track habits, build routines and keep unwanted habits within limits — inside [Super Productivity](https://super-productivity.com/).
 
 Set a goal such as reading for 20 minutes a day, limit coffee to two cups, or aim for three workouts over seven days. Record your progress and see your history in one place.
 
-Current release: **0.25.0** · Requires **Super Productivity 19.3.1+** · [Download](https://github.com/KingKord/sp-habits/releases/latest) · [User guide](docs/user-guide.md)
+Current release: **0.26.0** · Requires **Super Productivity 19.3.1+** · [Download](https://github.com/KingKord/sp-habits/releases/latest) · [User guide](docs/user-guide.md)
 
-![Habits in dark mode, showing example goals, daily counters and a week of progress](docs/images/habits-day.png)
+![Habit Ledger in dark mode, showing example goals, daily counters and a week of progress](docs/images/habits-day.png)
 
 *Demo habits with synthetic data.*
 
@@ -22,20 +22,22 @@ Current release: **0.25.0** · Requires **Super Productivity 19.3.1+** · [Downl
 - **Link recurring tasks.** Count completions from supported fixed daily and weekly schedules in Super Productivity.
 - **Keep your history.** Hide or archive a habit, correct past entries, and export or import JSON backups.
 
-English and Russian, light and dark themes, and layouts for narrow and wide screens are included. Habits needs no separate account or server and makes no runtime network requests.
+English and Russian, light and dark themes, and layouts for narrow and wide screens are included. Habit Ledger needs no separate account or server and makes no runtime network requests.
 
 ## Install
 
 1. Download **`sp-habits.zip`** from the [latest release](https://github.com/KingKord/sp-habits/releases/latest). Use the release asset, not GitHub's source-code ZIP.
 2. In Super Productivity, open **Settings → Plugins → Choose Plugin File**.
 3. Select the ZIP without extracting it and confirm installation.
-4. Make sure **Habits** is enabled, then open it from the sidebar.
+4. Make sure **Habit Ledger** is enabled, then open it from the sidebar.
 
 Plugins run inside Super Productivity and can access app data. Install builds you trust. Each release also provides a SHA-256 file if you want to check the download.
 
 ### Updating
 
-First use **More → Export JSON** to save a backup. Upload the new ZIP through the same settings screen, without removing the installed plugin. Habits keeps a stable plugin ID so compatible updates can reuse saved history and JSON backups. Reload Super Productivity after installing an update so it loads the new plugin code. See the [verification log](VERIFICATION.md) for checked versions and platforms.
+Habit Ledger was previously named Habits. The new display name distinguishes this plugin from Super Productivity’s built-in Habits feature. The plugin ID, repository, ZIP filename and saved-data format remain compatible.
+
+First use **More → Export JSON** to save a backup. Upload the new ZIP through the same settings screen, without removing the installed plugin. Habit Ledger keeps a stable plugin ID so compatible updates can reuse saved history and JSON backups. Reload Super Productivity after installing an update so it loads the new plugin code. See the [verification log](VERIFICATION.md) for checked versions and platforms.
 
 ## Try your first habit
 
@@ -45,7 +47,7 @@ First use **More → Export JSON** to save a backup. Upload the new ZIP through 
 4. Use the result buttons for a check-in or **+ / −** for quantities. Select a past day to correct it. Expand a row with its chevron to see recent history, notes and additional actions.
 5. Select **Reorder**, then drag a handle to move a habit within its group. Up/Down arrow keys on the handle and the **⋯** menu are alternatives. Select **Done reordering** to finish. Use **Manage groups** separately to organize groups.
 
-With focus inside Habits, your configured app-wide **Add task** shortcut (normally **Shift+A**) opens a new habit. The host header **+** and the system-wide desktop shortcut continue to create tasks.
+With focus inside Habit Ledger, your configured app-wide **Add task** shortcut (normally **Shift+A**) opens a new habit. The host header **+** and the system-wide desktop shortcut continue to create tasks.
 
 For example, choose Good, 20 min per day and a step of 5 for reading. Each **+** adds five minutes. For coffee, choose Bad and two cups per day: two is within the allowance, three is over it.
 
@@ -57,7 +59,7 @@ For optional review tasks, reduction plans, colour settings and full task-link b
 
 ## Your data and current limits
 
-Habits stores its history through Super Productivity's plugin storage. Names, custom units and existing history are preserved in their original language. It does not send your data to a separate service; cross-device sync depends on your Super Productivity settings.
+Habit Ledger stores its history through Super Productivity's plugin storage. Names, custom units and existing history are preserved in their original language. It does not send your data to a separate service; cross-device sync depends on your Super Productivity settings.
 
 Export before importing: an import replaces the complete plugin history after confirmation. Wait for saving to finish before closing after an edit. If a write fails, use **Reload data** to return to confirmed storage.
 
@@ -72,7 +74,7 @@ Read the [full rules and limitations](docs/user-guide.md) before relying on a pa
 
 ## Help and contributions
 
-For a bug or a feature idea, [open an issue](https://github.com/KingKord/sp-habits/issues/new/choose). Include the Habits version, Super Productivity version and steps to reproduce. Use invented examples instead of uploading personal habit backups.
+For a bug or a feature idea, [open an issue](https://github.com/KingKord/sp-habits/issues/new/choose). Include the Habit Ledger version, Super Productivity version and steps to reproduce. Use invented examples instead of uploading personal habit backups.
 
 Code, documentation, translations and reproducible bug reports are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md); it explains setup, checks and the pull request process. Community participation follows the [code of conduct](CODE_OF_CONDUCT.md). For vulnerabilities, use the [security policy](SECURITY.md).
 
@@ -87,10 +89,10 @@ npm ci
 npm run check
 ```
 
-Install `dist/sp-habits.zip` in a separate test profile. See [development](docs/development.md) for the architecture and testing guidance, or the [release guide](docs/releasing.md) for publication.
+Install `dist/sp-habits.zip` in a separate test profile. See [development](docs/development.md) for the architecture and testing guidance, or the [release guide](docs/releasing.md) for publication. The [catalog readiness checklist](docs/catalog-readiness.md) tracks the upstream review and reapplication requirements.
 
 ## License
 
-Habits code is available under the [MIT License](LICENSE). Bundled Unicode emoji and CLDR data retain their [separate license and notices](THIRD_PARTY_LICENSES.txt).
+Habit Ledger code is available under the [MIT License](LICENSE). Bundled Unicode emoji and CLDR data retain their [separate license and notices](THIRD_PARTY_LICENSES.txt).
 
 This is a community plugin, maintained independently of the Super Productivity project.

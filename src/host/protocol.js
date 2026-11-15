@@ -1,7 +1,7 @@
 export const EXPORT_REQUEST = "HABITS_EXPORT_REQUEST";
-export const EXPORT_RESPONSE = "HABITS_EXPORT_RESPONSE";
-export const SYSTEM_EMOJI_REQUEST = "HABITS_SYSTEM_EMOJI_REQUEST";
-export const SYSTEM_EMOJI_RESPONSE = "HABITS_SYSTEM_EMOJI_RESPONSE";
+export const EXPORT_RESPONSE = "PLUGIN_MESSAGE_RESPONSE";
+export const MESSAGE_REQUEST = "PLUGIN_MESSAGE";
+export const MESSAGE_ERROR = "PLUGIN_MESSAGE_ERROR";
 
 // Chromium can serialize file-based Electron origins as either "file://" or "null".
 export function transportOrigin(origin) {

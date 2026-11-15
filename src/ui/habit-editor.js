@@ -24,7 +24,6 @@ export function createHabitEditor({
   confirm,
   newId,
   loadEmojis,
-  systemEmoji,
   loadSchedules
 }) {
   let editing = null,
@@ -146,7 +145,6 @@ export function createHabitEditor({
     dom,
     select: setEmoji,
     loadData: loadEmojis,
-    systemEmoji,
     loadSchedules
   });
   function updateUnitChoice() {

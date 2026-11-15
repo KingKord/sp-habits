@@ -16,7 +16,7 @@ export function validateReleaseVersion(pkg, lock, manifest, html, readme) {
   ])
     assert.equal(value, version, `${name} version differs from package.json`);
   assert.ok(
-    html.includes(`Habits · ${version}</p>`),
+    html.includes(`Habit Ledger · ${version}</p>`),
     "Interface version differs from package.json"
   );
   assert.ok(

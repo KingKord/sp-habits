@@ -9,26 +9,11 @@ import { MAX_STORAGE_CHARACTERS, MAX_BACKUP_BYTES } from "../src/data-limits.js"
 // Exercise the same standalone script that is shipped to the host in the ZIP.
 const script = await bundle("src/plugin.js");
 function harness(raw) {
-  let handler,
-    unload,
-    removed = false,
-    saved,
-    response;
-  const source = {
-    postMessage: (data) => {
-      response = data;
-    }
-  };
-  const window = {
-    location: { origin: "https://app.test" },
-    addEventListener: (name, fn) => {
+  let handler, unload, saved, response;
+  const api = {
+    onMessage: (fn) => {
       handler = fn;
     },
-    removeEventListener: (name, fn) => {
-      removed = fn === handler;
-    }
-  };
-  const api = {
     loadSyncedData: async () => raw,
     downloadFile: async (name, data) => {
       saved = { name, data };
@@ -37,26 +22,21 @@ function harness(raw) {
       unload = fn;
     }
   };
-  const document = {
-    querySelectorAll: () => [{ contentWindow: source, contentDocument: { title: "Habits" } }]
-  };
-  vm.runInNewContext(script, { window, document, PluginAPI: api, Intl, JSON });
+  // No host document or parent DOM is available to the shipped plugin.
+  vm.runInNewContext(script, { PluginAPI: api, Intl, JSON });
   return {
-    window,
-    source,
     api,
     unload: () => unload(),
-    get removed() {
-      return removed;
-    },
     get saved() {
       return saved;
     },
     get response() {
       return response;
     },
-    dispatch: (data, origin = window.location.origin, sender = source) =>
-      handler({ data, origin, source: sender })
+    dispatch: async (data) => {
+      response = await handler(data);
+      return response;
+    }
   };
 }
 test("export uses the host download API and preserves malformed data for recovery", async () => {
@@ -66,18 +46,18 @@ test("export uses the host download API and preserves malformed data for recover
   assert.equal(h.saved.data, "{broken");
   assert.equal(h.response.ok, true);
   h.unload();
-  assert.equal(h.removed, true);
+  await h.dispatch({ type: "HABITS_EXPORT_REQUEST" });
+  assert.equal(h.response.ok, false);
 });
-test("export accepts only its own iframe and origin and reports host errors", async () => {
+test("public handler rejects unrelated message channels and reports host download errors", async () => {
   const h = harness('{"schemaVersion":1}');
-  const request = { type: "HABITS_EXPORT_REQUEST", requestId: "1" };
-  await h.dispatch(request, "https://elsewhere.test");
-  await h.dispatch(request, undefined, {});
+  await h.dispatch({ type: "UNRELATED_PLUGIN_MESSAGE" });
   assert.equal(h.saved, undefined);
+  assert.equal(h.response.ok, false);
   h.api.downloadFile = async () => {
     throw new Error("Disk error");
   };
-  await h.dispatch(request);
+  await h.dispatch({ type: "HABITS_EXPORT_REQUEST" });
   assert.equal(h.response.ok, false);
   assert.match(h.response.error, /Disk error/);
 });
@@ -141,231 +121,77 @@ test("a full-capacity Unicode backup preserves custom text, legacy notes and unk
   assert.equal(h.saved.data, raw);
   assert.equal(h.saved.name, "habits-recovery.json");
 });
-test("Electron host accepts an opaque origin only from its own plugin iframe", async () => {
+test("offline resources and revision status do not access habit storage", async () => {
   const h = harness(null);
-  h.window.location.origin = "file://";
-  const request = { type: "HABITS_EXPORT_REQUEST", requestId: "file" };
-  await h.dispatch(request, "null", {});
-  assert.equal(h.saved, undefined);
-  await h.dispatch(request, "null");
-  assert.equal(h.response.ok, true);
-  assert.deepEqual(JSON.parse(h.saved.data).habits, []);
-});
-test("offline emoji catalog is served only to the plugin frame without storage or download calls", async () => {
-  const h = harness(null);
-  let reads = 0;
-  h.api.loadSyncedData = async () => {
-    reads++;
-    throw new Error("Storage must not be read");
-  };
-  const request = { type: "HABITS_EXPORT_REQUEST", requestId: "emoji", asset: "emojis" };
-  await h.dispatch(request, "https://elsewhere.test");
-  assert.equal(h.response, undefined);
-  await h.dispatch(request, undefined, {});
-  assert.equal(h.response, undefined);
-  await h.dispatch(request);
-  assert.equal(h.response.ok, true);
-  assert.equal(typeof h.response.catalog, "string");
-  assert.equal(reads, 0);
-  assert.equal(h.saved, undefined);
-});
-test("translation assets are private to the plugin iframe and never access habit storage", async () => {
-  const h = harness(null);
-  h.api.loadSyncedData = async () => {
-    throw Error("Must not read storage");
-  };
-  const request = {
-    type: "HABITS_EXPORT_REQUEST",
-    requestId: "language",
-    asset: "translations"
-  };
-  await h.dispatch(request, undefined, {});
-  assert.equal(h.response, undefined);
-  await h.dispatch(request);
-  assert.equal(h.response.messages["Habits"], russian.Habits);
-  assert.equal(h.saved, undefined);
-});
-test("system emoji bridge reports desktop support and opens only for a trusted explicit request", async () => {
-  const h = harness(null);
-  let opened = 0;
-  h.window.ea = {
-    isLinux: () => false,
-    showEmojiPanel: () => {
-      opened++;
+  h.api.loadSyncedData = async () => assert.fail("Resource lookups must not read history");
+  for (const asset of ["emojis", "translations", "application", "status"]) {
+    await h.dispatch({ type: "HABITS_EXPORT_REQUEST", asset });
+    assert.equal(h.response.ok, true);
+    if (asset === "emojis") assert.equal(typeof h.response.catalog, "string");
+    if (asset === "translations") {
+      assert.equal(h.response.messages.Habits, russian.Habits);
+      assert.match(h.response.styles, /calendar-grid/);
     }
-  };
-  h.api.loadSyncedData = async () => {
-    throw Error("Must not read storage");
-  };
-  const request = { type: "HABITS_SYSTEM_EMOJI_REQUEST", requestId: "native" };
-  await h.dispatch(request);
-  assert.equal(h.response.available, true);
-  assert.equal(opened, 0);
-  await h.dispatch({ ...request, open: true }, "https://other.test");
-  await h.dispatch({ ...request, open: true }, undefined, {});
-  assert.equal(opened, 0);
-  await h.dispatch({ ...request, open: true });
-  assert.equal(opened, 1);
-  assert.equal(h.response.type, "HABITS_SYSTEM_EMOJI_RESPONSE");
-  assert.equal(h.response.ok, true);
-  assert.equal(h.saved, undefined);
-});
-test("system emoji bridge falls back on web and Linux without exporting or touching data", async () => {
-  for (const desktop of [
-    undefined,
-    {
-      isLinux: () => true,
-      showEmojiPanel: () => {
-        throw Error("Must not open");
-      }
-    }
-  ]) {
-    const h = harness(null);
-    h.window.ea = desktop;
-    h.api.loadSyncedData = async () => {
-      throw Error("Must not read storage");
-    };
-    const request = { type: "HABITS_SYSTEM_EMOJI_REQUEST", requestId: "native" };
-    await h.dispatch(request);
-    assert.equal(h.response.available, false);
-    await h.dispatch({ ...request, open: true });
-    assert.equal(h.response.ok, false);
-    assert.equal(h.saved, undefined);
+    if (asset === "application") assert.doesNotThrow(() => new vm.Script(h.response.source));
+    if (asset === "status") assert.equal(h.response.revision, 0);
   }
+  assert.equal(h.saved, undefined);
 });
 
-function deferredBridge() {
-  let listener,
+test("private native emoji messages are rejected without touching storage or a preload bridge", async () => {
+  const h = harness(null);
+  h.api.loadSyncedData = async () => assert.fail("Must not read storage");
+  await h.dispatch({ type: "HABITS_SYSTEM_EMOJI_REQUEST", open: true });
+  assert.equal(h.response.ok, false);
+  assert.equal(h.saved, undefined);
+});
+
+test("public handler returns authorized asynchronous results and rejects requests after unload", async () => {
+  let handler,
     release,
     completed = 0;
-  const received = [];
-  const source = { postMessage: (message) => received.push(message) };
-  const frame = { contentWindow: source, contentDocument: { title: "Habits" }, isConnected: true };
-  let frames = [frame];
-  const window = {
-    location: { origin: "https://app.test" },
-    addEventListener: (_event, handler) => {
-      listener = handler;
-    },
-    removeEventListener() {}
-  };
   const stop = installExportBridge(
-    {},
-    window,
-    { querySelectorAll: () => frames },
+    {
+      onMessage: (fn) => {
+        handler = fn;
+      }
+    },
     {
       request: async () => {
         await new Promise((resolve) => {
           release = resolve;
         });
         completed++;
-        return { raw: "confirmed authorized write" };
+        return { raw: "confirmed write" };
       }
     }
   );
-  const event = {
-    origin: window.location.origin,
-    source,
-    data: { type: "HABITS_EXPORT_REQUEST", requestId: "late", asset: "tasks", action: "write" }
-  };
-  return {
-    source,
-    frame,
-    event,
-    received,
-    stop,
-    dispatch: () => listener(event),
-    release: () => release(),
-    completed: () => completed,
-    replace: (next) => {
-      frames = [next];
-    }
-  };
-}
-
-test("a delayed authorized write completes without replying to a detached or replacement view", async () => {
-  const h = deferredBridge();
-  const pending = h.dispatch();
-  const replacementReplies = [];
-  const replacement = {
-    contentWindow: { postMessage: (message) => replacementReplies.push(message) },
-    contentDocument: { title: "Habits" },
-    isConnected: true
-  };
-  h.event.source = null;
-  h.frame.isConnected = false;
-  h.frame.contentWindow = null;
-  h.replace(replacement);
-  h.release();
-  await assert.doesNotReject(pending);
-  assert.equal(h.completed(), 1);
-  assert.deepEqual(h.received, []);
-  assert.deepEqual(replacementReplies, []);
+  const request = { type: "HABITS_EXPORT_REQUEST", asset: "tasks", action: "write" };
+  const pending = handler(request);
+  stop();
+  release();
+  assert.equal((await pending).raw, "confirmed write");
+  assert.equal(completed, 1);
+  assert.equal((await handler(request)).ok, false);
+  assert.equal(completed, 1);
 });
 
-test("bridge disposal suppresses a late response without cancelling the authorized request", async () => {
-  const h = deferredBridge();
-  const pending = h.dispatch();
-  h.stop();
-  h.event.source = null;
-  h.release();
-  await assert.doesNotReject(pending);
-  assert.equal(h.completed(), 1);
-  assert.deepEqual(h.received, []);
-  await h.dispatch();
-  assert.equal(h.completed(), 1);
-});
-
-test("a navigated frame document never receives an older document's delayed response", async () => {
-  const h = deferredBridge();
-  const pending = h.dispatch();
-  h.frame.contentDocument = { title: "Habits" };
-  h.release();
-  await assert.doesNotReject(pending);
-  assert.equal(h.completed(), 1);
-  assert.deepEqual(h.received, []);
-});
-
-test("postMessage failure is contained and never triggers a second error reply", async () => {
-  const h = deferredBridge();
-  let deliveries = 0;
-  h.source.postMessage = () => {
-    deliveries++;
-    throw Error("The view closed during delivery");
-  };
-  const pending = h.dispatch();
-  h.release();
-  await assert.doesNotReject(pending);
-  assert.equal(deliveries, 1);
-  assert.equal(h.completed(), 1);
-});
-
-test("shortcut settings are read-only, source checked and disclose only the configured add-task combo", async () => {
+test("shortcut response discloses only the configured add-task combo", async () => {
   const h = harness(null);
-  let reads = 0;
-  h.api.getAppState = async () => {
-    reads++;
-    return {
-      globalConfig: {
-        keyboard: { addNewTask: "Ctrl+Alt+N", globalAddTask: "Ctrl+G" },
-        privateExtension: "not a bridge response"
-      },
-      tasks: { privateTask: {} }
-    };
-  };
-  h.api.loadSyncedData = async () => assert.fail("Shortcut lookup must not load habit history");
-  const request = { type: "HABITS_EXPORT_REQUEST", requestId: "shortcut", asset: "shortcuts" };
-  await h.dispatch(request, "https://elsewhere.test");
-  await h.dispatch(request, undefined, {});
-  assert.equal(reads, 0);
+  h.api.getAppState = async () => ({
+    globalConfig: {
+      keyboard: { addNewTask: "Ctrl+Alt+N", globalAddTask: "Ctrl+G" },
+      privateExtension: "private"
+    },
+    tasks: { privateTask: {} }
+  });
+  h.api.loadSyncedData = async () => assert.fail("Must not read storage");
+  const request = { type: "HABITS_EXPORT_REQUEST", asset: "shortcuts" };
   await h.dispatch(request);
-  assert.equal(h.response.addNewTask, "Ctrl+Alt+N");
-  assert.deepEqual(Object.keys(h.response).sort(), ["addNewTask", "ok", "requestId", "type"]);
-  assert.equal(h.saved, undefined);
-  h.api.getAppState = async () => ({ globalConfig: { keyboard: { addNewTask: null } } });
-  await h.dispatch(request);
-  assert.equal(h.response.addNewTask, null);
-  h.api.getAppState = async () => ({ globalConfig: { keyboard: { addNewTask: "x".repeat(101) } } });
-  await h.dispatch(request);
-  assert.equal(h.response.addNewTask, null);
+  assert.deepEqual(JSON.parse(JSON.stringify(h.response)), { ok: true, addNewTask: "Ctrl+Alt+N" });
+  for (const combo of [null, "x".repeat(101)]) {
+    h.api.getAppState = async () => ({ globalConfig: { keyboard: { addNewTask: combo } } });
+    await h.dispatch(request);
+    assert.equal(h.response.addNewTask, null);
+  }
 });

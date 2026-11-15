@@ -90,7 +90,6 @@
   "Unable to export: ": "Unable to export: ",
   "File too large. Maximum: 4 MB.": "File too large. Maximum: 4 MB.",
   "Backup too large. Maximum: 12 MB.": "Backup too large. Maximum: 12 MB.",
-  "Replace all Habits history with this file? Habits in the file: ": "Replace all Habits history with this file? Habits in the file: ",
   ". First save the current history using Export JSON.": ". First save the current history using Export JSON.",
   "History imported.": "History imported.",
   "Import cancelled: ": "Import cancelled: ",
@@ -637,5 +636,7 @@
   "Turn on Hidden to show your hidden habits.": "Turn on Hidden to show your hidden habits.",
   "Expand group: ": "Expand group: ",
   "Collapse group: ": "Collapse group: ",
-  "Group display changed for this view. Preference storage is unavailable.": "Group display changed for this view. Preference storage is unavailable."
+  "Group display changed for this view. Preference storage is unavailable.": "Group display changed for this view. Preference storage is unavailable.",
+  "Habit Ledger": "Habit Ledger",
+  "Replace all Habit Ledger history with this file? Habits in the file: ": "Replace all Habit Ledger history with this file? Habits in the file: "
 }

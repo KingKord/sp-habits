@@ -1,6 +1,6 @@
 # Code of conduct
 
-Everyone participating in Habits issues, pull requests and other project spaces is expected to treat others with respect, regardless of background or experience.
+Everyone participating in Habit Ledger issues, pull requests and other project spaces is expected to treat others with respect, regardless of background or experience.
 
 - Discuss ideas and code constructively. Explain disagreements and accept good-faith corrections.
 - Avoid harassment, threats, discriminatory language, sexual attention and personal attacks.

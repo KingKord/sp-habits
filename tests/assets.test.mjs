@@ -28,11 +28,13 @@ function harness(styles) {
             source: parent,
             origin: "https://app.test",
             data: {
-              type: "HABITS_EXPORT_RESPONSE",
-              requestId: request.requestId,
-              ok: true,
-              messages,
-              styles
+              type: "PLUGIN_MESSAGE_RESPONSE",
+              messageId: request.messageId,
+              result: {
+                ok: true,
+                messages,
+                styles
+              }
             }
           });
       })

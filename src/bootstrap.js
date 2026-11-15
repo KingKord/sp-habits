@@ -16,7 +16,7 @@ export function bootApplication(window, create = createApplication, prepare = pr
       if (!disposed) {
         const document = window.document;
         const message = document.createElement("p");
-        message.textContent = "Unable to load the plugin assets. Reopen Habits to retry.";
+        message.textContent = "Unable to load the plugin assets. Reopen Habit Ledger to retry.";
         document.body.replaceChildren(message);
         document.body.hidden = false;
       }

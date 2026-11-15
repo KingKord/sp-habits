@@ -14,7 +14,7 @@ A private report should include the affected versions, a minimal reproduction wi
 
 ## Scope and data handling
 
-Habits runs inside Super Productivity. Uploaded plugins have access to host APIs, so install only trusted builds. The manifest requests no additional permissions, and Habits makes no runtime network requests. This does not sandbox the entire host-side plugin or prove that the host itself is offline.
+Habit Ledger runs inside Super Productivity. Uploaded plugins have access to host APIs, so install only trusted builds. The manifest requests no additional permissions, and Habit Ledger makes no runtime network requests. This does not sandbox the entire host-side plugin or prove that the host itself is offline.
 
 The plugin stores data through Super Productivity and can create optional review tasks when explicitly enabled. Imports replace plugin history after confirmation. Keep a backup before testing data-changing behavior; use an isolated profile for reproduction.
 

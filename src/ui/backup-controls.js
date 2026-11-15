@@ -39,7 +39,7 @@ export function mountBackupControls({
       if (!dom.isActive()) return;
       if (
         !confirm(
-          t("Replace all Habits history with this file? Habits in the file: ") +
+          t("Replace all Habit Ledger history with this file? Habits in the file: ") +
             candidate.habits.length +
             t(". First save the current history using Export JSON.")
         )

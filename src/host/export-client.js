@@ -2,74 +2,110 @@ import { t } from "../i18n/index.js";
 import {
   EXPORT_REQUEST,
   EXPORT_RESPONSE,
-  SYSTEM_EMOJI_REQUEST,
-  SYSTEM_EMOJI_RESPONSE,
+  MESSAGE_REQUEST,
+  MESSAGE_ERROR,
   transportOrigin,
   targetOrigin
 } from "./protocol.js";
 
 export function createExportClient(window, timeoutMs = 30000) {
-  // srcdoc inherits the host origin, although location.origin is "null".
   const origin = window.origin ?? window.location.origin;
-  const pending = new Map();
-  let disposed = false;
-  const subscribers = new Set();
-
+  const pending = new Map(),
+    subscribers = new Set();
+  let disposed = false,
+    timer = null,
+    revision,
+    checking = false;
+  function changed() {
+    if (!disposed) for (const callback of subscribers) callback();
+  }
   function receive(event) {
     if (event.source !== window.parent || transportOrigin(event.origin) !== transportOrigin(origin))
       return;
-    if (event.data?.type === "HABITS_DATA_CHANGED") {
-      for (const callback of subscribers) callback();
-      return;
-    }
-    const request = pending.get(event.data?.requestId);
-    if (!request || request.responseType !== event.data.type) return;
+    const data = event.data;
+    if (![EXPORT_RESPONSE, MESSAGE_ERROR].includes(data?.type)) return;
+    const request = pending.get(data.messageId);
+    if (!request) return;
     request.finish();
-    if (event.data.ok) request.resolve(event.data);
-    else request.reject(new Error(t(event.data.error || "Unable to export data.")));
+    if (data.type === MESSAGE_ERROR)
+      request.reject(new Error(t(data.error || "Unable to export data.")));
+    else if (data.result?.ok) request.resolve(data.result);
+    else request.reject(new Error(t(data.result?.error || "Unable to export data.")));
   }
   window.addEventListener("message", receive);
-
-  function send(type, responseType, payload) {
+  function request(recovery = false, asset, payload = {}) {
     if (disposed) return Promise.reject(new Error(t("The plugin view is closed.")));
     return new Promise((resolve, reject) => {
-      const requestId = window.crypto.randomUUID();
+      const messageId = window.crypto.randomUUID();
       const finish = () => {
-        window.clearTimeout(timer);
-        pending.delete(requestId);
+        window.clearTimeout(timeout);
+        pending.delete(messageId);
       };
-      const timer = window.setTimeout(() => {
+      const timeout = window.setTimeout(() => {
         finish();
         reject(new Error(t("The app did not respond to the request.")));
       }, timeoutMs);
-      pending.set(requestId, { resolve, reject, finish, responseType });
+      pending.set(messageId, { resolve, reject, finish });
       try {
-        window.parent.postMessage({ type, requestId, ...payload }, targetOrigin(origin));
+        window.parent.postMessage(
+          {
+            type: MESSAGE_REQUEST,
+            messageId,
+            message: { ...payload, type: EXPORT_REQUEST, recovery, ...(asset ? { asset } : {}) }
+          },
+          targetOrigin(origin)
+        );
       } catch (error) {
         finish();
         reject(error);
       }
     });
   }
-
+  async function checkRevision() {
+    if (disposed || checking || !subscribers.size) return;
+    checking = true;
+    try {
+      const result = await request(false, "status");
+      if (revision !== result.revision) {
+        revision = result.revision;
+        changed();
+      }
+    } catch {
+      // Actual reads/writes report failures through the existing persistence UI.
+    } finally {
+      checking = false;
+    }
+  }
   function dispose() {
+    if (disposed) return;
     disposed = true;
     subscribers.clear();
+    if (timer !== null) window.clearInterval(timer);
     window.removeEventListener("message", receive);
     for (const request of pending.values()) {
       request.finish();
       request.reject(new Error(t("The plugin view is closed.")));
     }
   }
-
   return {
-    request: (recovery = false, asset, payload = {}) =>
-      send(EXPORT_REQUEST, EXPORT_RESPONSE, { ...payload, recovery, ...(asset ? { asset } : {}) }),
+    request,
     subscribe: (callback) => {
+      if (disposed) return () => {};
       subscribers.add(callback);
-      return () => subscribers.delete(callback);
+      if (timer === null) {
+        // The public API has no per-view hook unregister or host-to-view push.
+        // Poll an in-memory revision instead of retaining detached iframe hooks.
+        timer = window.setInterval?.(checkRevision, 5000) ?? null;
+        void checkRevision();
+      }
+      return () => {
+        subscribers.delete(callback);
+        if (!subscribers.size && timer !== null) {
+          window.clearInterval(timer);
+          timer = null;
+        }
+      };
     },
-    systemEmoji: (open = false) => send(SYSTEM_EMOJI_REQUEST, SYSTEM_EMOJI_RESPONSE, { open }),
     dispose
   };
 }

@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Habits</title>
+    <title>Habit Ledger</title>
   </head>
   <body hidden>
     <main class="shell">
       <header class="top">
-        <h1 class="sr-only">Habits</h1>
+        <h1 class="sr-only">Habit Ledger</h1>
         <nav class="view-switch" aria-label="Plugin section">
           <button id="view-day" aria-pressed="true">Day</button
           ><button id="view-calendar" aria-pressed="false">Calendar</button
@@ -208,7 +208,7 @@
           >
         </footer>
         <p class="footnote" id="zone"></p>
-        <p class="footnote">Habits · 0.25.0</p>
+        <p class="footnote">Habit Ledger · 0.26.0</p>
       </details>
     </main>
     <p class="form-error" id="task-sync-error" role="alert"></p>
@@ -420,15 +420,6 @@
             maxlength="64"
             placeholder="Paste an emoji"
             autocomplete="off" /></label
-        ><button
-          id="open-system-emoji"
-          type="button"
-          class="quiet emoji-native-button"
-          aria-label="Open system emoji picker"
-          title="Open the system emoji picker"
-          hidden
-        >
-          ☺</button
         ><button id="use-custom-emoji" type="button">Use</button>
       </div>
       <p id="emoji-picker-error" class="form-error" role="alert"></p>

@@ -3,7 +3,7 @@ import { validEmoji } from "../domain.js";
 import { loadEmojiCatalog, searchEmoji, emojiName } from "./emoji-catalog.js";
 import { closeOnBackdrop } from "./dialog.js";
 
-export function createEmojiPicker({ dom, select, loadData, systemEmoji }) {
+export function createEmojiPicker({ dom, select, loadData }) {
   const { byId, node, button, on } = dom;
   let groups = [],
     current = "",
@@ -46,17 +46,8 @@ export function createEmojiPicker({ dom, select, loadData, systemEmoji }) {
     byId("emoji-results").replaceChildren();
     byId("emoji-results-status").textContent = t("Loading…");
     byId("more-emoji").hidden = true;
-    byId("open-system-emoji").hidden = true;
-    byId("open-system-emoji").disabled = false;
     byId("emoji-picker").showModal();
     byId("emoji-search").focus();
-    if (systemEmoji)
-      void systemEmoji()
-        .then((result) => {
-          if (dom.isActive() && token === opening && byId("emoji-picker").open)
-            byId("open-system-emoji").hidden = !result.available;
-        })
-        .catch(() => {});
     try {
       groups = await loadEmojiCatalog(loadData);
       if (!dom.isActive() || token !== opening || !byId("emoji-picker").open) return;
@@ -87,20 +78,6 @@ export function createEmojiPicker({ dom, select, loadData, systemEmoji }) {
   }
   on("close-emoji-picker", "click", close);
   closeOnBackdrop(dom, "emoji-picker", close);
-  on("open-system-emoji", "click", async () => {
-    const token = opening;
-    byId("emoji-custom").focus();
-    byId("emoji-custom").select();
-    byId("open-system-emoji").disabled = true;
-    try {
-      await systemEmoji(true);
-    } catch (error) {
-      if (dom.isActive() && token === opening && byId("emoji-picker").open)
-        byId("emoji-picker-error").textContent = error.message;
-    } finally {
-      if (dom.isActive() && token === opening) byId("open-system-emoji").disabled = false;
-    }
-  });
   on("emoji-picker", "cancel", (event) => {
     event.preventDefault();
     close();

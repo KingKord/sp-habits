@@ -59,7 +59,7 @@ export function createReleaseDraft(repo, tag, commit, body, run = gh) {
       "--raw-field",
       "target_commitish=" + commit,
       "--raw-field",
-      "name=Habits " + tag,
+      "name=Habit Ledger " + tag,
       "--raw-field",
       "body=" + body,
       "--field",
@@ -155,7 +155,7 @@ async function publish() {
     const description = await readReleaseNotes(version);
     await writeFile(
       notes,
-      `Habits ${version}\n\n${description}\n\nInstall sp-habits.zip through Super Productivity Settings → Plugins (19.3.1+).\n\nChecks: npm run check (lint, formatting, tests, ZIP build).\nCommit: ${commit}\nWorkflow: https://github.com/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}\nSHA-256: ${digest}\n`
+      `Habit Ledger ${version}\n\n${description}\n\nInstall sp-habits.zip through Super Productivity Settings → Plugins (19.3.1+).\n\nChecks: npm run check (lint, formatting, tests, ZIP build).\nCommit: ${commit}\nWorkflow: https://github.com/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}\nSHA-256: ${digest}\n`
     );
     if (!release) {
       release = createReleaseDraft(repo, tag, commit, await readFile(notes, "utf8"));

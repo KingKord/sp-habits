@@ -178,13 +178,14 @@ test("linking never backfills prior days; until, archives and malformed backups 
   assert.throws(() => D.parseState(JSON.stringify(invalid)), /link/);
 });
 
-function serviceHarness(initial = linked()) {
+function serviceHarness(initial = linked(), clock = instant) {
   let raw = JSON.stringify(initial),
     app = { tasks: {}, taskRepeatCfgs: cfgs },
     archived = [],
     fail = false,
     writes = 0,
-    notices = 0;
+    notices = 0,
+    archiveReads = 0;
   const api = {
     loadSyncedData: async () => raw,
     persistDataSynced: async (value) => {
@@ -193,7 +194,10 @@ function serviceHarness(initial = linked()) {
       writes++;
     },
     getAppState: async () => app,
-    getArchivedTasks: async () => archived,
+    getArchivedTasks: async () => {
+      archiveReads++;
+      return archived;
+    },
     showSnack: () => {}
   };
   const service = createTaskIntegration(
@@ -201,7 +205,7 @@ function serviceHarness(initial = linked()) {
     () => {
       notices++;
     },
-    instant
+    clock
   );
   return {
     service,
@@ -209,6 +213,7 @@ function serviceHarness(initial = linked()) {
     read: () => raw,
     writes: () => writes,
     notices: () => notices,
+    archiveReads: () => archiveReads,
     tasks: (tasks) => {
       app = { ...app, tasks: Object.fromEntries(tasks.map((t) => [t.id, t])) };
     },
@@ -362,4 +367,126 @@ test("the last supported calendar day remains finite when a completion interval 
   const row = D.statistics(state, day, day, "9999-12-31").rows[0];
   assert.equal(row.successDays, 1);
   assert.equal(row.successRate, 1);
+});
+
+test("a large archive is read once while live completions and undo settle through hook bursts", async () => {
+  const h = serviceHarness();
+  h.archived([
+    ...Array.from({ length: 50000 }, (_, index) =>
+      task({ id: "unrelated-" + index, repeatCfgId: "other-series" })
+    ),
+    task({ id: "archived-completion" })
+  ]);
+  await h.service.refresh();
+  assert.equal(h.archiveReads(), 1);
+  assert.equal(D.countsOf(JSON.parse(h.read()).habits[0])[today], 1);
+  h.tasks([task()]);
+  await Promise.all(Array.from({ length: 100 }, () => h.service.refresh()));
+  assert.equal(h.archiveReads(), 1);
+  assert.equal(D.countsOf(JSON.parse(h.read()).habits[0])[today], 2);
+  // Moving the observed live task out of the live state does not erase provenance.
+  h.tasks([]);
+  await h.service.refresh();
+  assert.equal(D.countsOf(JSON.parse(h.read()).habits[0])[today], 2);
+  h.tasks([task({ id: "archived-completion", isDone: false, doneOn: null })]);
+  await h.service.refresh();
+  h.tasks([]);
+  for (let index = 0; index < 20; index++) await h.service.refresh();
+  assert.equal(h.archiveReads(), 1);
+  assert.equal(D.countsOf(JSON.parse(h.read()).habits[0])[today], 1);
+});
+
+test("local midnight and timezone changes refresh archived provenance only once per scope", async () => {
+  let now = "2026-11-04T20:59:00Z";
+  const h = serviceHarness(linked(), () => new Date(now));
+  await h.service.refresh();
+  assert.equal(h.archiveReads(), 1);
+  h.archived([task()]);
+  now = "2026-11-04T21:01:00Z";
+  await h.service.refresh();
+  await h.service.refresh();
+  assert.equal(h.archiveReads(), 2);
+  assert.equal(D.countsOf(JSON.parse(h.read()).habits[0])[today], 1);
+  const expected = h.read();
+  const candidate = D.parseState(expected);
+  candidate.timeZone = "UTC";
+  await h.service.request({ action: "write", expected, raw: JSON.stringify(candidate) });
+  await h.service.refresh();
+  await h.service.refresh();
+  assert.equal(h.archiveReads(), 3);
+});
+
+test("explicit links rescan the archive while unlinking and unlinked polling do not", async () => {
+  const h = serviceHarness(habitState());
+  await h.service.refresh();
+  assert.equal(h.archiveReads(), 0);
+  async function link(repeatId) {
+    const expected = h.read();
+    return h.service.request({
+      action: "write",
+      expected,
+      raw: expected,
+      linkChange: { id: "reading", repeatId }
+    });
+  }
+  await link("series");
+  assert.equal(h.archiveReads(), 1);
+  await h.service.refresh();
+  assert.equal(h.archiveReads(), 1);
+  await link(null);
+  await h.service.refresh();
+  assert.equal(h.archiveReads(), 1);
+  h.archived([task()]);
+  await link("series");
+  await h.service.refresh();
+  assert.equal(h.archiveReads(), 2);
+  assert.equal(D.countsOf(JSON.parse(h.read()).habits[0])[today], 1);
+});
+
+test("archive read failures retry without losing history and successful retries clear the error", async () => {
+  const h = serviceHarness();
+  let reads = 0;
+  h.api.getArchivedTasks = async () => {
+    reads++;
+    if (reads === 1) throw Error("archive offline");
+    return [task()];
+  };
+  const before = h.read();
+  await h.service.refresh();
+  assert.equal(h.read(), before);
+  assert.match((await h.service.request({ action: "read" })).syncError, /archive offline/);
+  await h.service.refresh();
+  await h.service.refresh();
+  assert.equal(reads, 2);
+  assert.equal((await h.service.request({ action: "read" })).syncError, "");
+  assert.equal(D.countsOf(JSON.parse(h.read()).habits[0])[today], 1);
+});
+
+test("failed reconciliation writes retry archive provenance and disposal stops reads after pending storage", async () => {
+  const h = serviceHarness();
+  let attempts = 0;
+  h.archived([task()]);
+  const persist = h.api.persistDataSynced;
+  h.api.persistDataSynced = async (value) => {
+    attempts++;
+    if (attempts === 1) throw Error("write offline");
+    return persist(value);
+  };
+  await h.service.refresh();
+  await h.service.refresh();
+  assert.equal(h.archiveReads(), 2);
+  assert.equal(D.countsOf(JSON.parse(h.read()).habits[0])[today], 1);
+  const pending = serviceHarness();
+  let deliver;
+  pending.api.loadSyncedData = () =>
+    new Promise((resolve) => {
+      deliver = resolve;
+    });
+  const work = pending.service.refresh();
+  await Promise.resolve();
+  pending.service.dispose();
+  deliver(pending.read());
+  await work;
+  assert.equal(pending.archiveReads(), 0);
+  assert.equal(pending.writes(), 0);
 });

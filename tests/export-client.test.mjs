@@ -5,17 +5,29 @@ import { installExportBridge } from "../src/host/export-host.js";
 import {
   EXPORT_REQUEST,
   EXPORT_RESPONSE,
-  SYSTEM_EMOJI_REQUEST,
-  SYSTEM_EMOJI_RESPONSE
+  MESSAGE_REQUEST,
+  MESSAGE_ERROR
 } from "../src/host/protocol.js";
-
 function harness(origin = "https://app.test") {
   let sequence = 0,
     handler;
   const sent = [],
     timers = new Map();
   const parent = { postMessage: (data, targetOrigin) => sent.push({ data, targetOrigin }) };
+  const hooks = new Map(),
+    intervals = new Map();
   const window = {
+    PluginAPI: {
+      registerHook: (name, fn) => {
+        hooks.set(name, fn);
+      }
+    },
+    setInterval: (fn) => {
+      const id = ++sequence;
+      intervals.set(id, fn);
+      return id;
+    },
+    clearInterval: (id) => intervals.delete(id),
     parent,
     location: { origin },
     crypto: { randomUUID: () => String(++sequence) },
@@ -35,6 +47,8 @@ function harness(origin = "https://app.test") {
   const client = createExportClient(window);
   return {
     client,
+    hooks,
+    intervals,
     window,
     sent,
     timers,
@@ -46,20 +60,28 @@ function harness(origin = "https://app.test") {
   };
 }
 
-test("export client correlates concurrent responses and rejects untrusted senders and origins", async () => {
+const reply = (request, result = { ok: true }) => ({
+  type: EXPORT_RESPONSE,
+  messageId: request.messageId,
+  result
+});
+
+test("public message client correlates nested responses and rejects untrusted senders and origins", async () => {
   const h = harness();
   const first = h.client.request(),
     second = h.client.request(true);
   const [a, b] = h.sent.map((item) => item.data);
-  assert.equal(a.type, EXPORT_REQUEST);
-  assert.equal(b.recovery, true);
+  assert.equal(a.type, MESSAGE_REQUEST);
+  assert.equal(a.message.type, EXPORT_REQUEST);
+  assert.equal(b.message.recovery, true);
   assert.equal(h.sent[0].targetOrigin, "https://app.test");
-  const response = { type: EXPORT_RESPONSE, requestId: a.requestId, ok: true, filename: "a.json" };
+  const response = reply(a, { ok: true, filename: "a.json" });
   h.receive(response, {});
   h.receive(response, h.window.parent, "https://other.test");
-  h.receive({ ...response, requestId: "unknown" });
+  h.receive({ ...response, messageId: "unknown" });
+  h.receive({ ...response, type: "HABITS_EXPORT_RESPONSE" });
   assert.equal(h.timers.size, 2);
-  h.receive({ ...response, requestId: b.requestId, filename: "b.json" });
+  h.receive(reply(b, { ok: true, filename: "b.json" }));
   assert.equal((await second).filename, "b.json");
   h.receive(response);
   assert.equal((await first).filename, "a.json");
@@ -67,116 +89,131 @@ test("export client correlates concurrent responses and rejects untrusted sender
   h.client.dispose();
 });
 
-test("export timeout and synchronous transport failure release pending requests", async () => {
+test("transport errors, handler failures, timeouts and synchronous failures release requests", async () => {
   const h = harness();
-  const timedOut = h.client.request();
-  const rejected = assert.rejects(timedOut, /did not respond/);
+  let result = h.client.request();
+  h.receive({
+    type: MESSAGE_ERROR,
+    messageId: h.sent.at(-1).data.messageId,
+    error: "Host handler unavailable"
+  });
+  await assert.rejects(result, /unavailable/);
+  result = h.client.request();
+  h.receive(reply(h.sent.at(-1).data, { ok: false, error: "Disk failed" }));
+  await assert.rejects(result, /Disk/);
+  const timedOut = assert.rejects(h.client.request(), /did not respond/);
   [...h.timers.values()][0]();
-  await rejected;
-  assert.equal(h.timers.size, 0);
+  await timedOut;
   h.window.parent.postMessage = () => {
-    throw new Error("Disconnected");
+    throw Error("Disconnected");
   };
   await assert.rejects(h.client.request(), /Disconnected/);
   assert.equal(h.timers.size, 0);
   h.client.dispose();
 });
-test("system emoji requests have their own response channel and cannot become export requests", async () => {
+
+test("srcdoc inherited origins and opaque Electron origins remain source checked", async () => {
+  for (const origin of ["https://app.test", "file://"]) {
+    const h = harness(origin);
+    h.client.dispose();
+    h.window.origin = origin;
+    h.window.location.origin = "null";
+    const client = createExportClient(h.window);
+    const result = client.request();
+    const request = h.sent.at(-1);
+    assert.equal(request.targetOrigin, origin === "file://" ? "*" : origin);
+    h.receive(reply(request.data), h.window.parent, "https://other.test");
+    assert.equal(h.timers.size, 1);
+    h.receive(reply(request.data), h.window.parent, origin === "file://" ? "null" : origin);
+    assert.equal((await result).ok, true);
+    client.dispose();
+  }
+});
+
+test("bounded revision checks invalidate views without registering persistent iframe hooks", async () => {
   const h = harness();
-  const result = h.client.systemEmoji(true);
-  const request = h.sent[0].data;
-  assert.equal(request.type, SYSTEM_EMOJI_REQUEST);
-  assert.equal(request.open, true);
-  h.receive({ type: EXPORT_RESPONSE, requestId: request.requestId, ok: true });
-  assert.equal(h.timers.size, 1);
-  h.receive({
-    type: SYSTEM_EMOJI_RESPONSE,
-    requestId: request.requestId,
-    ok: true,
-    available: true
+  let changed = 0;
+  const unsubscribe = h.client.subscribe(() => {
+    changed++;
   });
-  assert.equal((await result).available, true);
-  assert.equal(h.timers.size, 0);
+  assert.equal(h.hooks.size, 0);
+  const tick = [...h.intervals.values()][0];
+  assert.equal(h.sent.at(-1).data.message.asset, "status");
+  const finish = async (value) => {
+    h.receive(reply(h.sent.at(-1).data, { ok: true, revision: value }));
+    await Promise.resolve();
+  };
+  await finish(3);
+  assert.equal(changed, 1);
+  let pending = tick();
+  await finish(3);
+  await pending;
+  assert.equal(changed, 1);
+  pending = tick();
+  await finish(4);
+  await pending;
+  assert.equal(changed, 2);
+  unsubscribe();
+  assert.equal(h.intervals.size, 0);
+  const before = h.sent.length;
+  await tick();
+  assert.equal(h.sent.length, before);
   h.client.dispose();
+  h.client.subscribe(() => {
+    changed++;
+  });
+  assert.equal(h.intervals.size, 0);
+  assert.equal(changed, 2);
 });
 
-test("srcdoc uses its inherited window origin instead of the null URL origin", async () => {
+test("reopening and disposing views does not accumulate host hooks or polling timers", async () => {
   const h = harness();
-  h.window.origin = "https://app.test";
-  h.window.location.origin = "null";
   h.client.dispose();
-  const client = createExportClient(h.window);
-  const request = client.request();
-  assert.equal(h.sent[0].targetOrigin, "https://app.test");
-  h.receive({ type: EXPORT_RESPONSE, requestId: h.sent[0].data.requestId, ok: true });
-  assert.equal((await request).ok, true);
-  client.dispose();
+  for (let index = 0; index < 12; index++) {
+    const client = createExportClient(h.window);
+    client.subscribe(() => assert.fail("A closed view must not receive updates"));
+    assert.equal(h.intervals.size, 1);
+    const request = h.sent.at(-1).data;
+    client.dispose();
+    h.receive(reply(request, { ok: true, revision: index }));
+    await Promise.resolve();
+    assert.equal(h.intervals.size, 0);
+    assert.equal(h.timers.size, 0);
+    assert.equal(h.hooks.size, 0);
+  }
 });
-test("Electron file origins accept opaque replies from the parent and use wildcard delivery", async () => {
-  const h = harness("file://");
-  const result = h.client.systemEmoji();
+
+test("disposal rejects pending requests and ignores late host responses", async () => {
+  const h = harness();
+  const pending = h.client.request();
+  const rejected = assert.rejects(pending, /closed/);
   const request = h.sent[0].data;
-  assert.equal(h.sent[0].targetOrigin, "*");
-  h.receive(
-    { type: SYSTEM_EMOJI_RESPONSE, requestId: request.requestId, ok: true, available: true },
-    h.window.parent,
-    "https://other.test"
-  );
-  assert.equal(h.timers.size, 1);
-  h.receive(
-    { type: SYSTEM_EMOJI_RESPONSE, requestId: request.requestId, ok: true, available: true },
-    h.window.parent,
-    "null"
-  );
-  assert.equal((await result).available, true);
-  h.client.dispose();
-});
-
-test("export disposal rejects all waiting requests and removes its listener", async () => {
-  const h = harness();
-  const requests = [h.client.request(), h.client.request()];
-  const rejected = requests.map((request) => assert.rejects(request, /closed/));
   h.client.dispose();
   h.client.dispose();
-  await Promise.all(rejected);
+  await rejected;
+  h.receive(reply(request));
   assert.equal(h.timers.size, 0);
   assert.equal(h.listening, false);
   await assert.rejects(h.client.request(), /closed/);
 });
 
-test("client and host bridge exchange a backup through the shared protocol", async () => {
+test("client and public host handler exchange backups without host DOM access", async () => {
   const h = harness("null");
-  let hostListener, saved;
-  const frame = { postMessage: (data) => h.receive(data) };
-  const hostWindow = {
-    location: { origin: "null" },
-    addEventListener: (_type, fn) => {
-      hostListener = fn;
+  let handler, saved;
+  const stop = installExportBridge({
+    onMessage: (fn) => {
+      handler = fn;
     },
-    removeEventListener: () => {
-      hostListener = undefined;
+    loadSyncedData: async () => '{"habits":[]}',
+    downloadFile: async (filename, data) => {
+      saved = { filename, data };
     }
-  };
-  const removeHost = installExportBridge(
-    {
-      loadSyncedData: async () => '{"habits":[]}',
-      downloadFile: async (filename, data) => {
-        saved = { filename, data };
-      }
-    },
-    hostWindow,
-    {
-      querySelectorAll: () => [{ contentWindow: frame, contentDocument: { title: "Habits" } }]
-    }
-  );
-  h.window.parent.postMessage = (data) => {
-    void hostListener({ data, source: frame, origin: "null" });
-  };
-  const result = await h.client.request();
-  assert.equal(result.filename, "habits-backup.json");
+  });
+  h.window.parent.postMessage = async (request) =>
+    h.receive(reply(request, await handler(request.message)));
+  assert.equal((await h.client.request()).filename, "habits-backup.json");
   assert.deepEqual(JSON.parse(saved.data), { habits: [] });
-  assert.equal(h.timers.size, 0);
-  removeHost();
-  assert.equal(hostListener, undefined);
+  stop();
+  await assert.rejects(h.client.request(), /closed/);
   h.client.dispose();
 });

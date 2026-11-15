@@ -1,6 +1,6 @@
 # Design notes
 
-Habits tracks user-defined goals and limits inside Super Productivity without a separate account or server. See [README.md](README.md) for installation, [the user guide](docs/user-guide.md) for behavior and [development](docs/development.md) for architecture.
+Habit Ledger tracks user-defined goals and limits inside Super Productivity without a separate account or server. See [README.md](README.md) for installation, [the user guide](docs/user-guide.md) for behavior and [development](docs/development.md) for architecture.
 
 ## Data and rules
 
@@ -10,7 +10,7 @@ Preserve user-entered names, custom units, existing aliases and history. Opening
 
 ## Host integration
 
-The interface runs in a plugin iframe. Host-side code provides the storage, export, resources and task integration needed by the view. Validate message origin, source and shape at the bridge.
+The interface runs in a plugin iframe. Host-side code provides the storage, export, resources and task integration needed by the view. Use public plugin messaging with bounded requests and validate message origin, source and response shape in the iframe. Host-side code must not inspect the host DOM or depend on private preload APIs.
 
 Use Super Productivity's plugin storage APIs. Keep the manifest ID stable for compatible updates. Imports replace plugin history only after confirmation; exports provide a recovery path before data-changing experiments.
 

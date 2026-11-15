@@ -1,5 +1,27 @@
 # Verification log
 
+## 0.26.0 — 2026-11-15
+
+### Checks and upstream review
+
+- Full `npm run check` passed: ESLint, Prettier, 350 automated tests, version/changelog validation, bundled JavaScript syntax and ZIP integrity. Package, lockfile, manifest, interface and current README entry are 0.26.0. Iframe: 26,974 / 102,400 bytes; headroom: 75,426 bytes. ZIP SHA-256: `7c1e70a782e4bca5cfee37dc28903c24a6d5e7d12723f01ed913863bd5fb943f`.
+- Imported the substantive feedback from upstream [PR #11513](https://github.com/super-productivity/super-productivity/pull/11513) into [#55](https://github.com/KingKord/sp-habits/issues/55) through [#59](https://github.com/KingKord/sp-habits/issues/59). The display name is Habit Ledger; the plugin ID, storage keys, repository and release filenames remain compatible. Historical version facts remain unchanged.
+- The shipped host bundle runs in tests without a host document. Public `PluginAPI.onMessage` handles standard `PLUGIN_MESSAGE` requests; the host owns delivery to the requesting iframe. Client regressions cover parent/origin/message correlation, malformed/error replies, opaque origins, timeout/disposal and twelve reopen/dispose cycles with no per-view host hooks or retained polling timers. Private preload calls, native emoji requests and host iframe inspection are removed.
+- A 50,001-record synthetic archive required one complete read across a 100-refresh burst and twenty subsequent polls. Regressions cover observed live completions moving into the archive, live undo winning over stale archived objects, local midnight/timezone changes, explicit link edits, failed-read/save retries and disposal. These are controlled Node fixtures, not measurements of a real user's archive.
+
+### Isolated browser and minimum-host review
+
+- Used Chromium 156.0.8078.80 on macOS in separate test profiles. Installed published 0.25.0 into the official 19.3.1 embedded web assets served on loopback (19.3.1WB), imported nine synthetic habits, and updated to the final 0.26.0 ZIP without removal. After a full host reload, Habit Ledger started through the public message channel and its exact synced JSON matched the baseline byte for byte.
+- The real-host backup download matched the complete validated import fixture, including Unicode names/custom units, hidden and archived habits, daily notes and legacy history. Offline emoji search and custom emoji input worked. A quick plus created exactly one review task in `INBOX_PROJECT`; minus created no additional task. Public storage delivery refreshed the open habit name through revision polling and restoring the saved value refreshed it again.
+- Checked eight English/Russian, light/dark and 320/1440 px combinations through the packaged public-message harness and host UI Kit. Day, Calendar and Statistics had no horizontal page overflow. Search/paste emoji, the distinct product name, explicit theme selection and exact view-only history preservation passed with no page errors. Reviewed representative narrow/wide and actual-host screenshots. Evidence is under ignored `output/playwright/upstream-0260/`; the full check log is under `output/upstream-review-0260/`.
+
+### Limits and catalog readiness
+
+- Open views check an in-memory revision initially and every five seconds; external changes may take up to five seconds to appear. Status checks read neither storage nor the task archive. The minimum host has no per-view hook unregister API, so views deliberately avoid registering persistent host callbacks.
+- Changes only to already archived tasks become visible at the next complete archive refresh: local-day/timezone change, active-link change or plugin restart. Previously observed live-task completion provenance remains saved between refreshes. No actual large personal archive was accessed.
+- The official 19.3.1 web assets have existing service-worker/Angular startup diagnostics when served locally; they were present before plugin installation. Plugin startup, export, task creation and invalidation passed despite those host diagnostics. Native Electron, Safari, physical touch devices, a fresh current-version host and real cross-device synchronization were not rerun; existing earlier compatibility evidence is preserved below.
+- The maintainer also requested time for stabilization before a new catalog PR. [The readiness checklist](docs/catalog-readiness.md) records that external condition; another release and passing tests do not establish upstream acceptance. No new catalog PR was opened.
+
 ## 0.25.0 — 2026-11-13
 
 ### Checks and scope

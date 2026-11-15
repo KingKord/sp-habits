@@ -17,6 +17,7 @@ import { emojiData } from "../src/i18n/emoji-data.js";
 test("English is the source and fallback; the SP language wins over browser preferences", async () => {
   assert.equal(getLanguage(), "en");
   assert.equal(t("Habits"), "Habits");
+  assert.equal(t("Habit Ledger"), "Habit Ledger");
   assert.equal(
     await readAppLanguage({ getCurrentLanguage: async () => "en", cfg: { lang: { code: "ru" } } }),
     "en"
@@ -37,6 +38,7 @@ test("English is the source and fallback; the SP language wins over browser pref
       setLanguage(code, russian);
       assert.equal(getLanguage(), "ru");
       assert.equal(t("Habits"), russian.Habits);
+      assert.equal(t("Habit Ledger"), "Habit Ledger");
     }
     for (const code of ["en", "en-US", "de", undefined]) {
       setLanguage(code, russian);
@@ -82,7 +84,12 @@ test("authored English messages and markup have complete Russian translations", 
     ...[...html.matchAll(/(?:aria-label|placeholder|title)="([^"]+)"/g)].map((m) => m[1])
   ];
   for (const key of values)
-    if (/[a-zA-Z]/.test(key) && !key.startsWith("Habits") && !key.startsWith("/*"))
+    if (
+      /[a-zA-Z]/.test(key) &&
+      !key.startsWith("Habits") &&
+      !/^Habit Ledger · \d/.test(key) &&
+      !key.startsWith("/*")
+    )
       assert.ok(Object.hasOwn(english, key), key);
 });
 

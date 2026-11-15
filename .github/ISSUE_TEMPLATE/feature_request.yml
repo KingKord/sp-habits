@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an improvement to Habits.
+description: Suggest an improvement to Habit Ledger.
 title: "Feature: "
 body:
   - type: textarea

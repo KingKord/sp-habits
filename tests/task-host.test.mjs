@@ -34,7 +34,6 @@ function harness() {
     handler,
     timerCount = 0,
     stopped = false,
-    frames = [],
     appTasks = {};
   let writes = 0;
   const hooks = new Map(),
@@ -63,12 +62,14 @@ function harness() {
     onReady: (fn) => {
       ready = fn;
     },
+    onMessage: (fn) => {
+      handler = fn;
+    },
     onUnload: (fn) => {
       unload = fn;
     }
   };
-  const document = { querySelectorAll: () => frames };
-  vm.runInNewContext(script, { window, document, PluginAPI: api, Intl, JSON, structuredClone });
+  vm.runInNewContext(script, { window, PluginAPI: api, Intl, JSON, structuredClone });
   return {
     day,
     hooks,
@@ -83,29 +84,21 @@ function harness() {
     writes: () => writes,
     timers: () => timerCount,
     stopped: () => stopped,
-    mount: () => {
-      frames = [{ contentWindow: source, contentDocument: { title: "Habits" } }];
-    },
+    mount: () => {},
     task: (isDone) => {
       appTasks = {
         task: { id: "task", repeatCfgId: "series", isDone, doneOn: isDone ? Date.now() : null }
       };
     },
-    request: async (data, origin = "https://app.test", sender = source) =>
-      handler({
-        data: {
-          type: "HABITS_EXPORT_REQUEST",
-          asset: "tasks",
-          requestId: "request",
-          ...data
-        },
-        source: sender,
-        origin
-      })
+    request: async (data) => {
+      const result = await handler({ type: "HABITS_EXPORT_REQUEST", asset: "tasks", ...data });
+      messages.push(result);
+      return result;
+    }
   };
 }
 
-test("shipped host registers hooks, records a completion with the tracker closed, notifies only its frame and undoes", async () => {
+test("shipped host records and undoes task completions while the view is closed without host DOM access", async () => {
   const h = harness();
   assert.equal(h.hooks.has("taskComplete"), true);
   h.ready();
@@ -114,26 +107,23 @@ test("shipped host registers hooks, records a completion with the tracker closed
   h.task(true);
   await h.hooks.get("taskComplete")();
   assert.equal(D.dayResult(JSON.parse(h.raw()).habits[0], h.day, h.day).count, 1);
-  assert.equal(h.messages.length, 0);
-  h.mount();
+  const before = await h.request({ asset: "status" });
   h.task(false);
   await h.hooks.get("taskUpdate")();
   assert.equal(D.dayResult(JSON.parse(h.raw()).habits[0], h.day, h.day).count, 0);
-  assert.equal(
-    h.messages.some((m) => m.type === "HABITS_DATA_CHANGED"),
-    true
-  );
+  const after = await h.request({ asset: "status" });
+  assert.ok(after.revision > before.revision);
   h.unload();
   assert.equal(h.stopped(), true);
   h.ready();
   assert.equal(h.timers(), 1);
+  assert.equal((await h.request({ action: "read" })).ok, false);
 });
 
-test("persistence deliveries invalidate the shipped iframe without a reconciliation write", async () => {
+test("persistence deliveries advance public revision without a reconciliation write", async () => {
   for (const linked of [false, true]) {
-    const h = harness();
-    h.mount();
-    const state = JSON.parse(h.raw());
+    const h = harness(),
+      state = JSON.parse(h.raw());
     state.habits[0].taskCompletions = {};
     if (!linked) {
       delete state.habits[0].taskSchedules;
@@ -141,41 +131,33 @@ test("persistence deliveries invalidate the shipped iframe without a reconciliat
     }
     state.habits[0].name = "Delivered name";
     h.replace(state);
+    const before = (await h.request({ asset: "status" })).revision;
     await Promise.all(Array.from({ length: 6 }, () => h.hooks.get("persistedDataChanged")()));
     assert.equal(h.writes(), 0);
-    assert.ok(h.messages.some((message) => message.type === "HABITS_DATA_CHANGED"));
-    const count = h.messages.length;
+    assert.ok((await h.request({ asset: "status" })).revision > before);
+    assert.equal((await h.request({ action: "read" })).raw, h.raw());
     h.unload();
     await h.hooks.get("persistedDataChanged")();
-    assert.equal(h.messages.length, count);
     assert.equal(h.writes(), 0);
   }
 });
 
-test("shipped bridge accepts task reads only from its iframe and reports stale writes without overwriting", async () => {
-  const h = harness();
-  h.mount();
-  await h.request({ action: "read" }, "https://other.test");
-  await h.request({ action: "read" }, undefined, {});
-  assert.equal(h.messages.length, 0);
-  await h.request({ action: "read" });
-  assert.equal(h.messages.at(-1).raw, h.raw());
-  const original = h.raw();
-  await h.request({ action: "write", expected: "stale", raw: original });
-  assert.equal(h.messages.at(-1).ok, false);
+test("public task handler reports stale writes without overwriting", async () => {
+  const h = harness(),
+    original = h.raw();
+  assert.equal((await h.request({ action: "read" })).raw, original);
+  assert.equal((await h.request({ action: "write", expected: "stale", raw: original })).ok, false);
   assert.equal(h.raw(), original);
   h.unload();
 });
 
-test("the shipped host supplies offline styles with translations to its own iframe", async () => {
-  const h = harness();
-  h.mount();
-  await h.request({ asset: "translations" });
-  const response = h.messages.at(-1);
-  assert.equal(response.ok, true);
-  assert.equal(response.messages["Habits"], russian.Habits);
-  assert.match(response.styles, /\.habit-goal-track/);
-  assert.match(response.styles, /\.habit-visibility/);
-  assert.match(response.styles, /\.calendar-grid/);
+test("shipped public handler supplies offline translations and styles", async () => {
+  const h = harness(),
+    result = await h.request({ asset: "translations" });
+  assert.equal(result.ok, true);
+  assert.equal(result.messages.Habits, russian.Habits);
+  assert.match(result.styles, /\.habit-goal-track/);
+  assert.match(result.styles, /\.calendar-grid/);
   assert.equal(h.timers(), 0);
+  h.unload();
 });

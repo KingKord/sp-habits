@@ -79,7 +79,6 @@ export function createApplication({ window, api = window.PluginAPI, instant = ()
     confirm,
     newId: () => window.crypto.randomUUID(),
     loadEmojis: async () => (await exportClient.request(false, "emojis")).catalog,
-    systemEmoji: exportClient.systemEmoji,
     loadSchedules: async () => (await taskRequest({ action: "list" })).schedules
   });
   const details = createHabitDetails({ dom, store, now });

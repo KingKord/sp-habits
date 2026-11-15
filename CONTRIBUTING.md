@@ -1,4 +1,4 @@
-# Contributing to Habits
+# Contributing to Habit Ledger
 
 Contributions can be code, clearer documentation, translations, bug reports or focused suggestions. The project is maintained by [@KingKord](https://github.com/KingKord); review and release timing depend on availability.
 
